@@ -1,29 +1,22 @@
-import { spawn } from "child_process";
+import { exec } from "child_process";
 import * as fs from "fs";
 import * as parser from "./parser.js";
 import * as zlib from "zlib";
 
-function genNetlist(file: string): any {
-    let proc = spawn("./yosys/yosys.exe");
-
-    proc.stdin.write(
-        `design -reset
-read_verilog ${file}
-proc; opt; fsm; opt; memory; opt
-write_json temp.json
-exit
-`);
+function genNetlist(file: string): Promise<any> {
+    const commands = "proc; opt; fsm; opt; memory; opt"
+    const proc = exec(`yosys -p "${commands}" -o temp.json -- ${file}`);
 
     // proc.stdout.on("data", data => {
-    //     console.log(`${data}`);
-    // });
+    //      console.log(`${data}`);
+    //  });
 
     return new Promise(res => {
         proc.on("exit", () => {
-            let dat = JSON.parse(fs.readFileSync("./temp.json").toString());
+            const data = JSON.parse(fs.readFileSync("./temp.json", 'utf8'));
             fs.unlinkSync("temp.json");
 
-            res(dat);
+            res(data);
         });
     })
 }
@@ -32,30 +25,25 @@ function compress(data: any) {
     return "0" + zlib.deflateSync(JSON.stringify(data), { level: 9 }).toString("base64");
 }
 
-async function compileFile(path) {
+async function compileFile(path: string) {
+
     console.log("Generating netlist");
-    let data = await genNetlist(path);
+    const data = await genNetlist(path);
 
     let modules = [];
 
     for (const name in data.modules) {
         console.log(`Building graph for ${name}`);
-        let graph = parser.buildGraph(data.modules[name]);
+        const graph = parser.buildGraph(data.modules[name]);
 
         console.log(`Translating graph to combinators`);
-        let print = parser.transform(graph.nodes);
+        const print = parser.transform(graph.nodes);
         print.label = name;
 
         modules.push(print);
     }
 
-    let el;
-    if(modules.length == 1) {
-        el = {
-            blueprint: modules[0]
-        };
-    } else {
-        el = {
+    const el = modules[0] ?? {
             "blueprint-book": {
                 item: "blueprint-book",
                 blueprints: modules,
@@ -63,12 +51,11 @@ async function compileFile(path) {
                 version: 281479273447424
             }
         }
-    }
 
     console.log(compress(el));
 }
 
-let args = process.argv.slice(2);
+const args = process.argv.slice(2);
 for (const file of args) {
     compileFile(file);    
 }
