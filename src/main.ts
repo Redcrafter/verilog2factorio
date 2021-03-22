@@ -43,13 +43,16 @@ async function compileFile(path: string) {
         modules.push(print);
     }
 
-    const el = modules[0] ?? {
+    const el = modules.length === 1 ?
+        {
+            blueprint: modules[0]
+        } :
+        {
             "blueprint-book": {
-                item: "blueprint-book",
-                blueprints: modules,
-                active_index: 0,
-                version: 281479273447424
-            }
+            item: "blueprint-book",
+            blueprints: modules,
+            active_index: 0,
+            version: 281479273447424
         }
 
     console.log(compress(el));
