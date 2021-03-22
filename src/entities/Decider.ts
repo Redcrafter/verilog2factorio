@@ -3,10 +3,10 @@ import { dir, objEqual } from "../parser.js";
 
 export const enum ComparatorString {
     LE = "<",
-    GE = ">",
-    EQ = "=",
     LEQ = "≤",
+    GE = ">",
     GEQ = "≥",
+    EQ = "=",
     NEQ = "≠"
 }
 

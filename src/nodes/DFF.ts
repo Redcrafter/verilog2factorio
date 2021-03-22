@@ -1,8 +1,8 @@
 import { signalV, signalC, makeConnection, Color } from "../parser.js";
-import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
+import { Arithmetic } from "../entities/Arithmetic.js";
 import { Decider, ComparatorString } from "../entities/Decider.js";
 import { Entity } from "../entities/Entity.js";
-import { Node } from "./Node.js";
+import { createLimiter, createTransformer, Node } from "./Node.js";
 
 export class DFF extends Node {
     data: any;
@@ -26,12 +26,7 @@ export class DFF extends Node {
     limiter: Arithmetic;
 
     createComb() {
-        this.transformer = new Arithmetic({
-            first_signal: signalV,
-            second_constant: 0,
-            operation: ArithmeticOperations.Add,
-            output_signal: signalC
-        }); // clk v to c
+        this.transformer = createTransformer(); // clk v to c
         this.decider1 = new Decider({
             first_signal: signalC,
             constant: 1,
@@ -46,12 +41,7 @@ export class DFF extends Node {
             copy_count_from_input: true,
             output_signal: signalV
         }); // if c == 0 output b
-        this.limiter = new Arithmetic({
-            first_signal: signalV,
-            second_constant: this.outMask,
-            operation: ArithmeticOperations.And,
-            output_signal: signalV
-        }); // return (a & limit)
+        this.limiter = createLimiter(this.outMask); // return (a & limit)
     }
 
     connectComb() {

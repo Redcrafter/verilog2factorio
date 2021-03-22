@@ -1,16 +1,18 @@
 import { Color, makeConnection, signalV } from "../parser.js";
 import { ConstNode } from "./ConstNode.js";
-import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
+import { Arithmetic } from "../entities/Arithmetic.js";
 import { Constant } from "../entities/Constant.js";
-import { Node } from "./Node.js";
+import { createLimiter, Node } from "./Node.js";
 
 export class ADD extends Node {
     a: Node;
     b: Node;
 
+    limiter: Arithmetic;
+
     data: any;
 
-    constructor(item) {
+    constructor(item: any) {
         super(item.connections.Y);
         this.data = item;
     }
@@ -20,46 +22,26 @@ export class ADD extends Node {
         this.b = getInputNode(this.data.connections.B);
     }
 
-    limiter: Arithmetic;
-    const: Constant;
     createComb() {
-        this.limiter = new Arithmetic({
-            first_signal: signalV,
-            second_constant: this.outMask,
-            operation: ArithmeticOperations.And,
-            output_signal: signalV
-        });
+        this.limiter = createLimiter(this.outMask);
+
+        if (this.a instanceof ConstNode && this.b instanceof ConstNode)
+            throw new Error("Unnecessary operation");
 
         if (this.a instanceof ConstNode) {
-            this.const = new Constant({
-                count: this.a.value,
-                index: 1,
-                signal: signalV
-            });
+            if (this.a.value == 0) throw new Error("Unnecessary operation");
+            else this.a.forceCreate();
         }
 
         if (this.b instanceof ConstNode) {
-            if (this.const) { throw "Two const inputs"; }
-            this.const = new Constant({
-                count: this.b.value,
-                index: 1,
-                signal: signalV
-            });
+            if (this.b.value == 0) throw new Error("Unnecessary operation");
+            else this.b.forceCreate();
         }
     }
 
     connectComb() {
-        if (this.a instanceof ConstNode) {
-            makeConnection(Color.Red, this.const.output, this.limiter.input);
-        } else {
-            makeConnection(Color.Red, this.a.output(), this.limiter.input);
-        }
-
-        if (this.b instanceof ConstNode) {
-            makeConnection(Color.Green, this.const.output, this.limiter.input);
-        } else {
-            makeConnection(Color.Green, this.b.output(), this.limiter.input);
-        }
+        makeConnection(Color.Red, this.a.output(), this.limiter.input);
+        makeConnection(Color.Green, this.b.output(), this.limiter.input);
     }
 
     output() {
@@ -67,10 +49,6 @@ export class ADD extends Node {
     }
 
     combs() {
-        if (this.const)
-            return [this.const, this.limiter];
-
-        else
-            return [this.limiter];
+        return [this.limiter];
     }
 }

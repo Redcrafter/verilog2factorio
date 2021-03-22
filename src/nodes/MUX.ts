@@ -3,7 +3,7 @@ import { Constant } from "../entities/Constant.js";
 import { ConstNode } from "./ConstNode.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Entity } from "../entities/Entity.js";
-import { Node } from "./Node.js";
+import { createLimiter, createTransformer, Node } from "./Node.js";
 import { Color, makeConnection, signalC, signalV } from "../parser.js";
 
 export class MUX extends Node {
@@ -24,19 +24,13 @@ export class MUX extends Node {
         this.s = getInputNode(this.data.connections.S);
     }
 
-    constIn: Constant;
     transformer: Arithmetic;
     decider1: Decider;
     decider2: Decider;
     limiter: Arithmetic;
 
     createComb() {
-        this.transformer = new Arithmetic({
-            first_signal: signalV,
-            second_constant: 0,
-            operation: ArithmeticOperations.Add,
-            output_signal: signalC
-        });
+        this.transformer = createTransformer();
         this.decider1 = new Decider({
             first_signal: signalC,
             constant: 0,
@@ -51,62 +45,56 @@ export class MUX extends Node {
             copy_count_from_input: true,
             output_signal: signalV
         }); // if c == 1 save input value
-        this.limiter = new Arithmetic({
-            first_signal: signalV,
-            second_constant: this.outMask,
-            operation: ArithmeticOperations.And,
-            output_signal: signalV
-        });
+        this.limiter = createLimiter(this.outMask);
 
+        // TODO: make custom structure for 2 const inputs
         if (this.a instanceof ConstNode && this.b instanceof ConstNode)
             throw new Error("not allowed");
 
-        if (this.a instanceof ConstNode && this.a.value != 0) {
-            this.constIn = new Constant({
-                signal: signalV,
-                count: this.a.value,
-                index: 1
-            });
+        if (this.a instanceof ConstNode) {
+            if (this.a.value == 0) {
+                // can be completely ignored
+                this.decider1 = null;
+                this.limiter = null;
+            } else {
+                this.a.forceCreate();
+            }
         }
-        if (this.b instanceof ConstNode && this.b.value != 0) {
-            this.constIn = new Constant({
-                signal: signalV,
-                count: this.b.value,
-                index: 1
-            });
+        if (this.b instanceof ConstNode) {
+            if (this.b.value == 0) {
+                // can be completely ignored
+                this.decider2 = null;
+                this.limiter = null;
+            } else {
+                this.b.forceCreate();
+            }
         }
     }
 
     connectComb() {
         makeConnection(Color.Red, this.s.output(), this.transformer.input);
 
-        if (this.a instanceof ConstNode) {
-            if (this.a.value != 0) makeConnection(Color.Red, this.constIn.output, this.decider1.input);
-        } else {
-            makeConnection(Color.Red, this.a.output(), this.decider1.input);
-        }
-        if (this.b instanceof ConstNode) {
-            if (this.b.value != 0) makeConnection(Color.Red, this.constIn.output, this.decider2.input);
-        } else {
-            makeConnection(Color.Red, this.b.output(), this.decider2.input);
-        }
+        if (!(this.a instanceof ConstNode) || this.a.value != 0) makeConnection(Color.Red, this.a.output(), this.decider1.input);
+        if (!(this.b instanceof ConstNode) || this.b.value != 0) makeConnection(Color.Red, this.b.output(), this.decider2.input);
 
-        makeConnection(Color.Green, this.transformer.output, this.decider1.input);
-        makeConnection(Color.Green, this.decider1.input, this.decider2.input);
+        if (this.decider1) makeConnection(Color.Green, this.transformer.output, this.decider1.input);
+        if (this.decider2) makeConnection(Color.Green, this.transformer.output, this.decider2.input);
 
-        makeConnection(Color.Red, this.decider1.output, this.decider2.output);
-        makeConnection(Color.Red, this.decider2.output, this.limiter.input);
+        if (this.limiter) {
+            makeConnection(Color.Red, this.decider1.output, this.limiter.input);
+            makeConnection(Color.Red, this.decider2.output, this.limiter.input);
+        }
     }
 
     output() {
-        return this.limiter.output;
+        return (this.limiter ?? this.decider1 ?? this.decider2).output;
     }
 
     combs(): Entity[] {
-        let r: Entity[] = [this.transformer, this.decider1, this.decider2, this.limiter];
-        if (this.constIn) {
-            r.push(this.constIn);
-        }
+        let r: Entity[] = [this.transformer];
+        if (this.decider1) r.push(this.decider1);
+        if (this.decider2) r.push(this.decider2);
+        if (this.limiter) r.push(this.limiter);
         return r;
     }
 }

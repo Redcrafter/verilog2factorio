@@ -1,16 +1,22 @@
+// nodes
 import { ADD } from "./nodes/ADD.js";
-import { Endpoint, Connection, Entity, RawEntity, SignalID } from "./entities/Entity.js";
-
-import { Node } from "./nodes/Node.js";
 import { ConstNode } from "./nodes/ConstNode.js";
-import { MergeEl, MergeNode } from "./nodes/MergeNode.js";
-import { SplitNode } from "./nodes/SplitNode.js";
 import { DFF } from "./nodes/DFF.js";
-import { MUX } from "./nodes/MUX.js";
-import { XOR } from "./nodes/XOR.js";
 import { Input } from "./nodes/Input.js";
+import { MathNode } from "./nodes/MathNode.js";
+import { MergeNode, MergeEl } from "./nodes/MergeNode.js";
+import { MUX } from "./nodes/MUX.js";
+import { Node } from "./nodes/Node.js";
 import { Output } from "./nodes/Output.js";
+import { PMUX } from "./nodes/PMUX.js";
+import { SplitNode } from "./nodes/SplitNode.js";
+// entities
+import { Endpoint, Connection, Entity, RawEntity, SignalID } from "./entities/Entity.js";
+import { ArithmeticOperations } from "./entities/Arithmetic.js";
+import { ComparatorString } from "./entities/Decider";
+
 import { Simulator } from "./sim.js";
+import { LogicNode } from "./nodes/LogicNode.js";
 
 export const enum Color {
     Red,
@@ -80,6 +86,34 @@ export function objEqual(a: any, b: any) {
     return true;
 }
 
+function createNode(item: any) {
+    switch (item.type) {
+        case "$add": return new ADD(item);
+        case "$dff": return new DFF(item);
+        case "$mux": return new MUX(item);
+        case "$and": return new MathNode(item, ArithmeticOperations.And);
+        case "$or": return new MathNode(item, ArithmeticOperations.Or);
+        case "$xor": return new MathNode(item, ArithmeticOperations.Xor);
+        case "$eq": return new LogicNode(item, ComparatorString.EQ);
+        case "$ge": return new LogicNode(item, ComparatorString.GE);
+        case "$reduce_or": // reduce or is the same as != 0
+            item.connections.B = ["0"];
+            return new LogicNode(item, ComparatorString.NEQ);
+        case "$logic_not": // same as == 0
+            item.connections.B = ["0"];
+            return new LogicNode(item, ComparatorString.EQ);
+        case "$not": // ~x == x^(2**n - 1)
+            item.connections.B = new Array(item.connections.Y.length).fill("1");
+            return new MathNode(item, ArithmeticOperations.Xor);
+        case "$pmux": return new PMUX(item);
+        default:
+            console.error(`Unknown node type ${item.type}`);
+            break;
+    }
+
+    return null;
+}
+
 function buildGraph(mod) {
     let ports = new Map();
 
@@ -106,9 +140,37 @@ function buildGraph(mod) {
                 }
             }
 
-            return new ConstNode(value, bits.length);
+            // TODO: if value == 0 can be optimized away since 0 is default
+            let n = new ConstNode(value, bits.length);
+            nodes.push(n);
+            return n;
         } else if (hasConst) {
-            throw "Not implemented";
+            // if the extra bits are at the end and all 0 they can be ignored
+            let valid = true;
+            for (let i = bits.length - 1; i >= 0; i--) {
+                const bit = bits[i];
+
+                if (typeof bit === "string") {
+                    if (bit === "1") {
+                        valid = false;
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            if (!valid) {
+                throw "Not implemented";
+            } else {
+                let copy = bits.slice();
+                for (let i = bits.length - 1; i >= 0; i--) {
+                    if(typeof bits[i] === "string") {
+                        copy.splice(i, 1);
+                    }
+                }
+                bits = copy;
+            }
         }
 
         for (const node of nodes) {
@@ -117,6 +179,7 @@ function buildGraph(mod) {
             }
         }
 
+        // TODO: make this better
         if (bits.length == 1) {
             let bit = bits[0] as number;
             let n: Node;
@@ -158,7 +221,7 @@ function buildGraph(mod) {
     for (const name in mod.ports) {
         const item = mod.ports[name];
 
-        let node;
+        let node: Node;
         if (item.direction == "input") {
             node = new Input(item.bits);
 
@@ -175,50 +238,7 @@ function buildGraph(mod) {
     for (const key in mod.cells) {
         const item = mod.cells[key];
 
-        let node: Node;
-        switch (item.type) {
-            case "$add":
-                node = new ADD(item);
-                break;
-            case "$dff":
-                node = new DFF(item);
-                break;
-            case "$mux":
-                node = new MUX(item);
-                break;
-            case "$xor":
-                node = new XOR(item);
-                break;
-            /*case "$eq":
-                node = new EQ(item);
-                break;
-            case "$ge":
-                node = new GE(item);
-                break;
-            case "$and":
-                node = new AND(item);
-                break;
-            case "$or":
-                node = new OR(item);
-                break;
-            
-            case "$logic_not":
-                node = new LNot(item);
-                break;
-            case "$not":
-                node = new Not(item);
-                break;
-            case "$pmux":
-                node = new PMUX(item);
-                break;
-            case "reduce_or":
-                node = new ReduceOr(item);
-                break;*/
-            default:
-                console.error(`Unknown node type ${item.type}`);
-                continue;
-            // throw "Unknown node type";
-        }
+        let node = createNode(item);
         nodes.push(node);
         for (const n of node.outputBits) {
             knownWires.add(n);
@@ -375,7 +395,7 @@ function transform(nodes: Node[]): Blueprint {
             checkCon(n.output.red);
             checkCon(n.output.green);
         }
-        if(errors != 0) {
+        if (errors != 0) {
             console.error(`${errors} error(s) occurred while trying to layout the circuit`);
             process.exit(0);
         }

@@ -7,10 +7,6 @@ function genNetlist(file: string): Promise<any> {
     const commands = "proc; opt; fsm; opt; memory; opt"
     const proc = exec(`yosys -p "${commands}" -o temp.json -- ${file}`);
 
-    // proc.stdout.on("data", data => {
-    //      console.log(`${data}`);
-    //  });
-
     return new Promise(res => {
         proc.on("exit", () => {
             const data = JSON.parse(fs.readFileSync("./temp.json", 'utf8'));

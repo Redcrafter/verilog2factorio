@@ -1,18 +1,32 @@
+import { Constant } from "../entities/Constant.js";
 import { Endpoint, Entity } from "../entities/Entity.js";
+import { signalV } from "../parser.js";
 import { Node } from "./Node.js";
-
 
 export class ConstNode extends Node {
     value: number;
+    c: Constant;
 
-    constructor(value, bits) {
+    constructor(value: number, bits: number) {
         super([]);
         this.outMask = (1 << bits) - 1;
         this.value = value;
     }
 
+    forceCreate() {
+        this.c = new Constant({
+            count: this.value,
+            index: 1,
+            signal: signalV
+        });
+    }
+
     createComb(): void { }
     connectComb(): void { }
-    output(): Endpoint { throw new Error("Method not implemented."); }
-    combs(): Entity[] { return []; }
+
+    output(): Endpoint { return this.c.output; }
+    combs(): Entity[] { 
+        if(this.c) return [this.c];
+        else return []; 
+    }
 }

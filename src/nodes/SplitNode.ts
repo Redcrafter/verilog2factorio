@@ -1,6 +1,6 @@
 import { Endpoint, Entity } from "../entities/Entity.js";
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
-import { Node } from "./Node.js";
+import { createLimiter, Node } from "./Node.js";
 import { signalV, makeConnection, Color } from "../parser.js";
 
 export class SplitNode extends Node {
@@ -26,12 +26,7 @@ export class SplitNode extends Node {
             operation: ArithmeticOperations.RShift,
             output_signal: signalV
         });
-        this.limiter = new Arithmetic({
-            first_signal: signalV,
-            second_constant: 1,
-            operation: ArithmeticOperations.And,
-            output_signal: signalV
-        });
+        this.limiter = createLimiter(this.outMask);
     }
     connectComb(): void {
         makeConnection(Color.Red, this.input.output(), this.shifter.input);
