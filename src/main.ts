@@ -49,10 +49,11 @@ async function compileFile(path: string) {
         } :
         {
             "blueprint-book": {
-            item: "blueprint-book",
-            blueprints: modules,
-            active_index: 0,
-            version: 281479273447424
+                item: "blueprint-book",
+                blueprints: modules,
+                active_index: 0,
+                version: 281479273447424
+            }
         }
 
     console.log(compress(el));
