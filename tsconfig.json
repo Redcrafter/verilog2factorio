@@ -2,6 +2,8 @@
     "compilerOptions": {
         "target": "ESNext",
         "moduleResolution": "Node",
-        "module": "ESNext"
+        "module": "ESNext",
+	"outDir": "dist"
     },
+    "include": ["src/"]
 }
