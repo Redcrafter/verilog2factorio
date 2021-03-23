@@ -9,7 +9,6 @@ import { MUX } from "./nodes/MUX.js";
 import { Node } from "./nodes/Node.js";
 import { Output } from "./nodes/Output.js";
 import { PMUX } from "./nodes/PMUX.js";
-import { SplitNode } from "./nodes/SplitNode.js";
 // entities
 import { Endpoint, Connection, Entity, RawEntity, SignalID } from "./entities/Entity.js";
 import { ArithmeticOperations } from "./entities/Arithmetic.js";
@@ -19,8 +18,9 @@ import { Simulator } from "./sim.js";
 import { LogicNode } from "./nodes/LogicNode.js";
 
 export const enum Color {
-    Red,
-    Green
+    Red = 1,
+    Green = 2,
+    Both = Red | Green
 }
 
 export const signalV: SignalID = {
@@ -114,11 +114,56 @@ function createNode(item: any) {
     return null;
 }
 
+function arrMatch<T>(a: T[], b: T[]) {
+    let start = -1;
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] === b[0]) {
+            start = i;
+            break;
+        }
+    }
+
+    if (start == -1) {
+        return null;
+    }
+
+    let i = 1;
+    while (i < a.length && i < b.length) {
+        if (a[start + i] !== b[i]) {
+            break;
+        }
+        i++;
+    }
+
+    return [start, i];
+}
+
 function buildGraph(mod) {
     let ports = new Map();
 
     let nodes: Node[] = [];
     let knownWires = new Set<number>();
+
+    function matchSection(arr: number[]): MergeEl {
+        let current = [0, 0];
+        let best: Node = null;
+
+        for (const n of nodes) {
+            let match = arrMatch(n.outputBits, arr);
+            if (!match) continue;
+            if (match[1] > current[1]) {
+                current = match;
+                best = n;
+            }
+        }
+
+        if (!best) return null;
+        return {
+            start: current[0],
+            count: current[1],
+            node: best
+        };
+    }
 
     function getInputNode(bits: (number | string)[]) {
         let isConst = true;
@@ -165,7 +210,7 @@ function buildGraph(mod) {
             } else {
                 let copy = bits.slice();
                 for (let i = bits.length - 1; i >= 0; i--) {
-                    if(typeof bits[i] === "string") {
+                    if (typeof bits[i] === "string") {
                         copy.splice(i, 1);
                     }
                 }
@@ -179,38 +224,22 @@ function buildGraph(mod) {
             }
         }
 
-        // TODO: make this better
-        if (bits.length == 1) {
-            let bit = bits[0] as number;
-            let n: Node;
+        // search for every possible subset
+        let sub: MergeEl[] = [];
 
-            for (const node of nodes) {
-                if (node.outputBits.includes(bit)) {
-                    n = node;
+        let rest = bits.slice() as number[];
+        while (rest.length != 0) {
+            // all wires are non existent/can be ignored
+            if(rest.every(x => !knownWires.has(x))) break;          
+
+            for (let i = rest.length; i > 0; i--) {
+                let sect = matchSection(rest);
+                if (sect) {
+                    rest.splice(0, sect.count);
+                    sub.push(sect);
                     break;
                 }
             }
-
-            let split = new SplitNode(n, bits as number[]);
-            nodes.push(split);
-            return split;
-        }
-
-        // search for every possible subset
-        // too lazy just search for single signals could cause unnecessary split nodes to appear
-        let sub: MergeEl[] = [];
-        for (let i = 0; i < bits.length; i++) {
-            let bit = bits[i] as number;
-            if (!knownWires.has(bit)) {
-                continue;
-            }
-
-            let n = getInputNode([bits[i]]);
-
-            sub.push({
-                n,
-                shift: i
-            });
         }
 
         let node = new MergeNode(sub, bits as number[]);
@@ -256,16 +285,27 @@ function buildGraph(mod) {
 }
 
 export function makeConnection(c: Color, a: Endpoint, b: Endpoint) {
-    let col = c == Color.Red ? "red" : "green";
+    if (c & Color.Red) {
+        a.red.push({
+            entity_id: b.id,
+            circuit_id: b.type
+        });
+        b.red.push({
+            entity_id: a.id,
+            circuit_id: a.type
+        });
+    }
 
-    a[col].push({
-        entity_id: b.id,
-        circuit_id: b.type
-    });
-    b[col].push({
-        entity_id: a.id,
-        circuit_id: a.type
-    });
+    if (c & Color.Green) {
+        a.green.push({
+            entity_id: b.id,
+            circuit_id: b.type
+        });
+        b.green.push({
+            entity_id: a.id,
+            circuit_id: a.type
+        });
+    }
 }
 
 export const dir = 4;
