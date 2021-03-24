@@ -230,7 +230,7 @@ function buildGraph(mod) {
         let rest = bits.slice() as number[];
         while (rest.length != 0) {
             // all wires are non existent/can be ignored
-            if(rest.every(x => !knownWires.has(x))) break;          
+            if (rest.every(x => !knownWires.has(x))) break;
 
             for (let i = rest.length; i > 0; i--) {
                 let sect = matchSection(rest);
@@ -318,13 +318,13 @@ function transform(nodes: Node[]): Blueprint {
 
     // assign entity id's
     let combs: Entity[] = [];
-    let ports: Entity[] = [];
+    let ports = new Set<Entity>();
 
     for (const node of nodes) {
         if (node instanceof Input) {
-            ports.push(node.constant);
+            ports.add(node.constant);
         } if (node instanceof Output) {
-            ports.push(node.pole);
+            ports.add(node.pole);
         }
 
         let sub = node.combs();
@@ -340,109 +340,12 @@ function transform(nodes: Node[]): Blueprint {
     }
 
     // TODO: remove duplicate
-    /*for (const n1 of nodes) {
-        for (const n2 of nodes) {
-            if (n1 == n2) continue;
+    // optimize(combs);
 
-            if (n1.eq(n2)) { }
-        }
-    }*/
-
-    // position entities
-    {
-        // position based on dependency
-        let next = [];
-        for (let i = 0; i < ports.length; i++) {
-            let el = ports[i];
-            el.x = i;
-            el.y = 0;
-
-            next.push(...el.output.red.map(x => x.entity_id));
-            next.push(...el.output.green.map(x => x.entity_id));
-        }
-
-        let y = 1;
-        while (next.length != 0) {
-            let temp = [];
-            let x = 0;
-            for (let i = 0; i < next.length; i++) {
-                let el = combs[next[i] - 1];
-
-                if (el.x != -1) {
-                    // already set position
-                    continue;
-                }
-
-                el.x = x++;
-                el.y = y + 0.5;
-
-                temp.push(...el.output.red.map(x => x.entity_id));
-                temp.push(...el.output.green.map(x => x.entity_id));
-            }
-            next = temp;
-            y += 2;
-        }
-
-        // position using graphing algorithm
-        console.log(`Running layout simulation`);
-        let simulator = new Simulator();
-        for (const n of combs) {
-            let f = ports.includes(n);
-
-            simulator.addNode(n.x, n.y, n.width, n.height, f);
-        }
-        for (const n of combs) {
-            function add(dat: Connection[]) {
-                for (const c of dat) {
-                    simulator.addEdge(n.id - 1, c.entity_id - 1);
-                }
-            }
-            if (n.input) {
-                add(n.input.red);
-                add(n.input.green);
-            }
-            add(n.output.red);
-            add(n.output.green);
-        }
-
-        simulator.sim();
-
-        for (let i = 0; i < combs.length; i++) {
-            const n = combs[i];
-            const p = simulator.nodes[i];
-
-            n.x = Math.floor(p.x);
-            n.y = Math.floor(p.y) + n.height / 2;
-        }
-
-        let errors = 0;
-        // check if all connections lengths are < 9
-        for (const n of combs) {
-            function checkCon(dat: Connection[]) {
-                for (const c of dat) {
-                    let ent = combs[c.entity_id - 1];
-                    let dist = Math.sqrt((n.x - ent.x) ** 2 + (n.y - ent.y) ** 2);
-
-                    if (dist > 9) {
-                        errors++;
-                    }
-                }
-            }
-            if (n.input) {
-                checkCon(n.input.red);
-                checkCon(n.input.green);
-            }
-            checkCon(n.output.red);
-            checkCon(n.output.green);
-        }
-        if (errors != 0) {
-            console.error(`${errors} error(s) occurred while trying to layout the circuit`);
-            process.exit(0);
-        }
-    }
+    createLayout(combs, ports);
 
     // create entities
-    let dat = combs.map(x => x.toObj());
+    let entities = combs.map(x => x.toObj());
 
     return {
         icons: [
@@ -461,9 +364,57 @@ function transform(nodes: Node[]): Blueprint {
                 index: 2
             }
         ],
-        entities: dat,
+        entities,
         item: "blueprint",
         version: 281479273447424
+    }
+}
+
+function createLayout(combs: Entity[], ports: Set<Entity>) {
+    console.log(`Running layout simulation`);
+    let simulator = new Simulator();
+    // add combinators to simulator
+    for (const n of combs) {
+        let f = ports.has(n);
+        simulator.addNode(f);
+    }
+    // add connectiosn to simulator
+    for (const n of combs) {
+        function add(dat: Connection[]) {
+            for (const c of dat) {
+                simulator.addEdge(n.id - 1, c.entity_id - 1);
+            }
+        }
+        if (n.input) {
+            add(n.input.red);
+            add(n.input.green);
+        }
+        add(n.output.red);
+        add(n.output.green);
+    }
+
+    let errors = 0;
+    // run simulator
+    simulator.sim((a, b) => {
+        let an = combs[a];
+        let bn = combs[b];
+
+        // TODO: identify which connection should be changed and add pole
+        // debugger;
+        errors++;
+    });
+    if (errors != 0) {
+        console.error(`${errors} error(s) occurred while trying to layout the circuit`);
+        // process.exit(0);
+    }
+
+    // transfer simulation to combinators
+    for (let i = 0; i < combs.length; i++) {
+        const n = combs[i];
+        const p = simulator.nodes[i];
+
+        n.x = Math.floor(p.x);
+        n.y = Math.floor(p.y * 2) + n.height / 2;
     }
 }
 

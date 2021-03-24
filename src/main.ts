@@ -22,7 +22,6 @@ function compress(data: any) {
 }
 
 async function compileFile(path: string) {
-
     console.log("Generating netlist");
     const data = await genNetlist(path);
 
@@ -55,7 +54,12 @@ async function compileFile(path: string) {
     console.log(compress(el));
 }
 
-const args = process.argv.slice(2);
-for (const file of args) {
-    compileFile(file);    
+async function main() {
+    const args = process.argv.slice(2);
+
+    for (const file of args) {
+        // have to wait for compilation because of potential problems with temp.json being overwritten
+        await compileFile(file);
+    }
 }
+main();
