@@ -2,8 +2,8 @@
 import { ADD } from "./nodes/ADD.js";
 import { ConstNode } from "./nodes/ConstNode.js";
 import { DFF } from "./nodes/DFF.js";
-import { SDFFE } from "./nodes/SDFFE";
-import { SDFFCE } from "./nodes/SDFFCE";
+import { SDFFE } from "./nodes/SDFFE.js";
+import { SDFFCE } from "./nodes/SDFFCE.js";
 import { Input } from "./nodes/Input.js";
 import { MathNode } from "./nodes/MathNode.js";
 import { MergeNode, MergeEl } from "./nodes/MergeNode.js";
