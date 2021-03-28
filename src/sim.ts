@@ -146,10 +146,35 @@ class Simulator {
         }
     }
 
+    private initRandom() {
+        let x = Math.floor(this.gridSize / 2);
+
+        for (const n of this.nodes) {
+            if(n.fixed) {
+                n.x = x++;
+                n.y = -1;
+                continue;
+            }
+
+            while (true) {
+                let x = Math.floor(Math.random() * this.gridSize);
+                let y = Math.floor(Math.random() * this.gridSize);
+
+                if (!this.getNode(x, y)) {
+                    n.x = x;
+                    n.y = y;
+                    this.setNode(x, y, n);
+                    break;
+                }
+            }
+        }
+    }
+
     private reset() {
         this.gridSize = Math.floor(5 * Math.sqrt(this.nodes.length));
         this.grid = new Array(this.gridSize * this.gridSize);
-        this.initBFS();
+        // this.initBFS();
+        this.initRandom();
 
         /*for (const n of this.nodes) {
             n.cost = n.getCost();
@@ -195,6 +220,7 @@ class Simulator {
         return this.grid[x + y * this.gridSize];
     }
     private setNode(x: number, y: number, v: Point) {
+        if (x < 0 || x >= this.gridSize || y < 0 || y >= this.gridSize) throw new Error("element out of range");
         this.grid[x + y * this.gridSize] = v;
     }
 }

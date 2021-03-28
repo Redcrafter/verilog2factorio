@@ -1,5 +1,4 @@
 import { Arithmetic } from "../entities/Arithmetic.js";
-import { Constant } from "../entities/Constant.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Endpoint, Entity } from "../entities/Entity.js";
 import { Color, makeConnection, signalC, signalV } from "../parser.js";
@@ -29,8 +28,8 @@ export class PMUX extends Node {
     connect(getInputNode) {
         this.a = getInputNode(this.data.connections.A);
 
-        let width = this.data.parameters.WIDTH;
-        let s_width = this.data.parameters.S_WIDTH;
+        let width = parseInt(this.data.parameters.WIDTH, 2);
+        let s_width = parseInt(this.data.parameters.S_WIDTH, 2);
 
         for (let i = 0; i < s_width; i++) {
             this.b.push(getInputNode(this.data.connections.B.slice(i * width, (i + 1) * width)));
@@ -42,21 +41,22 @@ export class PMUX extends Node {
     createComb(): void {
         this.tranformer = createTransformer();
 
+        this.default = new Decider({
+            first_signal: signalC,
+            constant: 0,
+            comparator: ComparatorString.EQ,
+            copy_count_from_input: true,
+            output_signal: signalV
+        });
+
         // if a is constant can be ignored
         if (this.a instanceof ConstNode) {
             if (this.a.value == 0) {
                 // can be ignored
+                this.default = null;
             } else {
-                throw new Error("Not implemented");
+                this.a.forceCreate();
             }
-        } else {
-            this.default = new Decider({
-                first_signal: signalC,
-                constant: 0,
-                comparator: ComparatorString.EQ,
-                copy_count_from_input: true,
-                output_signal: signalV
-            });
         }
 
         this.other = new Array(this.b.length);
@@ -93,7 +93,7 @@ export class PMUX extends Node {
 
         for (let i = 0; i < this.b.length; i++) {
             let el = this.other[i];
-            if(!el) continue;
+            if (!el) continue;
             makeConnection(Color.Red, this.b[i].output(), el.input);
             makeConnection(Color.Green, this.tranformer.output, el.input);
             makeConnection(Color.Red, el.output, this.limiter.input);

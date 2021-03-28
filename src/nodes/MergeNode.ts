@@ -2,7 +2,8 @@ import { Endpoint, Entity } from "../entities/Entity.js";
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Node } from "./Node.js";
 import { signalV, makeConnection, Color } from "../parser.js";
-import { Pole } from "../entities/Pole.js";
+import { ConstNode } from "./ConstNode.js";
+import { Constant } from "../entities/Constant.js";
 
 export interface MergeEl {
     node: Node;
@@ -18,16 +19,27 @@ export class MergeNode extends Node {
         this.inputs = inputs;
     }
 
-    layers: { in: Arithmetic, out: Arithmetic }[] = [];
+    layers: { in: Arithmetic, out: Entity }[] = [];
     all: Entity[] = [];
     out: Entity;
 
     createComb(): void {
-        let offset = this.outputBits.length;
-        for (const n of this.inputs) {
-            offset -= n.count;
+        let offset = 0;
+        let constVal = 0;
 
-            let shiftVal = offset - (n.node.outputBits.length - (n.start + n.count));
+        for (const n of this.inputs) {
+            if (n.node instanceof ConstNode) {
+                console.assert(n.start == 0);
+                console.assert(n.count == 1);
+                constVal |= n.node.value << offset;
+
+                offset += n.count;
+
+                this.layers.push(null);
+                continue;
+            }
+
+            let shiftVal = offset - n.start;
             let op = shiftVal > 0 ? ArithmeticOperations.LShift : ArithmeticOperations.RShift;
 
             let shift = new Arithmetic({
@@ -44,6 +56,7 @@ export class MergeNode extends Node {
             });
 
             if (n.start == 0 && (offset == 0 || n.count == n.node.outputBits.length)) { // don't need a limiter
+                // if(shiftVal == 0) don't need either but need a separator so signals don't get mixed
                 this.layers.push({
                     in: shift,
                     out: shift
@@ -62,29 +75,41 @@ export class MergeNode extends Node {
                 });
                 this.all.push(shift, mask);
             }
+
+            offset += n.count;
         }
 
-        if (this.inputs.length == 1) {
-            this.out = this.layers[0].out;
-        } else {
-            let pole = new Pole();
-            this.out = pole;
-            this.all.push(pole);
+        if (constVal != 0) {
+            let c = new Constant({
+                count: constVal,
+                index: 1,
+                signal: signalV
+            });
+            this.all.push(c);
+            this.layers.push({
+                in: null,
+                out: c
+            });
         }
+
+        this.out = this.layers.filter(x => x != null)[0].out;
     }
 
     connectComb(): void {
-        for (let i = 0; i < this.layers.length; i++) {
+        for (let i = 0; i < this.inputs.length; i++) {
             const el = this.layers[i];
+            if (el == null) continue;
+
             makeConnection(Color.Red, this.inputs[i].node.output(), el.in.input);
             if (el.in != el.out) {
                 makeConnection(Color.Red, el.in.output, el.out.input);
             }
         }
-        if (this.inputs.length > 1) {
-            for (const el of this.layers) {
-                makeConnection(Color.Both, el.out.output, this.out.input);
-            }
+        let last = null;
+        for (const el of this.layers) {
+            if (!el) continue;
+            if (last) makeConnection(Color.Both, last.out.output, el.out.output);
+            last = el;
         }
     }
 

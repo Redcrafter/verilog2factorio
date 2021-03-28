@@ -1,7 +1,7 @@
 # Factorio verilog compiler
 
 ## Install
-Download [yosys](http://www.clifford.at/yosys/download.html) and add it to your PATH. 
+Manually compile [yosys](https://github.com/YosysHQ/yosys) (since the last release is quite old) and add it to your PATH. 
 
 Run ``` npm install ```
 
