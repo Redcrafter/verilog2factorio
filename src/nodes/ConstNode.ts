@@ -24,7 +24,7 @@ export class ConstNode extends Node {
     createComb(): void { }
     connectComb(): void { }
 
-    output(): Endpoint { return this.c.output; }
+    output(): Endpoint { return this.c?.output; }
     combs(): Entity[] { 
         if(this.c) return [this.c];
         else return []; 

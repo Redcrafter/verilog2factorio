@@ -1,7 +1,6 @@
 import { Color, makeConnection, signalV } from "../parser.js";
 import { ConstNode } from "./ConstNode.js";
 import { Arithmetic } from "../entities/Arithmetic.js";
-import { Constant } from "../entities/Constant.js";
 import { createLimiter, Node } from "./Node.js";
 
 export class ADD extends Node {

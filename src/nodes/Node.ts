@@ -27,12 +27,12 @@ export abstract class Node {
     outMask: number;
 
     constructor(bits: number[]) {
-        console.assert(bits.length <= 31); // factorio uses 32bit signed integers so for now only safely support 31 bits
+        console.assert(bits.length <= 31, `Wire width too big: ${bits.length}`); // factorio uses 32bit signed integers so for now only safely support 31 bits
         this.outputBits = bits;
         this.outMask = (1 << bits.length) - 1;
     }
 
-    connect(getInputNode: func) { }
+    connect(getInputNode: func, getMergeEls) { }
 
     abstract createComb(): void;
     abstract connectComb(): void;

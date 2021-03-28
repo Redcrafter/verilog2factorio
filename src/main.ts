@@ -4,8 +4,11 @@ import * as parser from "./parser.js";
 import * as zlib from "zlib";
 
 function genNetlist(file: string): Promise<any> {
-    const commands = "proc; opt; fsm; opt; memory; opt"
-    const proc = exec(`yosys -p "${commands}" -o temp.json -- ${file}`);
+    if (!fs.existsSync(file)) {
+        throw new Error("File not found");
+    }
+    const commands = "proc; flatten; wreduce; opt; fsm; opt; memory; opt; peepopt; async2sync; wreduce; opt"
+    const proc = exec(`yosys -p "${commands}" -o temp.json ${file}`);
 
     return new Promise(res => {
         proc.on("exit", () => {
@@ -45,7 +48,7 @@ async function compileFile(path: string) {
         {
             "blueprint-book": {
                 item: "blueprint-book",
-                blueprints: modules,
+                blueprints: modules.map((x, i) => ({ index: i, blueprint: x })),
                 active_index: 0,
                 version: 281479273447424
             }

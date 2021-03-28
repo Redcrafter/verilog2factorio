@@ -1,4 +1,4 @@
-import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
+import { Arithmetic } from "../entities/Arithmetic.js";
 import { Decider, ComparatorString } from "../entities/Decider.js"
 import { Constant } from "../entities/Constant.js";
 import { Endpoint, Entity } from "../entities/Entity.js";

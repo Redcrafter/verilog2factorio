@@ -2,6 +2,8 @@
 import { ADD } from "./nodes/ADD.js";
 import { ConstNode } from "./nodes/ConstNode.js";
 import { DFF } from "./nodes/DFF.js";
+import { SDFFE } from "./nodes/SDFFE";
+import { SDFFCE } from "./nodes/SDFFCE";
 import { Input } from "./nodes/Input.js";
 import { MathNode } from "./nodes/MathNode.js";
 import { MergeNode, MergeEl } from "./nodes/MergeNode.js";
@@ -31,6 +33,10 @@ export const signalC: SignalID = {
     type: "virtual",
     name: "signal-C"
 };
+export const signalR: SignalID = {
+    type: "virtual",
+    name: "signal-R"
+}
 
 interface Blueprint {
     /** String, the name of the item that was saved ("blueprint" in vanilla). */
@@ -53,7 +59,7 @@ interface Blueprint {
 
 function arraysEqual(a: any[], b: any[]) {
     if (a === b) return true;
-    if (a == null || b == null) return false;
+    if (a === null || b === null) return false;
     if (a.length !== b.length) return false;
 
     for (var i = 0; i < a.length; ++i) {
@@ -90,19 +96,37 @@ function createNode(item: any) {
     switch (item.type) {
         case "$add": return new ADD(item);
         case "$dff": return new DFF(item);
+        case "$dffe": return new DFF(item);
+        case "$sdffe": return new SDFFE(item);
+        case "$sdffce": return new SDFFCE(item);
         case "$mux": return new MUX(item);
+        case "$mul": return new MathNode(item, ArithmeticOperations.Mul);
         case "$and": return new MathNode(item, ArithmeticOperations.And);
         case "$or": return new MathNode(item, ArithmeticOperations.Or);
         case "$xor": return new MathNode(item, ArithmeticOperations.Xor);
+        case "$xnor": return new MathNode(item, ArithmeticOperations.Xor, true)
         case "$eq": return new LogicNode(item, ComparatorString.EQ);
+        case "$ne": return new LogicNode(item, ComparatorString.NEQ);
         case "$ge": return new LogicNode(item, ComparatorString.GE);
         case "$reduce_or": // reduce or is the same as != 0
+        case "$reduce_bool":
             item.connections.B = ["0"];
             return new LogicNode(item, ComparatorString.NEQ);
+        case "$reduce_and": // reduce and is the same as == (1 << n) - 1
+            item.connections.B = new Array(item.connections.A.length).fill("1");
+            return new LogicNode(item, ComparatorString.EQ);
         case "$logic_not": // same as == 0
             item.connections.B = ["0"];
             return new LogicNode(item, ComparatorString.EQ);
-        case "$not": // ~x == x^(2**n - 1)
+        case "$logic_or":
+            console.assert(item.connections.A.length == 1);
+            console.assert(item.connections.B.length == 1);
+            return new MathNode(item, ArithmeticOperations.Or);
+        case "$logic_and":
+            console.assert(item.connections.A.length == 1);
+            console.assert(item.connections.B.length == 1);
+            return new MathNode(item, ArithmeticOperations.And);
+        case "$not": // ~x == x^(1 << n - 1)
             item.connections.B = new Array(item.connections.Y.length).fill("1");
             return new MathNode(item, ArithmeticOperations.Xor);
         case "$pmux": return new PMUX(item);
@@ -165,57 +189,55 @@ function buildGraph(mod) {
         };
     }
 
-    function getInputNode(bits: (number | string)[]) {
-        let isConst = true;
-        let hasConst = false;
+    function findMergeList(bits: (number | string)[]) {
+        let sub: MergeEl[] = [];
 
-        for (const bit of bits) {
+        let offset = 0;
+        while (offset < bits.length) {
+            let bit = bits[offset];
+
+            if (typeof bit == "string") {
+                offset++;
+                let c = new ConstNode(bit === "1" ? 1 : 0, 1);
+                sub.push({ start: 0, count: 1, node: c });
+                continue;
+            }
+            if (!knownWires.has(bit)) {
+                // throw new Error("Unknown wire");
+                offset++;
+                let c = new ConstNode(0, 1);
+                sub.push({ start: 0, count: 1, node: c });
+                continue;
+            }
+
+            let sect = matchSection(bits.slice(offset) as number[]);
+            if (!sect) throw new Error("Unreachable"); // should be covered by knownWires
+
+            offset += sect.count;
+            sub.push(sect);
+        }
+
+        return sub;
+    }
+
+    function getInputNode(bits: (number | string)[]) {
+        let allConst = true;
+        let value = 0;
+
+        for (let i = 0; i < bits.length; i++) {
+            const bit = bits[i];
+
             if (typeof bit === "string") {
-                hasConst = true;
+                if (bit === "1") value |= 1 << i;
             } else {
-                isConst = false;
+                allConst = false;
             }
         }
 
-        if (isConst) {
-            let value = 0;
-            for (let i = 0; i < bits.length; i++) {
-                if (bits[i] === "1") {
-                    value |= 1 << i;
-                }
-            }
-
-            // TODO: if value == 0 can be optimized away since 0 is default
+        if (allConst) {
             let n = new ConstNode(value, bits.length);
             nodes.push(n);
             return n;
-        } else if (hasConst) {
-            // if the extra bits are at the end and all 0 they can be ignored
-            let valid = true;
-            for (let i = bits.length - 1; i >= 0; i--) {
-                const bit = bits[i];
-
-                if (typeof bit === "string") {
-                    if (bit === "1") {
-                        valid = false;
-                        break;
-                    }
-                } else {
-                    break;
-                }
-            }
-
-            if (!valid) {
-                throw "Not implemented";
-            } else {
-                let copy = bits.slice();
-                for (let i = bits.length - 1; i >= 0; i--) {
-                    if (typeof bits[i] === "string") {
-                        copy.splice(i, 1);
-                    }
-                }
-                bits = copy;
-            }
         }
 
         for (const node of nodes) {
@@ -224,23 +246,7 @@ function buildGraph(mod) {
             }
         }
 
-        // search for every possible subset
-        let sub: MergeEl[] = [];
-
-        let rest = bits.slice() as number[];
-        while (rest.length != 0) {
-            // all wires are non existent/can be ignored
-            if (rest.every(x => !knownWires.has(x))) break;
-
-            for (let i = rest.length; i > 0; i--) {
-                let sect = matchSection(rest);
-                if (sect) {
-                    rest.splice(0, sect.count);
-                    sub.push(sect);
-                    break;
-                }
-            }
-        }
+        let sub = findMergeList(bits);
 
         let node = new MergeNode(sub, bits as number[]);
         nodes.push(node);
@@ -264,18 +270,26 @@ function buildGraph(mod) {
         ports.set(name, node);
     }
 
+    let err = false;
     for (const key in mod.cells) {
         const item = mod.cells[key];
 
         let node = createNode(item);
+        if (!node) {
+            err = true;
+            continue;
+        }
         nodes.push(node);
         for (const n of node.outputBits) {
             knownWires.add(n);
         }
     }
+    if (err) {
+        throw new Error("Unknown nodes encountered");
+    }
 
     for (const item of nodes) {
-        item.connect(getInputNode);
+        item.connect(getInputNode, findMergeList);
     }
 
     return {
@@ -284,27 +298,32 @@ function buildGraph(mod) {
     }
 }
 
-export function makeConnection(c: Color, a: Endpoint, b: Endpoint) {
-    if (c & Color.Red) {
-        a.red.push({
-            entity_id: b.id,
-            circuit_id: b.type
-        });
-        b.red.push({
-            entity_id: a.id,
-            circuit_id: a.type
-        });
-    }
+export function makeConnection(c: Color, ...points: Endpoint[]) {
+    for (let i = 1; i < points.length; i++) {
+        const a = points[i - 1];
+        const b = points[i];
 
-    if (c & Color.Green) {
-        a.green.push({
-            entity_id: b.id,
-            circuit_id: b.type
-        });
-        b.green.push({
-            entity_id: a.id,
-            circuit_id: a.type
-        });
+        if (c & Color.Red) {
+            a.red.push({
+                entity_id: b.id,
+                circuit_id: b.type
+            });
+            b.red.push({
+                entity_id: a.id,
+                circuit_id: a.type
+            });
+        }
+
+        if (c & Color.Green) {
+            a.green.push({
+                entity_id: b.id,
+                circuit_id: b.type
+            });
+            b.green.push({
+                entity_id: a.id,
+                circuit_id: a.type
+            });
+        }
     }
 }
 
@@ -339,13 +358,9 @@ function transform(nodes: Node[]): Blueprint {
         node.connectComb();
     }
 
-    // TODO: remove duplicate
-    // optimize(combs);
+    // TODO: optimize(combs);
 
     createLayout(combs, ports);
-
-    // create entities
-    let entities = combs.map(x => x.toObj());
 
     return {
         icons: [
@@ -364,7 +379,7 @@ function transform(nodes: Node[]): Blueprint {
                 index: 2
             }
         ],
-        entities,
+        entities: combs.map(x => x.toObj()),
         item: "blueprint",
         version: 281479273447424
     }

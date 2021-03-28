@@ -25,10 +25,16 @@ export class MathNode extends Node {
     calculator: Arithmetic;
     limiter: Arithmetic;
 
-    constructor(data: any, method: ArithmeticOperations) {
+    constructor(data: any, method: ArithmeticOperations, negate = false) {
         super(data.connections.Y);
         this.data = data;
         this.method = method;
+
+        // TODO: negate
+        if (negate) {
+            // throw new Error("not implemented");
+            console.assert(false, "Math negate not implemented");
+        }
 
         // add has custom node
         console.assert(method != ArithmeticOperations.Add);
@@ -80,7 +86,6 @@ export class MathNode extends Node {
             makeConnection(Color.Red, this.a.output(), this.calculator.input);
         } else {
             makeConnection(Color.Red, this.b.output(), this.transformer.input);
-
             makeConnection(Color.Green, this.a.output(), this.calculator.input);
             makeConnection(Color.Red, this.transformer.output, this.calculator.input);
         }
