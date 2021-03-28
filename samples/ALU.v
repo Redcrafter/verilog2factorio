@@ -30,7 +30,7 @@ module ALU( clk, op, right, AI, BI, CI, CO, BCD, OUT, V, Z, N, HC, RDY );
     reg [4:0] temp_l;
     reg [4:0] temp_h;
     wire [8:0] temp = { temp_h, temp_l[3:0] };
-    wire adder_CI = (right | (op[3:2] == 2'b11)) ? 1'b0 : CI;
+    wire adder_CI = (right | (op[3:2] == 2'b11)) ? 0 : CI;
 
     // calculate the logic operations. The 'case' can be done in 1 LUT per
     // bit. The 'right' shift is a simple mux that can be implemented by
