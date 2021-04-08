@@ -1,6 +1,5 @@
-import { signalV, signalC, makeConnection, Color } from "../parser.js";
 import { Decider, ComparatorString } from "../entities/Decider.js";
-import { Entity } from "../entities/Entity.js";
+import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 import { Node } from "./Node.js";
 import { Input } from "./Input.js";
 

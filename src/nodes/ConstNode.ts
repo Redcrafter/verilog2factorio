@@ -1,6 +1,5 @@
 import { Constant } from "../entities/Constant.js";
-import { Endpoint, Entity } from "../entities/Entity.js";
-import { signalV } from "../parser.js";
+import { signalV } from "../entities/Entity.js";
 import { Node } from "./Node.js";
 
 export class ConstNode extends Node {
@@ -24,9 +23,9 @@ export class ConstNode extends Node {
     createComb(): void { }
     connectComb(): void { }
 
-    output(): Endpoint { return this.c?.output; }
-    combs(): Entity[] { 
-        if(this.c) return [this.c];
-        else return []; 
+    output() { return this.c?.output; }
+    combs() {
+        if (this.c) return [this.c];
+        else return [];
     }
 }

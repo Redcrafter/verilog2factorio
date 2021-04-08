@@ -1,7 +1,6 @@
-import { Entity, SignalID, RawEntity } from "./Entity.js";
-import { dir, objEqual } from "../parser.js";
+import { Entity, SignalID, createEndpoint, convertEndpoint, dir } from "./Entity.js";
 
-export const enum ArithmeticOperations {
+export enum ArithmeticOperations {
     Mul = "*",
     Div = "/",
     Add = "+",
@@ -30,8 +29,13 @@ export class Arithmetic extends Entity {
 
     constructor(params: ArithmeticCombinatorParameters) {
         super(1, 2);
-        this.output.type = 2;
         this.params = params;
+
+        this.input = createEndpoint(this, 1);
+        this.output = createEndpoint(this, 2);
+
+        console.assert(params.first_signal ? params.first_constant === undefined : params.first_constant !== undefined);
+        console.assert(params.second_signal ? params.second_constant === undefined : params.second_constant !== undefined);
     }
 
     toObj() {
@@ -48,22 +52,9 @@ export class Arithmetic extends Entity {
                 arithmetic_conditions: this.params
             },
             connections: {
-                "1": {
-                    red: this.input.red,
-                    green: this.input.green
-                },
-                "2": {
-                    red: this.output.red,
-                    green: this.output.green
-                }
+                "1": convertEndpoint(this.input),
+                "2": convertEndpoint(this.output)
             }
         };
-    }
-
-    eq(other: RawEntity) {
-        if (!(other instanceof Arithmetic))
-            return false;
-
-        return objEqual(this.params, other.params);
     }
 }

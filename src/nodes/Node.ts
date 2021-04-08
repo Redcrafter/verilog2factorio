@@ -1,6 +1,5 @@
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
-import { Endpoint, Entity } from "../entities/Entity.js";
-import { signalC, signalV } from "../parser.js";
+import { Endpoint, Entity, signalC, signalV } from "../entities/Entity.js";
 
 type func = (n: number[]) => Node;
 

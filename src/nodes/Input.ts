@@ -16,6 +16,7 @@ export class Input extends Node {
             count: 0,
             index: 1
         });
+        this.constant.keep = true;
     }
 
     connectComb() { }

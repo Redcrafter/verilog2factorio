@@ -1,7 +1,6 @@
 import { Arithmetic } from "../entities/Arithmetic.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
-import { Endpoint, Entity } from "../entities/Entity.js";
-import { Color, makeConnection, signalC, signalV } from "../parser.js";
+import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 import { ConstNode } from "./ConstNode.js";
 import { createLimiter, createTransformer, Node } from "./Node.js";
 

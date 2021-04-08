@@ -1,8 +1,9 @@
-import { Entity, RawEntity } from "./Entity.js";
+import { convertEndpoint, createEndpoint, Entity, RawEntity } from "./Entity.js";
 
 export class Pole extends Entity {
     constructor() {
         super(1, 1);
+        this.input = this.output = createEndpoint(this, 1);
     }
 
     toObj(): RawEntity {
@@ -15,15 +16,8 @@ export class Pole extends Entity {
             name: "medium-electric-pole",
             position: { x: this.x, y: this.y },
             connections: {
-                "1": {
-                    red: [...this.input.red, ...this.output.red],
-                    green: [...this.input.green, ...this.output.green]
-                }
+                "1": convertEndpoint(this.input)
             }
         };
-    }
-
-    eq(other: RawEntity) {
-        return !(other instanceof Pole);
     }
 }

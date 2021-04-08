@@ -2,59 +2,32 @@
 import { ADD } from "./nodes/ADD.js";
 import { ConstNode } from "./nodes/ConstNode.js";
 import { DFF } from "./nodes/DFF.js";
-import { SDFFE } from "./nodes/SDFFE.js";
-import { SDFFCE } from "./nodes/SDFFCE.js";
 import { Input } from "./nodes/Input.js";
+import { LogicNode } from "./nodes/LogicNode.js";
 import { MathNode } from "./nodes/MathNode.js";
 import { MergeNode, MergeEl } from "./nodes/MergeNode.js";
 import { MUX } from "./nodes/MUX.js";
 import { Node } from "./nodes/Node.js";
 import { Output } from "./nodes/Output.js";
 import { PMUX } from "./nodes/PMUX.js";
+import { SDFFE } from "./nodes/SDFFE.js";
+import { SDFFCE } from "./nodes/SDFFCE.js";
+
 // entities
-import { Endpoint, Connection, Entity, RawEntity, SignalID } from "./entities/Entity.js";
 import { ArithmeticOperations } from "./entities/Arithmetic.js";
-import { ComparatorString } from "./entities/Decider";
+import { ComparatorString } from "./entities/Decider.js";
 
-import { Simulator } from "./sim.js";
-import { LogicNode } from "./nodes/LogicNode.js";
-
-export const enum Color {
-    Red = 1,
-    Green = 2,
-    Both = Red | Green
+interface IDict<T> {
+    [i: string]: T;
 }
 
-export const signalV: SignalID = {
-    type: "virtual",
-    name: "signal-V"
-};
-export const signalC: SignalID = {
-    type: "virtual",
-    name: "signal-C"
-};
-export const signalR: SignalID = {
-    type: "virtual",
-    name: "signal-R"
-}
-
-interface Blueprint {
-    /** String, the name of the item that was saved ("blueprint" in vanilla). */
-    item: string;
-    /** String, the name of the blueprint set by the user. */
-    label?: string;
-    /** The color of the label of this blueprint. */
-    label_color?: any;
-    /** The actual content of the blueprint. */
-    entities: RawEntity[];
-    /** The tiles included in the blueprint. */
-    tiles?: any[];
-    /** The icons of the blueprint set by the user. */
-    icons: any[];
-    /** The schedules for trains in this blueprint. */
-    schedules?: any[];
-    /** The map version of the map the blueprint was created in. */
-    version: number;
+interface IdkItem {
+    hide_name: boolean;
+    type: string;
+    parameters: IDict<string>;
+    attributes: { src?: string, full_case?: string };
+    port_directions: IDict<"input" | "output">;
+    connections: IDict<(number | string)[]>;
 }
 
 function arraysEqual(a: any[], b: any[]) {
@@ -68,31 +41,7 @@ function arraysEqual(a: any[], b: any[]) {
     return true
 }
 
-export function objEqual(a: any, b: any) {
-    for (const key in a) {
-        let ae = a[key];
-        let be = b[key];
-
-        if (!be) {
-            return false;
-        }
-        if (typeof ae === "object") {
-            if (typeof be !== "object") {
-                return false;
-            }
-            return objEqual(ae, be);
-        }
-        if (typeof be === "object") {
-            return false;
-        }
-
-        if (ae !== be) return false;
-    }
-
-    return true;
-}
-
-function createNode(item: any) {
+function createNode(item: IdkItem): Node {
     switch (item.type) {
         case "$add": return new ADD(item);
         case "$dff": return new DFF(item);
@@ -162,7 +111,7 @@ function arrMatch<T>(a: T[], b: T[]) {
     return [start, i];
 }
 
-function buildGraph(mod) {
+export function buildGraph(mod) {
     let ports = new Map();
 
     let nodes: Node[] = [];
@@ -296,145 +245,4 @@ function buildGraph(mod) {
         ports,
         nodes
     }
-}
-
-export function makeConnection(c: Color, ...points: Endpoint[]) {
-    for (let i = 1; i < points.length; i++) {
-        const a = points[i - 1];
-        const b = points[i];
-
-        if (c & Color.Red) {
-            a.red.push({
-                entity_id: b.id,
-                circuit_id: b.type
-            });
-            b.red.push({
-                entity_id: a.id,
-                circuit_id: a.type
-            });
-        }
-
-        if (c & Color.Green) {
-            a.green.push({
-                entity_id: b.id,
-                circuit_id: b.type
-            });
-            b.green.push({
-                entity_id: a.id,
-                circuit_id: a.type
-            });
-        }
-    }
-}
-
-export const dir = 4;
-
-function transform(nodes: Node[]): Blueprint {
-    // create all combinators (could do this in constructor?)
-    for (const node of nodes) {
-        node.createComb();
-    }
-
-    // assign entity id's
-    let combs: Entity[] = [];
-    let ports = new Set<Entity>();
-
-    for (const node of nodes) {
-        if (node instanceof Input) {
-            ports.add(node.constant);
-        } if (node instanceof Output) {
-            ports.add(node.pole);
-        }
-
-        let sub = node.combs();
-        for (const item of sub) {
-            item.id = combs.length + 1;
-            combs.push(item);
-        }
-    }
-
-    // connect nodes
-    for (const node of nodes) {
-        node.connectComb();
-    }
-
-    // TODO: optimize(combs);
-
-    createLayout(combs, ports);
-
-    return {
-        icons: [
-            {
-                signal: {
-                    type: "item",
-                    name: "decider-combinator"
-                },
-                index: 1
-            },
-            {
-                signal: {
-                    type: "item",
-                    name: "constant-combinator"
-                },
-                index: 2
-            }
-        ],
-        entities: combs.map(x => x.toObj()),
-        item: "blueprint",
-        version: 281479273447424
-    }
-}
-
-function createLayout(combs: Entity[], ports: Set<Entity>) {
-    console.log(`Running layout simulation`);
-    let simulator = new Simulator();
-    // add combinators to simulator
-    for (const n of combs) {
-        let f = ports.has(n);
-        simulator.addNode(f);
-    }
-    // add connectiosn to simulator
-    for (const n of combs) {
-        function add(dat: Connection[]) {
-            for (const c of dat) {
-                simulator.addEdge(n.id - 1, c.entity_id - 1);
-            }
-        }
-        if (n.input) {
-            add(n.input.red);
-            add(n.input.green);
-        }
-        add(n.output.red);
-        add(n.output.green);
-    }
-
-    let errors = 0;
-    // run simulator
-    simulator.sim((a, b) => {
-        let an = combs[a];
-        let bn = combs[b];
-
-        // TODO: identify which connection should be changed and add pole
-        // debugger;
-        errors++;
-    });
-    if (errors != 0) {
-        console.error(`${errors} error(s) occurred while trying to layout the circuit`);
-        // process.exit(0);
-    }
-
-    // transfer simulation to combinators
-    for (let i = 0; i < combs.length; i++) {
-        const n = combs[i];
-        const p = simulator.nodes[i];
-
-        n.x = Math.floor(p.x);
-        n.y = Math.floor(p.y * 2) + n.height / 2;
-    }
-}
-
-export {
-    buildGraph,
-    transform,
-    Node
 }

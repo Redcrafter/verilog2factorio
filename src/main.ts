@@ -1,7 +1,8 @@
 import { exec } from "child_process";
 import * as fs from "fs";
-import * as parser from "./parser.js";
 import * as zlib from "zlib";
+import { buildGraph } from "./parser.js";
+import { transform } from "./transformer.js";
 
 function genNetlist(file: string): Promise<any> {
     if (!fs.existsSync(file)) {
@@ -32,10 +33,10 @@ async function compileFile(path: string) {
 
     for (const name in data.modules) {
         console.log(`Building graph for ${name}`);
-        const graph = parser.buildGraph(data.modules[name]);
+        const graph = buildGraph(data.modules[name]);
 
         console.log(`Translating graph to combinators`);
-        const print = parser.transform(graph.nodes);
+        const print = transform(graph.nodes);
         print.label = name;
 
         modules.push(print);
@@ -52,9 +53,10 @@ async function compileFile(path: string) {
                 active_index: 0,
                 version: 281479273447424
             }
-        }
+        };
 
-    console.log(compress(el));
+    process.stdout.write(compress(el));
+    process.stdout.write("\n");
 }
 
 async function main() {

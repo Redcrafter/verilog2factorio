@@ -1,6 +1,4 @@
-import { Entity, SignalID, RawEntity } from "./Entity.js";
-import { dir, objEqual } from "../parser.js";
-
+import { Entity, SignalID, RawEntity, convertEndpoint, dir, createEndpoint } from "./Entity.js";
 
 interface ConstantCombinatorParameters {
     signal: SignalID;
@@ -15,8 +13,7 @@ export class Constant extends Entity {
         super(1, 1);
         this.params = param;
 
-        // does not have input
-        this.input = undefined;
+        this.input = this.output = createEndpoint(this, 1);
     }
 
     toObj() {
@@ -33,28 +30,8 @@ export class Constant extends Entity {
                 filters: this.params
             },
             connections: {
-                "1": {
-                    red: this.output.red,
-                    green: this.output.green
-                }
+                "1": convertEndpoint(this.input)
             }
         };
-    }
-
-    eq(other: RawEntity) {
-        if (!(other instanceof Constant) || this.params.length != other.params.length)
-            return false;
-
-        for (let i = 0; i < this.params.length; i++) {
-            const a = this.params[i];
-            const b = other.params[i];
-
-            if (!objEqual(a, b)) {
-                return false;
-            }
-        }
-
-        debugger;
-        return true;
     }
 }
