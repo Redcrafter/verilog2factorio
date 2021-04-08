@@ -1,11 +1,12 @@
-import { Endpoint, Entity } from "../entities/Entity.js";
+import { Color, makeConnection } from "../entities/Entity.js";
 import { Pole } from "../entities/Pole.js";
-import { Color, makeConnection } from "../parser.js";
 import { Node } from "./Node.js";
 
 export class Output extends Node {
     bits: number[];
     src: Node;
+
+    pole: Pole;
 
     constructor(bits: number[]) {
         super([]);
@@ -16,13 +17,13 @@ export class Output extends Node {
         this.src = getInputNode(this.bits);
     }
 
-    pole: Pole;
     createComb(): void {
         this.pole = new Pole();
+        this.pole.keep = true;
     }
     connectComb(): void {
         makeConnection(Color.Red, this.src.output(), this.pole.input);
     }
-    output(): Endpoint { return this.pole.output; }
-    combs(): Entity[] { return [this.pole]; }
+    output() { return this.pole.output; }
+    combs() { return [this.pole]; }
 }

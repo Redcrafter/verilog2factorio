@@ -1,3 +1,24 @@
+export const dir = 4;
+
+export const signalV: SignalID = {
+    type: "virtual",
+    name: "signal-V"
+};
+export const signalC: SignalID = {
+    type: "virtual",
+    name: "signal-C"
+};
+export const signalR: SignalID = {
+    type: "virtual",
+    name: "signal-R"
+}
+
+export const enum Color {
+    Red = 1,
+    Green = 2,
+    Both = Red | Green
+}
+
 interface Vec2 {
     x: number;
     y: number;
@@ -11,22 +32,25 @@ export interface RawEntity {
     direction?: number;
     orientation?: number;
 
-    connections?: any;
+    connections?: { "1": ConnectionPoint, "2"?: ConnectionPoint };
 
     control_behaviour?: any;
 }
 
-export interface Connection {
-    entity_id: number;
-    circuit_id?: number;
-}
-
 export interface Endpoint {
-    id: number;
+    entity: Entity;
     type: number;
 
-    red: Connection[];
-    green: Connection[];
+    red: Endpoint[];
+    green: Endpoint[];
+}
+export interface ConnectionPoint {
+    red: ConnectionData[];
+    green: ConnectionData[];
+}
+export interface ConnectionData {
+    entity_id: number;
+    circuit_id?: number;
 }
 
 export interface SignalID {
@@ -35,6 +59,8 @@ export interface SignalID {
 }
 
 export abstract class Entity {
+    keep = false;
+
     x = -1;
     y = -1;
 
@@ -43,38 +69,48 @@ export abstract class Entity {
 
     input: Endpoint;
     output: Endpoint;
-    private _id: number;
+    id: number;
 
     constructor(width: number, height: number) {
-        this.input = {
-            id: 0,
-            type: 1,
-            red: [],
-            green: []
-        };
-        this.output = {
-            id: 0,
-            type: 1,
-            red: [],
-            green: []
-        };
         this.width = width;
         this.height = height;
     }
 
-    get id() {
-        return this._id;
-    }
-
-    set id(value: number) {
-        this._id = value;
-        if (this.input) {
-            this.input.id = value;
-        }
-        this.output.id = value;
-    }
-
     abstract toObj(): RawEntity;
-    abstract eq(other: RawEntity);
 }
 
+export function createEndpoint(ent: Entity, type: number) {
+    return {
+        entity: ent,
+        type,
+        red: [],
+        green: []
+    };
+}
+export function convertEndpoint(p: Endpoint): ConnectionPoint {
+    function map(el: Endpoint[]) {
+        return el.map(x => ({ entity_id: x.entity.id, circuit_id: x.type }))
+    }
+
+    return {
+        red: map(p.red),
+        green: map(p.green)
+    }
+}
+
+export function makeConnection(c: Color, ...points: Endpoint[]) {
+    for (let i = 1; i < points.length; i++) {
+        const a = points[i - 1];
+        const b = points[i];
+
+        if (c & Color.Red) {
+            a.red.push(b);
+            b.red.push(a);
+        }
+
+        if (c & Color.Green) {
+            a.green.push(b);
+            b.green.push(a);
+        }
+    }
+}

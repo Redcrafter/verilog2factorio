@@ -150,7 +150,7 @@ class Simulator {
         let x = Math.floor(this.gridSize / 2);
 
         for (const n of this.nodes) {
-            if(n.fixed) {
+            if (n.fixed) {
                 n.x = x++;
                 n.y = -1;
                 continue;

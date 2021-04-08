@@ -1,7 +1,6 @@
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Constant } from "../entities/Constant.js";
-import { Endpoint, Entity } from "../entities/Entity.js";
-import { Color, makeConnection, signalC, signalV } from "../parser.js";
+import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 import { ConstNode } from "./ConstNode.js";
 import { createLimiter, createTransformer, Node } from "./Node.js";
 

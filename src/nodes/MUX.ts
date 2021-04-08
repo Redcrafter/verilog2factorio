@@ -1,9 +1,8 @@
 import { Arithmetic } from "../entities/Arithmetic.js";
 import { ConstNode } from "./ConstNode.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
-import { Entity } from "../entities/Entity.js";
+import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 import { createTransformer, Node } from "./Node.js";
-import { Color, makeConnection, signalC, signalV } from "../parser.js";
 
 export class MUX extends Node {
     a: Node;
@@ -47,10 +46,6 @@ export class MUX extends Node {
             copy_count_from_input: true,
             output_signal: signalV
         }); // if c == 1 save input value
-
-        // TODO: make custom structure for 2 const inputs
-        if (this.a instanceof ConstNode && this.b instanceof ConstNode)
-            throw new Error("not allowed");
 
         if (this.a instanceof ConstNode) {
             if (this.a.value == 0) {
