@@ -90,12 +90,19 @@ export class PMUX extends Node {
             makeConnection(Color.Red, this.default.output, this.limiter.input);
         }
 
+        let lastGreen = this.tranformer.output;
+        let lastOut = this.limiter.input;
+
         for (let i = 0; i < this.b.length; i++) {
             let el = this.other[i];
             if (!el) continue;
             makeConnection(Color.Red, this.b[i].output(), el.input);
-            makeConnection(Color.Green, this.tranformer.output, el.input);
-            makeConnection(Color.Red, el.output, this.limiter.input);
+
+            makeConnection(Color.Red, el.output, lastOut);
+            lastOut = el.output;
+
+            makeConnection(Color.Green, lastGreen, el.input);
+            lastGreen = el.input;
         }
     }
 
