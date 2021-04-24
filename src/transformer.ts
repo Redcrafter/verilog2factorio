@@ -7,6 +7,7 @@ import { Output } from "./nodes/Output.js";
 import { Endpoint, Entity, RawEntity } from "./entities/Entity.js";
 
 import { Simulator } from "./sim.js";
+import { optimize } from "./optimize.js";
 
 interface Blueprint {
     /** String, the name of the item that was saved ("blueprint" in vanilla). */
@@ -52,9 +53,9 @@ function createLayout(combs: Entity[], ports: Set<Entity>) {
 
     let errors = 0;
     // run simulator
-    simulator.sim((a, b) => {
-        let an = combs[a];
-        let bn = combs[b];
+    simulator.sim((aId, bId) => {
+        let a = combs[aId];
+        let b = combs[bId];
 
         // TODO: identify which connection should be changed and add pole
         // debugger;
@@ -84,7 +85,7 @@ export function transform(nodes: Node[]): Blueprint {
     let combs = nodes.flatMap(x => x.combs());
     let ports = new Set(nodes.filter(x => x instanceof Input || x instanceof Output).flatMap(x => x.combs()));
 
-    // optimize(combs);
+    optimize(combs);
 
     // assign entity id's
     for (let i = 0; i < combs.length; i++) {

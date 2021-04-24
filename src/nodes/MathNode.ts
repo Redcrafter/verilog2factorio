@@ -29,7 +29,7 @@ export class MathNode extends Node {
         this.data = data;
         this.method = method;
 
-        // TODO: negate
+        // TODO: implement negate output
         if (negate) {
             // throw new Error("not implemented");
             console.assert(false, "Math negate not implemented");

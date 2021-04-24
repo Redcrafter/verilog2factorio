@@ -75,13 +75,12 @@ class Simulator {
         });
     }
 
-    private delEdge(e: Edge) {
-
-    }
-
     sim(errorCallback: (a: number, b: number) => void) {
         let run = true;
+        let iter = 0;
         while (run) {
+            iter++;
+
             run = false;
             this.reset();
 
@@ -89,21 +88,25 @@ class Simulator {
                 this.simStep();
             }
 
-            for (const e of this.edges) {
-                let len = dist(e.a, e.b);
+            let errorCount = 0;
+            for (const e of this.edges.filter(x => dist(x.a, x.b) > 9)) {
+                errorCount++;
+                errorCallback(e.a.id, e.b.id);
 
-                if (len > 9) {
-                    errorCallback(e.a.id, e.b.id);
-                    /* causes infinite loop
-                    this.delEdge(e);
+                // delete edge
+                e.a.connected.splice(e.a.connected.indexOf(e.b), 1);
+                e.b.connected.splice(e.b.connected.indexOf(e.a), 1);
+                this.edges.splice(this.edges.indexOf(e), 1);
 
-                    let p = this.addNode(false);
-                    this.addEdge(e.a.id, p);
-                    this.addEdge(p, e.b.id);
+                // add intermediate node
+                let p = this.addNode(false);
+                this.addEdge(e.a.id, p);
+                this.addEdge(p, e.b.id);
 
-                    run = true;*/
-                }
+                run = true;
             }
+
+            console.log(`Iteration: ${iter} Errors: ${errorCount}`);
         }
     }
 
