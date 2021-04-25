@@ -12,7 +12,7 @@ Run ```npm start ./samples/counter.v``` with verilog files as parameters
 
 The compiled blueprint will be output on the command line.
 
-The circuit will have inputs and outpus at the top in the order in which they were written in the code.
+The circuit will have inputs and outputs at the top in the order in which they were written in the code.
 Clock pulses are required to be exactly one tick high. (since adding edge detectors would produce a lot of overhead)
 
 ## Examples
