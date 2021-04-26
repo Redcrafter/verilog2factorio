@@ -44,6 +44,7 @@ function arraysEqual(a: any[], b: any[]) {
 function createNode(item: IdkItem): Node {
     switch (item.type) {
         case "$add": return new ADD(item);
+        case "$sub": return new MathNode(item, ArithmeticOperations.Sub);
         case "$dff": return new DFF(item);
         case "$dffe": return new DFF(item);
         case "$sdffe": return new SDFFE(item);

@@ -94,7 +94,7 @@ class Simulator {
                 errorCallback(e.a.id, e.b.id);
 
                 // delete edge
-                e.a.connected.splice(e.a.connected.indexOf(e.b), 1);
+                /*e.a.connected.splice(e.a.connected.indexOf(e.b), 1);
                 e.b.connected.splice(e.b.connected.indexOf(e.a), 1);
                 this.edges.splice(this.edges.indexOf(e), 1);
 
@@ -103,7 +103,7 @@ class Simulator {
                 this.addEdge(e.a.id, p);
                 this.addEdge(p, e.b.id);
 
-                run = true;
+                run = true;*/
             }
 
             console.log(`Iteration: ${iter} Errors: ${errorCount}`);
