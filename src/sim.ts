@@ -1,3 +1,7 @@
+import * as seedrandom from "seedrandom";
+
+let rng = seedrandom("v2f");
+
 function dist(a: Point, b: Point) {
     const dx = a.x - b.x;
     const dy = (a.y - b.y) * 2; // you counts double cause 2 heightl
@@ -6,7 +10,7 @@ function dist(a: Point, b: Point) {
 }
 
 function rand(min: number, max: number) {
-    return (Math.random() * (max - min)) + min;
+    return (rng() * (max - min)) + min;
 }
 
 class Point {
@@ -160,8 +164,8 @@ class Simulator {
             }
 
             while (true) {
-                let x = Math.floor(Math.random() * this.gridSize);
-                let y = Math.floor(Math.random() * this.gridSize);
+                let x = Math.floor(rand(0, this.gridSize));
+                let y = Math.floor(rand(0, this.gridSize));
 
                 if (!this.getNode(x, y)) {
                     n.x = x;
