@@ -92,7 +92,7 @@ function createBlueprintBook(blueprints: Blueprint[]): BlueprintBook {
     }
 }
 
-function compress(data: Wrapper) {
+function compress(data: BlueprintWrapper) {
     return "0" + zlib.deflateSync(JSON.stringify(data), { level: 9 }).toString("base64");
 }
 
