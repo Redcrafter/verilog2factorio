@@ -4,29 +4,10 @@ import { Node } from "./nodes/Node.js";
 import { Output } from "./nodes/Output.js";
 
 // entities
-import { Endpoint, Entity, RawEntity } from "./entities/Entity.js";
+import { Endpoint, Entity } from "./entities/Entity.js";
 
 import { Simulator } from "./sim.js";
 import { optimize } from "./optimize.js";
-
-interface Blueprint {
-    /** String, the name of the item that was saved ("blueprint" in vanilla). */
-    item: string;
-    /** String, the name of the blueprint set by the user. */
-    label?: string;
-    /** The color of the label of this blueprint. */
-    label_color?: any;
-    /** The actual content of the blueprint. */
-    entities: RawEntity[];
-    /** The tiles included in the blueprint. */
-    tiles?: any[];
-    /** The icons of the blueprint set by the user. */
-    icons: any[];
-    /** The schedules for trains in this blueprint. */
-    schedules?: any[];
-    /** The map version of the map the blueprint was created in. */
-    version: number;
-}
 
 function createLayout(combs: Entity[], ports: Set<Entity>) {
     console.log(`Running layout simulation`);
@@ -76,7 +57,7 @@ function createLayout(combs: Entity[], ports: Set<Entity>) {
     }
 }
 
-export function transform(nodes: Node[]): Blueprint {
+export function transform(nodes: Node[]) {
     // create all combinators (could do this in constructor?)
     for (const node of nodes) node.createComb();
     // connect nodes
@@ -94,25 +75,5 @@ export function transform(nodes: Node[]): Blueprint {
 
     createLayout(combs, ports);
 
-    return {
-        icons: [
-            {
-                signal: {
-                    type: "item",
-                    name: "decider-combinator"
-                },
-                index: 1
-            },
-            {
-                signal: {
-                    type: "item",
-                    name: "constant-combinator"
-                },
-                index: 2
-            }
-        ],
-        entities: combs.map(x => x.toObj()),
-        item: "blueprint",
-        version: 281479273447424
-    }
+    return combs.map(x => x.toObj()) // return list of entities
 }
