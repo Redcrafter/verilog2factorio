@@ -1,7 +1,8 @@
 import { Decider, ComparatorString } from "../entities/Decider.js";
 import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
-import { Node } from "./Node.js";
+import { createTransformer, Node } from "./Node.js";
 import { Input } from "./Input.js";
+import { Arithmetic } from "../entities/Arithmetic.js";
 
 // TODO: check parameters.EN_POLARITY
 
@@ -12,7 +13,7 @@ export class DFF extends Node {
     en: Node;
     d: Node;
 
-    transformer: Decider;
+    transformer: Arithmetic;
     decider1: Decider;
     decider2: Decider;
 
@@ -35,13 +36,7 @@ export class DFF extends Node {
     }
 
     createComb() {
-        this.transformer = new Decider({
-            first_signal: signalV,
-            constant: this.en ? 2 : 1,
-            comparator: ComparatorString.EQ,
-            copy_count_from_input: false,
-            output_signal: signalC
-        }); // if (c == 1) / (c + en == 2)
+        this.transformer = createTransformer();
         this.decider1 = new Decider({
             first_signal: signalC,
             constant: 1,

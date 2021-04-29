@@ -1,4 +1,4 @@
-import * as seedrandom from "seedrandom";
+import seedrandom from "seedrandom";
 
 let rng = seedrandom("v2f");
 
@@ -44,7 +44,7 @@ interface Edge {
     b: Point;
 }
 
-class Simulator {
+export class Simulator {
     public nodes: Point[] = [];
     private edges: Edge[] = [];
 
@@ -231,5 +231,3 @@ class Simulator {
         this.grid[x + y * this.gridSize] = v;
     }
 }
-
-export { Simulator }

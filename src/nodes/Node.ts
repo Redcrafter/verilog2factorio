@@ -7,7 +7,7 @@ export function createTransformer() {
     return new Arithmetic({
         first_signal: signalV,
         second_constant: 0,
-        operation: ArithmeticOperations.Add,
+        operation: ArithmeticOperations.Or,
         output_signal: signalC
     });
 }

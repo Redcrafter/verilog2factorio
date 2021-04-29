@@ -56,7 +56,7 @@ async function main() {
             blueprint: modules[0]
         } :
         {
-            "blueprint-book": {
+            blueprint_book: {
                 item: "blueprint-book",
                 blueprints: modules.map((x, i) => ({ index: i, blueprint: x })),
                 active_index: 0,

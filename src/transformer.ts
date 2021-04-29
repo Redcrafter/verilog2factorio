@@ -71,7 +71,7 @@ function createLayout(combs: Entity[], ports: Set<Entity>) {
         const n = combs[i];
         const p = simulator.nodes[i];
 
-        n.x = Math.floor(p.x);
+        n.x = Math.floor(p.x) + 0.5;
         n.y = Math.floor(p.y * 2) + n.height / 2;
     }
 }
