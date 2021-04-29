@@ -1,7 +1,15 @@
 import seedrandom from "seedrandom";
 
-let rng = seedrandom("v2f");
+let rng
 
+export function seedRNG(seed?: string) {
+    if (seed) {
+        rng = seedrandom(seed);
+    } else {
+        rng = seedrandom(Math.random().toString())
+    }
+    
+}
 function dist(a: Point, b: Point) {
     const dx = a.x - b.x;
     const dy = (a.y - b.y) * 2; // you counts double cause 2 heightl
