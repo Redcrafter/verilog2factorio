@@ -1,4 +1,5 @@
-import { convertEndpoint, createEndpoint, Entity, RawEntity } from "./Entity.js";
+import { RawEntity } from "../blueprint.js";
+import { convertEndpoint, createEndpoint, Entity } from "./Entity.js";
 
 export class Pole extends Entity {
     constructor() {

@@ -1,3 +1,5 @@
+import * as yosys from "./yosys.js";
+
 // nodes
 import { ADD } from "./nodes/ADD.js";
 import { ConstNode } from "./nodes/ConstNode.js";
@@ -17,19 +19,6 @@ import { SDFFCE } from "./nodes/SDFFCE.js";
 import { ArithmeticOperations } from "./entities/Arithmetic.js";
 import { ComparatorString } from "./entities/Decider.js";
 
-interface IDict<T> {
-    [i: string]: T;
-}
-
-interface IdkItem {
-    hide_name: boolean;
-    type: string;
-    parameters: IDict<string>;
-    attributes: { src?: string, full_case?: string };
-    port_directions: IDict<"input" | "output">;
-    connections: IDict<(number | string)[]>;
-}
-
 function arraysEqual(a: any[], b: any[]) {
     if (a === b) return true;
     if (a === null || b === null) return false;
@@ -41,7 +30,7 @@ function arraysEqual(a: any[], b: any[]) {
     return true
 }
 
-function createNode(item: IdkItem): Node {
+function createNode(item: yosys.Cell): Node {
     switch (item.type) {
         case "$add": return new ADD(item);
         case "$sub": return new MathNode(item, ArithmeticOperations.Sub);
@@ -112,7 +101,7 @@ function arrMatch<T>(a: T[], b: T[]) {
     return [start, i];
 }
 
-export function buildGraph(mod) {
+export function buildGraph(mod: yosys.Module) {
     let ports = new Map();
 
     let nodes: Node[] = [];
@@ -207,7 +196,7 @@ export function buildGraph(mod) {
         const item = mod.ports[name];
 
         let node: Node;
-        if (item.direction == "input") {
+        if (item.direction === "input") {
             node = new Input(item.bits);
 
             for (const b of item.bits) {

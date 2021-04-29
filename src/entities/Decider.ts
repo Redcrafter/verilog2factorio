@@ -1,4 +1,5 @@
-import { Entity, SignalID, RawEntity, createEndpoint, convertEndpoint, dir } from "./Entity.js";
+import { RawEntity } from "../blueprint.js";
+import { Entity, SignalID, createEndpoint, convertEndpoint, dir } from "./Entity.js";
 
 export enum ComparatorString {
     LE = "<",
@@ -31,8 +32,7 @@ export class Decider extends Entity {
         this.output = createEndpoint(this, 2);
     }
 
-    toObj() {
-
+    toObj(): RawEntity {
         if (this.input.red.length == 0 && this.input.green.length == 0 || this.output.red.length == 0 && this.output.green.length == 0) {
             throw new Error("Unconnected Decider");
         }

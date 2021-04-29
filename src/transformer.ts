@@ -12,11 +12,13 @@ import { optimize } from "./optimize.js";
 function createLayout(combs: Entity[], ports: Set<Entity>) {
     console.log(`Running layout simulation`);
     let simulator = new Simulator();
+
     // add combinators to simulator
     for (const n of combs) {
         let f = ports.has(n);
         simulator.addNode(f);
     }
+
     // add connectiosn to simulator
     for (const n of combs) {
         function add(dat: Endpoint[]) {
@@ -58,7 +60,7 @@ function createLayout(combs: Entity[], ports: Set<Entity>) {
 }
 
 export function transform(nodes: Node[]) {
-    // create all combinators (could do this in constructor?)
+    // create all combinators
     for (const node of nodes) node.createComb();
     // connect nodes
     for (const node of nodes) node.connectComb();
@@ -75,5 +77,5 @@ export function transform(nodes: Node[]) {
 
     createLayout(combs, ports);
 
-    return combs.map(x => x.toObj()) // return list of entities
+    return combs.map(x => x.toObj()); // return list of entities
 }

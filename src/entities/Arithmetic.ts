@@ -1,3 +1,4 @@
+import { RawEntity } from "../blueprint.js";
 import { Entity, SignalID, createEndpoint, convertEndpoint, dir } from "./Entity.js";
 
 export enum ArithmeticOperations {
@@ -38,7 +39,7 @@ export class Arithmetic extends Entity {
         console.assert(params.second_signal ? params.second_constant === undefined : params.second_constant !== undefined);
     }
 
-    toObj() {
+    toObj(): RawEntity {
         if (this.input.red.length == 0 && this.input.green.length == 0 || this.output.red.length == 0 && this.output.green.length == 0) {
             throw new Error("Unconnected Arithmetic");
         }

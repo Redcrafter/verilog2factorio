@@ -1,3 +1,5 @@
+import { RawEntity, ConnectionPoint } from "../blueprint.js";
+
 export const dir = 4;
 
 export const signalV: SignalID = {
@@ -19,38 +21,12 @@ export const enum Color {
     Both = Red | Green
 }
 
-interface Vec2 {
-    x: number;
-    y: number;
-}
-
-export interface RawEntity {
-    entity_number: number;
-    name: string;
-    position: Vec2;
-
-    direction?: number;
-    orientation?: number;
-
-    connections?: { "1": ConnectionPoint, "2"?: ConnectionPoint };
-
-    control_behaviour?: any;
-}
-
 export interface Endpoint {
     entity: Entity;
     type: number;
 
     red: Endpoint[];
     green: Endpoint[];
-}
-export interface ConnectionPoint {
-    red: ConnectionData[];
-    green: ConnectionData[];
-}
-export interface ConnectionData {
-    entity_id: number;
-    circuit_id?: number;
 }
 
 export interface SignalID {

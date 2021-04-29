@@ -1,16 +1,11 @@
 import seedrandom from "seedrandom";
-
-let rng = seedrandom("v2f");
+import { options } from "./main.js";
 
 function dist(a: Point, b: Point) {
     const dx = a.x - b.x;
     const dy = (a.y - b.y) * 2; // you counts double cause 2 heightl
 
     return Math.sqrt(dx * dx + dy * dy);
-}
-
-function rand(min: number, max: number) {
-    return (rng() * (max - min)) + min;
 }
 
 class Point {
@@ -55,6 +50,16 @@ export class Simulator {
 
     private gridSize: number;
     private grid: Point[];
+
+    private rng: ReturnType<seedrandom>;
+
+    constructor() {
+        this.rng = seedrandom(options.seed);
+    }
+
+    rand(min: number, max: number) {
+        return (this.rng() * (max - min)) + min;
+    }
 
     addNode(fixed: boolean) {
         let n = new Point(this.nodes.length, fixed);
@@ -164,8 +169,8 @@ export class Simulator {
             }
 
             while (true) {
-                let x = Math.floor(rand(0, this.gridSize));
-                let y = Math.floor(rand(0, this.gridSize));
+                let x = Math.floor(this.rand(0, this.gridSize));
+                let y = Math.floor(this.rand(0, this.gridSize));
 
                 if (!this.getNode(x, y)) {
                     n.x = x;
@@ -200,8 +205,8 @@ export class Simulator {
             // find optimal place to put node
 
             const [mx, my] = n.getMidPoint();
-            const fx = Math.round(mx + rand(-this.T, this.T));
-            const fy = Math.round(my + rand(-this.T, this.T));
+            const fx = Math.round(mx + this.rand(-this.T, this.T));
+            const fy = Math.round(my + this.rand(-this.T, this.T));
 
             if (fx < 0 || fx >= this.gridSize || fy < 0 || fy >= this.gridSize)
                 continue;
