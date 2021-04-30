@@ -110,9 +110,11 @@ export class Simulator {
                 // add intermediate node
                 let p = this.addNode(false);
                 this.addEdge(e.a.id, p);
-                this.addEdge(p, e.b.id);
+                this.addEdge(p, e.b.id);*/
 
-                run = true;*/
+                if (options.retry) {
+                    run = true;
+                }
             }
 
             console.log(`Iteration: ${iter} Errors: ${errorCount}`);
