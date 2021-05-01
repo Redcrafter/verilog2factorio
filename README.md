@@ -19,7 +19,7 @@ Options:
   -r, --retry               Retry until there are no longer layout errors.
   -h, --help                Display this information.
 ```
-## Quick Start
+# Quick Start
 Run ```./v2f``` with verilog files as parameters. Example: `./v2f ./samples/counter.v`
 
 The compiled blueprint will be output on the command line unless otherwise specified with `-f`.
