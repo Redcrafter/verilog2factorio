@@ -1,5 +1,5 @@
-import { RawEntity } from "../blueprint.js";
-import { Entity, SignalID, createEndpoint, convertEndpoint, dir } from "./Entity.js";
+import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
+import { Entity, createEndpoint, convertEndpoint, dir } from "./Entity.js";
 
 export enum ComparatorString {
     LT = "<",
@@ -10,7 +10,7 @@ export enum ComparatorString {
     NE = "≠"
 }
 
-interface DeciderCombinatorParameters {
+export interface DeciderControlBehavior {
     first_signal: SignalID,
 
     second_signal?: SignalID;
@@ -21,10 +21,21 @@ interface DeciderCombinatorParameters {
     copy_count_from_input: boolean;
 }
 
-export class Decider extends Entity {
-    params: DeciderCombinatorParameters;
+export interface DeciderCombinator extends EntityBase {
+    name: "decider-combinator";
+    control_behavior: {
+        decider_conditions: DeciderControlBehavior
+    };
+    connections: {
+        "1": ConnectionPoint,
+        "2": ConnectionPoint
+    };
+}
 
-    constructor(params: DeciderCombinatorParameters) {
+export class Decider extends Entity {
+    params: DeciderControlBehavior;
+
+    constructor(params: DeciderControlBehavior) {
         super(1, 2);
         this.params = params;
 
@@ -32,7 +43,7 @@ export class Decider extends Entity {
         this.output = createEndpoint(this, 2);
     }
 
-    toObj(): RawEntity {
+    toObj(): DeciderCombinator {
         if (this.input.red.length == 0 && this.input.green.length == 0 || this.output.red.length == 0 && this.output.green.length == 0) {
             throw new Error("Unconnected Decider");
         }

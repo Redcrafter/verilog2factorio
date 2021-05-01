@@ -1,5 +1,12 @@
-import { RawEntity } from "../blueprint.js";
+import { ConnectionPoint, EntityBase } from "../blueprint.js";
 import { convertEndpoint, createEndpoint, Entity } from "./Entity.js";
+
+export interface MediumElectricPole extends EntityBase {
+    name: "medium-electric-pole";
+    connections: {
+        "1": ConnectionPoint
+    };
+}
 
 export class Pole extends Entity {
     constructor() {
@@ -7,7 +14,7 @@ export class Pole extends Entity {
         this.input = this.output = createEndpoint(this, 1);
     }
 
-    toObj(): RawEntity {
+    toObj(): MediumElectricPole {
         if (this.input.red.length == 0 && this.input.green.length == 0 && this.output.red.length == 0 && this.output.green.length == 0) {
             throw new Error("Unconnected Arithmetic");
         }

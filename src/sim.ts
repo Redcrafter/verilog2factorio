@@ -122,7 +122,7 @@ export class Simulator {
     }
 
     private initBFS() {
-        let next = [];
+        let next: Point[] = [];
 
         let x = Math.floor(this.gridSize / 2);
         for (const n of this.nodes) {
@@ -140,7 +140,7 @@ export class Simulator {
 
         let y = 0;
         while (next.length > 0) {
-            let temp = [];
+            let temp: Point[] = [];
             x = 0;
             for (const n of next) {
                 if (n.x != -1) continue;

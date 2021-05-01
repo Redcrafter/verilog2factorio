@@ -1,8 +1,9 @@
-import { Decider, ComparatorString } from "../entities/Decider.js";
 import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
-import { createTransformer, Node } from "./Node.js";
-import { Input } from "./Input.js";
 import { Arithmetic } from "../entities/Arithmetic.js";
+import { Decider } from "../entities/Decider.js";
+
+import { createTransformer, Node, nodeFunc } from "./Node.js";
+import { Input } from "./Input.js";
 import { Dff, Dffe } from "../yosys.js";
 
 // TODO: check parameters.EN_POLARITY
@@ -23,7 +24,7 @@ export class DFF extends Node {
         this.data = item;
     }
 
-    connect(getInputNode) {
+    connect(getInputNode: nodeFunc) {
         this.clk = getInputNode(this.data.connections.CLK);
         this.d = getInputNode(this.data.connections.D);
         // @ts-ignore

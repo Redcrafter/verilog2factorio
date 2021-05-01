@@ -2,7 +2,7 @@ import { Arithmetic } from "../entities/Arithmetic.js";
 import { ConstNode } from "./ConstNode.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
-import { createTransformer, Node } from "./Node.js";
+import { createTransformer, Node, nodeFunc } from "./Node.js";
 import { Mux } from "../yosys.js";
 
 export class MUX extends Node {
@@ -17,7 +17,7 @@ export class MUX extends Node {
         this.data = item;
     }
 
-    connect(getInputNode) {
+    connect(getInputNode: nodeFunc) {
         this.a = getInputNode(this.data.connections.A);
         this.b = getInputNode(this.data.connections.B);
         this.s = getInputNode(this.data.connections.S);

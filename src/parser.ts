@@ -20,7 +20,7 @@ import { SDFFCE } from "./nodes/SDFFCE.js";
 import { ArithmeticOperations } from "./entities/Arithmetic.js";
 import { ComparatorString } from "./entities/Decider.js";
 
-function arraysEqual(a: any[], b: any[]) {
+function arraysEqual<T>(a: T[], b: T[]) {
     if (a === b) return true;
     if (a === null || b === null) return false;
     if (a.length !== b.length) return false;

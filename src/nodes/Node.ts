@@ -1,7 +1,9 @@
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Endpoint, Entity, signalC, signalV } from "../entities/Entity.js";
+import { MergeEl } from "./MergeNode.js";
 
-type func = (n: (number | string)[]) => Node;
+export type nodeFunc = (n: (number | string)[]) => Node;
+export type mergeFunc = (n: (number | string)[]) => MergeEl[];
 
 export function createTransformer() {
     return new Arithmetic({
@@ -31,7 +33,7 @@ export abstract class Node {
         this.outMask = (1 << bits.length) - 1;
     }
 
-    connect(getInputNode: func, getMergeEls) { }
+    connect(getInputNode: nodeFunc, getMergeEls: mergeFunc) { }
 
     abstract createComb(): void;
     abstract connectComb(): void;

@@ -3,7 +3,7 @@ import { Constant } from "../entities/Constant.js";
 import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 import { BinaryCell } from "../yosys.js";
 import { ConstNode } from "./ConstNode.js";
-import { createLimiter, createTransformer, Node } from "./Node.js";
+import { createLimiter, createTransformer, Node, nodeFunc } from "./Node.js";
 
 // TODO: add support for chained operations?
 
@@ -40,7 +40,7 @@ export class MathNode extends Node {
         console.assert(method != ArithmeticOperations.Add);
     }
 
-    connect(getInputNode) {
+    connect(getInputNode: nodeFunc) {
         this.a = getInputNode(this.data.connections.A);
         this.b = getInputNode(this.data.connections.B);
     }

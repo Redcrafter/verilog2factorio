@@ -1,7 +1,7 @@
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Decider, ComparatorString } from "../entities/Decider.js";
 import { Endpoint, Entity, signalV, signalC, makeConnection, Color } from "../entities/Entity.js";
-import { createTransformer, Node } from "./Node.js";
+import { createTransformer, Node, nodeFunc } from "./Node.js";
 import { Input } from "./Input.js";
 import { ConstNode } from "./ConstNode.js";
 import { SDffe } from "../yosys.js";
@@ -27,7 +27,7 @@ export class SDFFE extends Node {
         console.assert(parseInt(item.parameters.SRST_POLARITY, 2) == 1, "revert reset polarity");
     }
 
-    connect(getInputNode) {
+    connect(getInputNode: nodeFunc) {
         this.clk = getInputNode(this.data.connections.CLK);
         this.d = getInputNode(this.data.connections.D);
         this.en = getInputNode(this.data.connections.EN);

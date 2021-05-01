@@ -1,6 +1,6 @@
 import { ConstNode } from "./ConstNode.js";
 import { Arithmetic } from "../entities/Arithmetic.js";
-import { createLimiter, Node } from "./Node.js";
+import { createLimiter, Node, nodeFunc } from "./Node.js";
 import { Color, makeConnection } from "../entities/Entity.js";
 import { BinaryCell } from "../yosys.js";
 
@@ -17,7 +17,7 @@ export class ADD extends Node {
         this.data = item;
     }
 
-    connect(getInputNode) {
+    connect(getInputNode: nodeFunc) {
         this.a = getInputNode(this.data.connections.A);
         this.b = getInputNode(this.data.connections.B);
     }
@@ -30,12 +30,12 @@ export class ADD extends Node {
 
         if (this.a instanceof ConstNode) {
             if (this.a.value == 0) throw new Error("Unnecessary operation");
-            else this.a.forceCreate();
+            this.a.forceCreate();
         }
 
         if (this.b instanceof ConstNode) {
             if (this.b.value == 0) throw new Error("Unnecessary operation");
-            else this.b.forceCreate();
+            this.b.forceCreate();
         }
     }
 

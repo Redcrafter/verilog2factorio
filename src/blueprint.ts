@@ -1,3 +1,8 @@
+import { ArithmeticCombinator } from "./entities/Arithmetic";
+import { DeciderCombinator } from "./entities/Decider.js";
+import { ConstantCombinator } from "./entities/Constant.js";
+import { MediumElectricPole } from "./entities/Pole.js";
+
 import * as zlib from "zlib";
 
 // https://wiki.factorio.com/Blueprint_string_format
@@ -12,22 +17,58 @@ export interface ConnectionPoint {
     green: ConnectionData[];
 }
 
-interface Vec2 {
+interface Position {
     x: number;
     y: number;
 }
 
-export interface RawEntity {
+interface Color {
+    r: number;
+    g: number;
+    b: number;
+    a: number;
+}
+
+export interface SignalID {
+    type: "item" | "fluid" | "virtual",
+    name: string;
+}
+
+export interface EntityBase {
     entity_number: number;
     name: string;
-    position: Vec2;
+    position: Position;
 
     direction?: number;
     orientation?: number;
 
-    connections?: { "1": ConnectionPoint, "2"?: ConnectionPoint };
+    // connections?: { "1": ConnectionPoint, "2"?: ConnectionPoint };
+    // control_behavior?: any;
+}
 
-    control_behavior?: any;
+export type RawEntity = ArithmeticCombinator | DeciderCombinator | ConstantCombinator | MediumElectricPole;
+
+interface Tile {
+    name: string;
+    position: Position;
+}
+
+interface Icon {
+    index: number;
+    signal: SignalID;
+}
+
+interface Schedule {
+    schedule: {
+        station: string;
+        wait_conditions: {
+            type: "time" | "inactivity" | "full" | "empty" | "item_count" | "circuit" | "robots_inactive" | "fluid_count" | "passenger_present" | "passenger_not_present";
+            compare_type: "and" | "or";
+            ticks: number;
+            condition: Object;
+        }
+    };
+    locomotives: number[];
 }
 
 export interface Blueprint {
@@ -36,15 +77,15 @@ export interface Blueprint {
     /** String, the name of the blueprint set by the user. */
     label?: string;
     /** The color of the label of this blueprint. */
-    label_color?: any;
+    label_color?: Color;
     /** The actual content of the blueprint. */
     entities: RawEntity[];
     /** The tiles included in the blueprint. */
-    tiles?: any[];
+    tiles?: Tile[];
     /** The icons of the blueprint set by the user. */
-    icons: any[];
+    icons: Icon[];
     /** The schedules for trains in this blueprint. */
-    schedules?: any[];
+    schedules?: Schedule[];
     /** The map version of the map the blueprint was created in. */
     version: number;
 }

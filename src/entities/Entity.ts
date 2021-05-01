@@ -1,4 +1,4 @@
-import { RawEntity, ConnectionPoint } from "../blueprint.js";
+import { RawEntity, ConnectionPoint, SignalID } from "../blueprint.js";
 
 export const dir = 4;
 
@@ -29,11 +29,6 @@ export interface Endpoint {
     green: Endpoint[];
 }
 
-export interface SignalID {
-    type: "item" | "fluid" | "virtual",
-    name: string;
-}
-
 export abstract class Entity {
     keep = false;
 
@@ -55,7 +50,7 @@ export abstract class Entity {
     abstract toObj(): RawEntity;
 }
 
-export function createEndpoint(ent: Entity, type: number) {
+export function createEndpoint(ent: Entity, type: number): Endpoint {
     return {
         entity: ent,
         type,

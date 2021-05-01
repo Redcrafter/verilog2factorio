@@ -1,6 +1,6 @@
 import { Color, makeConnection } from "../entities/Entity.js";
 import { Pole } from "../entities/Pole.js";
-import { Node } from "./Node.js";
+import { Node, nodeFunc } from "./Node.js";
 
 export class Output extends Node {
     bits: number[];
@@ -13,7 +13,7 @@ export class Output extends Node {
         this.bits = bits;
     }
 
-    connect(getInputNode) {
+    connect(getInputNode: nodeFunc) {
         this.src = getInputNode(this.bits);
     }
 

@@ -1,23 +1,33 @@
-import { RawEntity } from "../blueprint.js";
-import { Entity, SignalID, convertEndpoint, dir, createEndpoint } from "./Entity.js";
+import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
+import { Entity, convertEndpoint, dir, createEndpoint } from "./Entity.js";
 
-interface ConstantCombinatorParameters {
+export interface ConstantControlBehavior {
     signal: SignalID;
     count: number;
     index: number;
 }
 
-export class Constant extends Entity {
-    params: ConstantCombinatorParameters[];
+export interface ConstantCombinator extends EntityBase {
+    name: "constant-combinator",
+    control_behavior: {
+        filters: ConstantControlBehavior[];
+    }
+    connections: {
+        "1": ConnectionPoint
+    };
+}
 
-    constructor(...param: ConstantCombinatorParameters[]) {
+export class Constant extends Entity {
+    params: ConstantControlBehavior[];
+
+    constructor(...param: ConstantControlBehavior[]) {
         super(1, 1);
         this.params = param;
 
         this.input = this.output = createEndpoint(this, 1);
     }
 
-    toObj(): RawEntity {
+    toObj(): ConstantCombinator {
         if (this.output.red.length == 0 && this.output.green.length == 0) {
             throw new Error("Unconnected Constant");
         }

@@ -3,7 +3,7 @@ import { Decider, ComparatorString } from "../entities/Decider.js"
 import { Constant } from "../entities/Constant.js";
 import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 import { ConstNode } from "./ConstNode.js";
-import { createTransformer, Node } from "./Node.js";
+import { createTransformer, Node, nodeFunc } from "./Node.js";
 import { BinaryCell } from "../yosys.js";
 
 // TODO: add support for chained operations?
@@ -26,7 +26,7 @@ export class LogicNode extends Node {
         console.assert(this.outputBits.length == 1);
     }
 
-    connect(getInputNode) {
+    connect(getInputNode: nodeFunc) {
         this.a = getInputNode(this.data.connections.A);
         this.b = getInputNode(this.data.connections.B);
     }

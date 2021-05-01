@@ -1,5 +1,5 @@
-import { RawEntity } from "../blueprint.js";
-import { Entity, SignalID, createEndpoint, convertEndpoint, dir } from "./Entity.js";
+import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
+import { Entity, createEndpoint, convertEndpoint, dir } from "./Entity.js";
 
 export enum ArithmeticOperations {
     Mul = "*",
@@ -15,7 +15,7 @@ export enum ArithmeticOperations {
     Xor = "XOR"
 }
 
-interface ArithmeticCombinatorParameters {
+export interface ArithmeticControlBehavior {
     first_signal?: SignalID,
     second_signal?: SignalID;
     first_constant?: number;
@@ -25,10 +25,21 @@ interface ArithmeticCombinatorParameters {
     output_signal: SignalID;
 }
 
-export class Arithmetic extends Entity {
-    params: ArithmeticCombinatorParameters;
+export interface ArithmeticCombinator extends EntityBase {
+    name: "arithmetic-combinator";
+    control_behavior: {
+        arithmetic_conditions: ArithmeticControlBehavior
+    };
+    connections: {
+        "1": ConnectionPoint,
+        "2": ConnectionPoint
+    };
+}
 
-    constructor(params: ArithmeticCombinatorParameters) {
+export class Arithmetic extends Entity {
+    params: ArithmeticControlBehavior;
+
+    constructor(params: ArithmeticControlBehavior) {
         super(1, 2);
         this.params = params;
 
@@ -39,7 +50,7 @@ export class Arithmetic extends Entity {
         console.assert(params.second_signal ? params.second_constant === undefined : params.second_constant !== undefined);
     }
 
-    toObj(): RawEntity {
+    toObj(): ArithmeticCombinator {
         if (this.input.red.length == 0 && this.input.green.length == 0 || this.output.red.length == 0 && this.output.green.length == 0) {
             throw new Error("Unconnected Arithmetic");
         }

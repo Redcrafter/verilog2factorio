@@ -3,7 +3,7 @@ import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 import { PMux } from "../yosys.js";
 import { ConstNode } from "./ConstNode.js";
-import { createLimiter, createTransformer, Node } from "./Node.js";
+import { createLimiter, createTransformer, Node, nodeFunc } from "./Node.js";
 
 // https://github.com/YosysHQ/yosys/blob/master/techlibs/common/pmux2mux.v
 // s should be one hot encoded. If not errors will occur
@@ -25,7 +25,7 @@ export class PMUX extends Node {
         this.data = item;
     }
 
-    connect(getInputNode) {
+    connect(getInputNode: nodeFunc) {
         this.a = getInputNode(this.data.connections.A);
 
         let width = parseInt(this.data.parameters.WIDTH, 2);
