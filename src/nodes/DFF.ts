@@ -3,11 +3,12 @@ import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Ent
 import { createTransformer, Node } from "./Node.js";
 import { Input } from "./Input.js";
 import { Arithmetic } from "../entities/Arithmetic.js";
+import { Dff, Dffe } from "../yosys.js";
 
 // TODO: check parameters.EN_POLARITY
 
 export class DFF extends Node {
-    data: any;
+    data: Dff | Dffe;
 
     clk: Node;
     en: Node;
@@ -17,7 +18,7 @@ export class DFF extends Node {
     decider1: Decider;
     decider2: Decider;
 
-    constructor(item: any) {
+    constructor(item: Dff | Dffe) {
         super(item.connections.Q);
         this.data = item;
     }
@@ -25,9 +26,8 @@ export class DFF extends Node {
     connect(getInputNode) {
         this.clk = getInputNode(this.data.connections.CLK);
         this.d = getInputNode(this.data.connections.D);
-        if (this.data.connections.EN) {
-            this.en = getInputNode(this.data.connections.EN);
-        }
+        // @ts-ignore
+        if (this.data.connections.EN) this.en = getInputNode(this.data.connections.EN);
 
         if (!(this.clk instanceof Input)) {
             // need an edge detector

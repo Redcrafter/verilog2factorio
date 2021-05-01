@@ -1,6 +1,7 @@
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Constant } from "../entities/Constant.js";
 import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
+import { BinaryCell } from "../yosys.js";
 import { ConstNode } from "./ConstNode.js";
 import { createLimiter, createTransformer, Node } from "./Node.js";
 
@@ -14,7 +15,7 @@ const needsLimiter = new Set([
 ]);
 
 export class MathNode extends Node {
-    data: any;
+    data: BinaryCell;
     method: ArithmeticOperations;
 
     a: Node;
@@ -24,12 +25,12 @@ export class MathNode extends Node {
     calculator: Arithmetic;
     limiter: Arithmetic;
 
-    constructor(data: any, method: ArithmeticOperations, negate = false) {
+    constructor(data: BinaryCell, method: ArithmeticOperations, negate = false) {
         super(data.connections.Y);
         this.data = data;
         this.method = method;
 
-        // TODO: implement negate output
+        // TODO: implement negate output only required for xnor?
         if (negate) {
             // throw new Error("not implemented");
             console.assert(false, "Math negate not implemented");

@@ -12,6 +12,7 @@ import { MUX } from "./nodes/MUX.js";
 import { Node } from "./nodes/Node.js";
 import { Output } from "./nodes/Output.js";
 import { PMUX } from "./nodes/PMUX.js";
+import { ReduceOr } from "./nodes/ReduceOr.js";
 import { SDFFE } from "./nodes/SDFFE.js";
 import { SDFFCE } from "./nodes/SDFFCE.js";
 
@@ -32,43 +33,83 @@ function arraysEqual(a: any[], b: any[]) {
 
 function createNode(item: yosys.Cell): Node {
     switch (item.type) {
-        case "$add": return new ADD(item);
-        case "$sub": return new MathNode(item, ArithmeticOperations.Sub);
-        case "$dff": return new DFF(item);
-        case "$dffe": return new DFF(item);
-        case "$sdffe": return new SDFFE(item);
-        case "$sdffce": return new SDFFCE(item);
-        case "$mux": return new MUX(item);
-        case "$mul": return new MathNode(item, ArithmeticOperations.Mul);
+        case "$not": // ~x == x^(1 << n - 1)
+            // @ts-ignore
+            item.connections.B = new Array(item.connections.Y.length).fill("1");
+            // @ts-ignore
+            return new MathNode(item, ArithmeticOperations.Xor);
+        // TODO: case "$pos":
+        // TODO: case "$neg":
+
+        case "$reduce_and": // reduce and is the same as == (1 << n) - 1
+            // @ts-ignore
+            item.connections.B = new Array(item.connections.A.length).fill("1");
+            // @ts-ignore
+            return new LogicNode(item, ComparatorString.EQ);
+        case "$reduce_or": return new ReduceOr(item);
+        // TODO: case "$reduce_xor":
+        // TODO: case "$reduce_xnor":
+
+        case "$reduce_bool": return new ReduceOr(item);
+        case "$logic_not": // same as == 0
+            // @ts-ignore
+            item.connections.B = ["0"];
+            // @ts-ignore
+            return new LogicNode(item, ComparatorString.EQ);
+
+
         case "$and": return new MathNode(item, ArithmeticOperations.And);
         case "$or": return new MathNode(item, ArithmeticOperations.Or);
         case "$xor": return new MathNode(item, ArithmeticOperations.Xor);
-        case "$xnor": return new MathNode(item, ArithmeticOperations.Xor, true)
-        case "$eq": return new LogicNode(item, ComparatorString.EQ);
-        case "$ne": return new LogicNode(item, ComparatorString.NEQ);
-        case "$ge": return new LogicNode(item, ComparatorString.GE);
-        case "$reduce_or": // reduce or is the same as != 0
-        case "$reduce_bool":
-            item.connections.B = ["0"];
-            return new LogicNode(item, ComparatorString.NEQ);
-        case "$reduce_and": // reduce and is the same as == (1 << n) - 1
-            item.connections.B = new Array(item.connections.A.length).fill("1");
-            return new LogicNode(item, ComparatorString.EQ);
-        case "$logic_not": // same as == 0
-            item.connections.B = ["0"];
-            return new LogicNode(item, ComparatorString.EQ);
-        case "$logic_or":
-            console.assert(item.connections.A.length == 1);
-            console.assert(item.connections.B.length == 1);
-            return new MathNode(item, ArithmeticOperations.Or);
+        case "$xnor": return new MathNode(item, ArithmeticOperations.Xor, true);
+
+        case "$shl": return new MathNode(item, ArithmeticOperations.LShift);
+        case "$shr": return new MathNode(item, ArithmeticOperations.RShift);
+        // TODO: case "$sshl":
+        // TODO: case "$sshr":
+
         case "$logic_and":
             console.assert(item.connections.A.length == 1);
             console.assert(item.connections.B.length == 1);
             return new MathNode(item, ArithmeticOperations.And);
-        case "$not": // ~x == x^(1 << n - 1)
-            item.connections.B = new Array(item.connections.Y.length).fill("1");
-            return new MathNode(item, ArithmeticOperations.Xor);
+        case "$logic_or":
+            console.assert(item.connections.A.length == 1);
+            console.assert(item.connections.B.length == 1);
+            return new MathNode(item, ArithmeticOperations.Or);
+
+        case "$lt": return new LogicNode(item, ComparatorString.LT);
+        case "$le": return new LogicNode(item, ComparatorString.LE);
+        case "$eqx":
+        case "$eq": return new LogicNode(item, ComparatorString.EQ);
+        case "$nex":
+        case "$ne": return new LogicNode(item, ComparatorString.NE);
+        case "$ge": return new LogicNode(item, ComparatorString.GE);
+        case "$gt": return new LogicNode(item, ComparatorString.GT);
+
+        case "$add": return new ADD(item);
+        case "$sub": return new MathNode(item, ArithmeticOperations.Sub);
+        case "$mul": return new MathNode(item, ArithmeticOperations.Mul);
+        case "$div": return new MathNode(item, ArithmeticOperations.Div);
+        case "$mod": return new MathNode(item, ArithmeticOperations.Mod);
+        // TODO: case "$divfloor":
+        // TODO: case "$modfloor":
+        case "$pow": return new MathNode(item, ArithmeticOperations.Pow);
+
+        case "$mux": return new MUX(item);
         case "$pmux": return new PMUX(item);
+
+        // TODO: case "$sr"
+        case "$dff": return new DFF(item);
+        // TODO: case "$adff"
+        // TODO: case "$sdff"
+        // TODO: case "$dffsr":
+
+        case "$dffe": return new DFF(item);
+        // TODO: case "$adffe":
+        case "$sdffe": return new SDFFE(item);
+        case "$sdffce": return new SDFFCE(item);
+        // TODO: case "$dffsre":
+
         default:
             console.error(`Unknown node type ${item.type}`);
             break;

@@ -2,6 +2,7 @@ import { ConstNode } from "./ConstNode.js";
 import { Arithmetic } from "../entities/Arithmetic.js";
 import { createLimiter, Node } from "./Node.js";
 import { Color, makeConnection } from "../entities/Entity.js";
+import { BinaryCell } from "../yosys.js";
 
 export class ADD extends Node {
     a: Node;
@@ -9,9 +10,9 @@ export class ADD extends Node {
 
     limiter: Arithmetic;
 
-    data: any;
+    data: BinaryCell;
 
-    constructor(item: any) {
+    constructor(item: BinaryCell) {
         super(item.connections.Y);
         this.data = item;
     }

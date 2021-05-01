@@ -3,15 +3,16 @@ import { ConstNode } from "./ConstNode.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 import { createTransformer, Node } from "./Node.js";
+import { Mux } from "../yosys.js";
 
 export class MUX extends Node {
     a: Node;
     b: Node;
     s: Node;
 
-    data: any;
+    data: Mux;
 
-    constructor(item: any) {
+    constructor(item: Mux) {
         super(item.connections.Y);
         this.data = item;
     }

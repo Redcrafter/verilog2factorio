@@ -59,9 +59,9 @@ function opt_chain(entities: Entity[]) {
     console.log("Running opt_chain");
 
     function chain(point: Endpoint, color: Color) {
-        let prop = color == Color.Red ? "red" : "green";
+        let prop: "red" | "green" = color == Color.Red ? "red" : "green";
 
-        let outs: Endpoint[] = point[prop];
+        let outs = point[prop];
         if (outs.length == 1) return;
         point[prop] = [];
 

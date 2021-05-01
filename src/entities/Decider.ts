@@ -2,12 +2,12 @@ import { RawEntity } from "../blueprint.js";
 import { Entity, SignalID, createEndpoint, convertEndpoint, dir } from "./Entity.js";
 
 export enum ComparatorString {
-    LE = "<",
-    LEQ = "≤",
-    GE = ">",
-    GEQ = "≥",
+    LT = "<",
+    LE = "≤",
+    GT = ">",
+    GE = "≥",
     EQ = "=",
-    NEQ = "≠"
+    NE = "≠"
 }
 
 interface DeciderCombinatorParameters {

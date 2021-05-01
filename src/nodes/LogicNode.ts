@@ -4,11 +4,12 @@ import { Constant } from "../entities/Constant.js";
 import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 import { ConstNode } from "./ConstNode.js";
 import { createTransformer, Node } from "./Node.js";
+import { BinaryCell } from "../yosys.js";
 
 // TODO: add support for chained operations?
 
 export class LogicNode extends Node {
-    data: any;
+    data: BinaryCell;
     method: ComparatorString;
 
     a: Node;
@@ -17,7 +18,7 @@ export class LogicNode extends Node {
     transformer: Arithmetic;
     calculator: Decider;
 
-    constructor(data: any, method: ComparatorString) {
+    constructor(data: BinaryCell, method: ComparatorString) {
         super(data.connections.Y);
         this.data = data;
         this.method = method;

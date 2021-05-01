@@ -1,13 +1,14 @@
 import { Arithmetic } from "../entities/Arithmetic.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
+import { PMux } from "../yosys.js";
 import { ConstNode } from "./ConstNode.js";
 import { createLimiter, createTransformer, Node } from "./Node.js";
 
 // https://github.com/YosysHQ/yosys/blob/master/techlibs/common/pmux2mux.v
 // s should be one hot encoded. If not errors will occur
 export class PMUX extends Node {
-    data: any;
+    data: PMux;
 
     a: Node;
     b: Node[] = [];
@@ -19,7 +20,7 @@ export class PMUX extends Node {
     // not really required but safer
     limiter: Arithmetic;
 
-    constructor(item) {
+    constructor(item: PMux) {
         super(item.connections.Y);
         this.data = item;
     }

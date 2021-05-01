@@ -3,10 +3,11 @@ import { Decider, ComparatorString } from "../entities/Decider.js";
 import { Color, Entity, makeConnection, signalC, signalR, signalV } from "../entities/Entity.js";
 import { Node } from "./Node.js";
 import { Input } from "./Input.js";
+import { SDffe } from "../yosys.js";
 
 
 export class SDFFCE extends Node {
-    data: any;
+    data: SDffe;
 
     clk: Node;
     en: Node;
@@ -18,7 +19,7 @@ export class SDFFCE extends Node {
     dff2: Decider;
     arith: Arithmetic;
 
-    constructor(item: any) {
+    constructor(item: SDffe) {
         super(item.connections.Q);
         this.data = item;
 

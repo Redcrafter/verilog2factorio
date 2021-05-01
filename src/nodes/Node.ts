@@ -1,7 +1,7 @@
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Endpoint, Entity, signalC, signalV } from "../entities/Entity.js";
 
-type func = (n: number[]) => Node;
+type func = (n: (number | string)[]) => Node;
 
 export function createTransformer() {
     return new Arithmetic({

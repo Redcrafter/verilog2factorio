@@ -4,10 +4,11 @@ import { Endpoint, Entity, signalV, signalC, makeConnection, Color } from "../en
 import { createTransformer, Node } from "./Node.js";
 import { Input } from "./Input.js";
 import { ConstNode } from "./ConstNode.js";
+import { SDffe } from "../yosys.js";
 
 
 export class SDFFE extends Node {
-    data: any;
+    data: SDffe;
     rstVal: number;
 
     clk: Node;
@@ -15,15 +16,15 @@ export class SDFFE extends Node {
     d: Node;
     srst: Node;
 
-    constructor(item: any) {
+    constructor(item: SDffe) {
         super(item.connections.Q);
         this.data = item;
 
         this.rstVal = parseInt(item.parameters.SRST_VALUE, 2);
 
-        console.assert(parseInt(item.parameters.CLK_POLARITY, 2) == 1);
-        console.assert(parseInt(item.parameters.EN_POLARITY, 2) == 1);
-        console.assert(parseInt(item.parameters.SRST_POLARITY, 2) == 1);
+        console.assert(parseInt(item.parameters.CLK_POLARITY, 2) == 1, "revert clk polarity");
+        console.assert(parseInt(item.parameters.EN_POLARITY, 2) == 1, "revert enable polarity");
+        console.assert(parseInt(item.parameters.SRST_POLARITY, 2) == 1, "revert reset polarity");
     }
 
     connect(getInputNode) {
@@ -71,7 +72,7 @@ export class SDFFE extends Node {
         this.dff2 = new Decider({
             first_signal: signalC,
             constant: 0,
-            comparator: ComparatorString.NEQ,
+            comparator: ComparatorString.NE,
             copy_count_from_input: true,
             output_signal: signalV
         });
