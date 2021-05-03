@@ -71,7 +71,7 @@ export class MergeNode extends Node {
                 output_signal: signalV
             });
 
-            if (n.start == 0 && (offset == 0 || n.count == n.node.outputBits.length)) { // don't need a limiter
+            if ((n.start == 0 || n.start + shiftVal <= 0) && n.start + n.count == n.node.outputBits.length) { // don't need a limiter
                 // if(shiftVal == 0) don't need either but need a separator so signals don't get mixed
                 this.layers.push({
                     source: n.node,
@@ -117,9 +117,6 @@ export class MergeNode extends Node {
     connectComb(): void {
         // could let the optimization pass do this but doing it here keeps combinator order neater
         let groups = groupBy(this.layers, x => x.source);
-        if([...groups.values()].some(x => x.length > 2)) {
-            debugger;
-        }
 
         // used to chain outputs
         let lastOut: Entity = null;
@@ -128,7 +125,7 @@ export class MergeNode extends Node {
             let lastIn = k?.output();
 
             for (const n of v) {
-                if(lastIn) { // lastIn is only null for constant combinator
+                if (lastIn) { // lastIn is only null for constant combinator
                     makeConnection(Color.Red, lastIn, n.in.input);
                     lastIn = n.in.input;
 

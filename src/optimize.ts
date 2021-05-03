@@ -40,7 +40,6 @@ function opt_clean(entities: Entity[]) {
         if (e.keep) continue;
 
         if (e instanceof Constant && e.params[0].count == 0) {
-            debugger;
             del(e);
             entities.splice(entities.indexOf(e), 1);
             i--;

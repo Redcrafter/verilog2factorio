@@ -1,6 +1,6 @@
 import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 import { Arithmetic } from "../entities/Arithmetic.js";
-import { Decider } from "../entities/Decider.js";
+import { ComparatorString, Decider } from "../entities/Decider.js";
 
 import { createTransformer, Node, nodeFunc } from "./Node.js";
 import { Input } from "./Input.js";
