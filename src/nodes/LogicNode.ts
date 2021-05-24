@@ -73,7 +73,7 @@ export class LogicNode extends Node {
             makeConnection(Color.Red, this.b.output(), this.transformer.input);
 
             makeConnection(Color.Red, this.a.output(), this.calculator.input);
-            makeConnection(Color.Red, this.transformer.output, this.calculator.input);
+            makeConnection(Color.Green, this.transformer.output, this.calculator.input);
         }
     }
 

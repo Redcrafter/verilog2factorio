@@ -75,7 +75,7 @@ export class SDFFCE extends Node {
         makeConnection(Color.Red, this.clk.output(), this.transformer.input);
         makeConnection(Color.Green, this.en.output(), this.transformer.input);
 
-        makeConnection(Color.Green, this.transformer.output, this.dff1.input, this.dff2.input);
+        makeConnection(Color.Green, this.transformer.output, this.dff1.input, this.dff2.input, this.arith.output);
 
         makeConnection(Color.Red, this.d.output(), this.dff1.input);
 
@@ -84,7 +84,6 @@ export class SDFFCE extends Node {
 
         makeConnection(Color.Red, this.srst.output(), this.arith.input);
         makeConnection(Color.Green, this.transformer.output, this.arith.input);
-        makeConnection(Color.Green, this.arith.output, this.transformer.output);
     }
 
     output() {

@@ -183,11 +183,7 @@ export function buildGraph(mod: yosys.Module) {
                 continue;
             }
             if (!knownWires.has(bit)) {
-                // throw new Error("Unknown wire");
-                offset++;
-                let c = new ConstNode(0, 1);
-                sub.push({ start: 0, count: 1, node: c });
-                continue;
+                throw new Error("Unknown wire");
             }
 
             let sect = matchSection(bits.slice(offset) as number[]);

@@ -15,6 +15,9 @@ export class ADD extends Node {
     constructor(item: BinaryCell) {
         super(item.connections.Y);
         this.data = item;
+
+        console.assert(parseInt(item.parameters.A_SIGNED, 2) == 0);
+        console.assert(parseInt(item.parameters.B_SIGNED, 2) == 0);
     }
 
     connect(getInputNode: nodeFunc) {

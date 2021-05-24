@@ -22,6 +22,10 @@ export class DFF extends Node {
     constructor(item: Dff | Dffe) {
         super(item.connections.Q);
         this.data = item;
+
+        console.assert(parseInt(item.parameters.CLK_POLARITY, 2) == 1, "revert clk polarity");
+        if(item.type == "$dffe") 
+            console.assert(parseInt(item.parameters.EN_POLARITY, 2) == 1, "revert enable polarity");
     }
 
     connect(getInputNode: nodeFunc) {
