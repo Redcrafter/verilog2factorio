@@ -10,11 +10,13 @@ import { MathNode } from "./nodes/MathNode.js";
 import { MergeNode, MergeEl } from "./nodes/MergeNode.js";
 import { MUX } from "./nodes/MUX.js";
 import { Node } from "./nodes/Node.js";
+import { NOT } from "./nodes/NOT.js";
 import { Output } from "./nodes/Output.js";
 import { PMUX } from "./nodes/PMUX.js";
 import { ReduceOr } from "./nodes/ReduceOr.js";
 import { SDFFE } from "./nodes/SDFFE.js";
 import { SDFFCE } from "./nodes/SDFFCE.js";
+import { XNOR } from "./nodes/XNOR.js";
 
 // entities
 import { ArithmeticOperations } from "./entities/Arithmetic.js";
@@ -33,11 +35,7 @@ function arraysEqual<T>(a: T[], b: T[]) {
 
 function createNode(item: yosys.Cell): Node {
     switch (item.type) {
-        case "$not": // ~x == x^(1 << n - 1)
-            // @ts-ignore
-            item.connections.B = new Array(item.connections.Y.length).fill("1");
-            // @ts-ignore
-            return new MathNode(item, ArithmeticOperations.Xor);
+        case "$not": return new NOT(item);
         // TODO: case "$pos":
         // TODO: case "$neg":
 
@@ -61,8 +59,7 @@ function createNode(item: yosys.Cell): Node {
         case "$and": return new MathNode(item, ArithmeticOperations.And);
         case "$or": return new MathNode(item, ArithmeticOperations.Or);
         case "$xor": return new MathNode(item, ArithmeticOperations.Xor);
-        case "$xnor": return new MathNode(item, ArithmeticOperations.Xor, true);
-
+        case "$xnor": return new XNOR(item);
         case "$shl": return new MathNode(item, ArithmeticOperations.LShift);
         case "$shr": return new MathNode(item, ArithmeticOperations.RShift);
         // TODO: case "$sshl":

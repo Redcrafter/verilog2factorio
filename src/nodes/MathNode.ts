@@ -25,16 +25,13 @@ export class MathNode extends Node {
     calculator: Arithmetic;
     limiter: Arithmetic;
 
-    constructor(data: BinaryCell, method: ArithmeticOperations, negate = false) {
+    constructor(data: BinaryCell, method: ArithmeticOperations) {
         super(data.connections.Y);
         this.data = data;
         this.method = method;
 
-        // TODO: implement negate output only required for xnor?
-        if (negate) {
-            // throw new Error("not implemented");
-            console.assert(false, "Math negate not implemented");
-        }
+        console.assert(parseInt(data.parameters.A_SIGNED, 2) == 0, "Only unsigned values allowed");
+        console.assert(parseInt(data.parameters.B_SIGNED, 2) == 0, "Only unsigned values allowed");
 
         // add has custom node
         console.assert(method != ArithmeticOperations.Add);

@@ -16,8 +16,8 @@ export class ADD extends Node {
         super(item.connections.Y);
         this.data = item;
 
-        console.assert(parseInt(item.parameters.A_SIGNED, 2) == 0);
-        console.assert(parseInt(item.parameters.B_SIGNED, 2) == 0);
+        console.assert(parseInt(item.parameters.A_SIGNED, 2) == 0, "Only unsigned values allowed");
+        console.assert(parseInt(item.parameters.B_SIGNED, 2) == 0, "Only unsigned values allowed");
     }
 
     connect(getInputNode: nodeFunc) {

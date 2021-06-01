@@ -23,6 +23,9 @@ export class LogicNode extends Node {
         this.data = data;
         this.method = method;
 
+        console.assert(parseInt(data.parameters.A_SIGNED, 2) == 0, "Only unsigned values allowed");
+        if(data.parameters.B_SIGNED) console.assert(parseInt(data.parameters.B_SIGNED, 2) == 0, "Only unsigned values allowed");
+
         console.assert(this.outputBits.length == 1);
     }
 
