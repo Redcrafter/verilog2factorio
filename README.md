@@ -1,6 +1,7 @@
 # Factorio verilog compiler
 
-This project will compile verilog (a hardware description language) into factorio blueprints.
+This project will compile verilog (a hardware description language) into factorio blueprints.\
+Using [this](https://github.com/ghdl/ghdl-yosys-plugin) it should also be possible to compile vhdl. (not tested)
 
 ## Install
 Manually compile [yosys](https://github.com/YosysHQ/yosys) (since the last release is quite old) and add it to your PATH.
