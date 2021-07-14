@@ -1,8 +1,7 @@
 import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
-import { Arithmetic } from "../entities/Arithmetic.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
 
-import { createTransformer, Node, nodeFunc } from "./Node.js";
+import { Node, nodeFunc } from "./Node.js";
 import { Input } from "./Input.js";
 import { Dff, Dffe } from "../yosys.js";
 
@@ -15,7 +14,7 @@ export class DFF extends Node {
     en: Node;
     d: Node;
 
-    transformer: Arithmetic;
+    transformer: Decider;
     decider1: Decider;
     decider2: Decider;
 
@@ -23,25 +22,42 @@ export class DFF extends Node {
         super(item.connections.Q);
         this.data = item;
 
-        console.assert(parseInt(item.parameters.CLK_POLARITY, 2) == 1, "revert clk polarity");
-        if(item.type == "$dffe") 
-            console.assert(parseInt(item.parameters.EN_POLARITY, 2) == 1, "revert enable polarity");
+        console.assert(item.parameters.CLK_POLARITY == 1, "revert clk polarity");
+        if (item.type == "$dffe")
+            console.assert(item.parameters.EN_POLARITY == 1, "revert enable polarity");
     }
 
     connect(getInputNode: nodeFunc) {
         this.clk = getInputNode(this.data.connections.CLK);
         this.d = getInputNode(this.data.connections.D);
+
         // @ts-ignore
-        if (this.data.connections.EN) this.en = getInputNode(this.data.connections.EN);
+        if (this.data.connections.EN) {
+            // @ts-ignore
+            this.en = getInputNode(this.data.connections.EN);
+
+            this.transformer = new Decider({
+                first_signal: signalV,
+                constant: 2,
+                comparator: ComparatorString.EQ,
+                copy_count_from_input: false,
+                output_signal: signalC
+            });
+        } else {
+            this.transformer = new Decider({
+                first_signal: signalV,
+                constant: 1,
+                comparator: ComparatorString.EQ,
+                copy_count_from_input: false,
+                output_signal: signalC
+            });
+        }
 
         if (!(this.clk instanceof Input)) {
             // need an edge detector
             throw new Error("Not implemented");
         }
-    }
 
-    createComb() {
-        this.transformer = createTransformer();
         this.decider1 = new Decider({
             first_signal: signalC,
             constant: 1,

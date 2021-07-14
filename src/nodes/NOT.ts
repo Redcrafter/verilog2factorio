@@ -15,15 +15,14 @@ export class NOT extends Node {
         super(data.connections.Y);
         this.data = data;
 
-        console.assert(parseInt(data.parameters.A_SIGNED, 2) == 0, "Only unsigned values allowed");
+        console.assert(data.parameters.A_SIGNED == 0, "Only unsigned values allowed");
     }
 
     connect(getInputNode: nodeFunc) {
         this.a = getInputNode(this.data.connections.A);
         if (this.a instanceof ConstNode)
             throw new Error("unnecessary operation");
-    }
-    createComb(): void {
+
         this.inverter = new Arithmetic({
             first_signal: signalV,
             second_constant: this.a.outMask,

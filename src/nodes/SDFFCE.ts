@@ -23,10 +23,10 @@ export class SDFFCE extends Node {
         super(item.connections.Q);
         this.data = item;
 
-        console.assert(parseInt(item.parameters.SRST_VALUE, 2) == 0, "reset value != 0");
-        console.assert(parseInt(item.parameters.CLK_POLARITY, 2) == 1, "revert clk polarity");
-        console.assert(parseInt(item.parameters.EN_POLARITY, 2) == 1, "revert enable polarity");
-        console.assert(parseInt(item.parameters.SRST_POLARITY, 2) == 1, "revert reset polarity"); // TODO: revert reset polarity
+        console.assert(item.parameters.SRST_VALUE == 0, "reset value != 0");
+        console.assert(item.parameters.CLK_POLARITY == 1, "revert clk polarity");
+        console.assert(item.parameters.EN_POLARITY == 1, "revert enable polarity");
+        console.assert(item.parameters.SRST_POLARITY == 1, "revert reset polarity"); // TODO: revert reset polarity
     }
 
     connect(getInputNode: nodeFunc) {
@@ -39,9 +39,7 @@ export class SDFFCE extends Node {
             // need an edge detector
             throw new Error("Not implemented");
         }
-    }
 
-    createComb() {
         this.transformer = new Decider({
             first_signal: signalV,
             constant: 2,

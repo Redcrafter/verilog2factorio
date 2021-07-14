@@ -16,16 +16,16 @@ export class ADD extends Node {
         super(item.connections.Y);
         this.data = item;
 
-        console.assert(parseInt(item.parameters.A_SIGNED, 2) == 0, "Only unsigned values allowed");
-        console.assert(parseInt(item.parameters.B_SIGNED, 2) == 0, "Only unsigned values allowed");
+        console.assert(item.type == "$add", "Only add allowed");
+
+        console.assert(item.parameters.A_SIGNED == 0, "Only unsigned values allowed");
+        console.assert(item.parameters.B_SIGNED == 0, "Only unsigned values allowed");
     }
 
     connect(getInputNode: nodeFunc) {
         this.a = getInputNode(this.data.connections.A);
         this.b = getInputNode(this.data.connections.B);
-    }
 
-    createComb() {
         this.limiter = createLimiter(this.outMask);
 
         if (this.a instanceof ConstNode && this.b instanceof ConstNode)

@@ -15,7 +15,7 @@ type Conn = (number | string)[];
 interface CellBase {
     hide_name: number;
     type: string;
-    parameters: IDict<string>;
+    parameters: IDict<number>;
     attributes: {
         src: string;
         full_case?: string;
@@ -26,9 +26,9 @@ interface CellBase {
 export interface UnaryCell extends CellBase {
     type: "$not" | "$pos" | "$neg" | "$reduce_and" | "$reduce_or" | "$reduce_xor" | "$reduce_xnor" | "$reduce_bool" | "$logic_not";
     parameters: {
-        A_SIGNED: string;
-        A_WIDTH: string;
-        Y_WIDTH: string;
+        A_SIGNED: number;
+        A_WIDTH: number;
+        Y_WIDTH: number;
     };
     connections: {
         A: Conn;
@@ -38,11 +38,11 @@ export interface UnaryCell extends CellBase {
 export interface BinaryCell extends CellBase {
     type: "$and" | "$or" | "$xor" | "$xnor" | "$shl" | "$shr" | "$sshl" | "$sshr" | "$logic_and" | "$logic_or" | "$eqx" | "$nex" | "$lt" | "$le" | "$eq" | "$ne" | "$ge" | "$gt" | "$add" | "$sub" | "$mul" | "$div" | "$mod" | "$pow";
     parameters: {
-        A_SIGNED: string;
-        A_WIDTH: string;
-        B_SIGNED: string;
-        B_WIDTH: string;
-        Y_WIDTH: string;
+        A_SIGNED: number;
+        A_WIDTH: number;
+        B_SIGNED: number;
+        B_WIDTH: number;
+        Y_WIDTH: number;
     };
     port_directions: {
         A: "input";
@@ -60,7 +60,7 @@ export interface BinaryCell extends CellBase {
 export interface Mux extends CellBase {
     type: "$mux";
     parameters: {
-        WIDTH: string;
+        WIDTH: number;
     };
     connections: {
         A: Conn;
@@ -73,8 +73,8 @@ export interface Mux extends CellBase {
 export interface PMux extends CellBase {
     type: "$pmux";
     parameters: {
-        WIDTH: string;
-        S_WIDTH: string;
+        WIDTH: number;
+        S_WIDTH: number;
     };
     connections: {
         A: Conn;
@@ -88,9 +88,9 @@ export interface PMux extends CellBase {
 export interface SR extends CellBase {
     type: "$sr";
     parameters: {
-        WIDTH: string;
-        SET_POLARITY: string;
-        CLR_POLARITY: string;
+        WIDTH: number;
+        SET_POLARITY: number;
+        CLR_POLARITY: number;
     };
     connections: {
         SET: Conn;
@@ -101,8 +101,8 @@ export interface SR extends CellBase {
 export interface Dff extends CellBase {
     type: "$dff";
     parameters: {
-        WIDTH: string;
-        CLK_POLARITY: string;
+        WIDTH: number;
+        CLK_POLARITY: number;
     };
     connections: {
         CLK: Conn;
@@ -113,10 +113,10 @@ export interface Dff extends CellBase {
 export interface ADff extends CellBase {
     type: "$adff";
     parameters: {
-        WIDTH: string;
-        CLK_POLARITY: string;
-        ARST_POLARITY: string;
-        ARST_VALUE: string;
+        WIDTH: number;
+        CLK_POLARITY: number;
+        ARST_POLARITY: number;
+        ARST_VALUE: number;
     };
     connections: {
         CLK: Conn;
@@ -128,10 +128,10 @@ export interface ADff extends CellBase {
 export interface SDff extends CellBase {
     type: "$sdff";
     parameters: {
-        WIDTH: string;
-        CLK_POLARITY: string;
-        SRST_POLARITY: string;
-        SRST_VALUE: string;
+        WIDTH: number;
+        CLK_POLARITY: number;
+        SRST_POLARITY: number;
+        SRST_VALUE: number;
     };
     connections: {
         CLK: Conn;
@@ -143,10 +143,10 @@ export interface SDff extends CellBase {
 export interface Dffsr extends CellBase {
     type: "$dffsr";
     parameters: {
-        WIDTH: string;
-        CLK_POLARITY: string;
-        SET_POLARITY: string;
-        CLR_POLARITY: string;
+        WIDTH: number;
+        CLK_POLARITY: number;
+        SET_POLARITY: number;
+        CLR_POLARITY: number;
     };
     connections: {
         CLK: Conn;
@@ -161,9 +161,9 @@ export interface Dffsr extends CellBase {
 export interface Dffe extends CellBase {
     type: "$dffe";
     parameters: {
-        WIDTH: string;
-        CLK_POLARITY: string;
-        EN_POLARITY: string;
+        WIDTH: number;
+        CLK_POLARITY: number;
+        EN_POLARITY: number;
     };
     connections: {
         CLK: Conn;
@@ -175,11 +175,11 @@ export interface Dffe extends CellBase {
 export interface ADffe extends CellBase {
     type: "$adffe";
     parameters: {
-        WIDTH: string;
-        CLK_POLARITY: string;
-        EN_POLARITY: string;
-        ARST_POLARITY: string;
-        ARST_VALUE: string;
+        WIDTH: number;
+        CLK_POLARITY: number;
+        EN_POLARITY: number;
+        ARST_POLARITY: number;
+        ARST_VALUE: number;
     };
     connections: {
         CLK: Conn;
@@ -192,11 +192,11 @@ export interface ADffe extends CellBase {
 export interface SDffe extends CellBase {
     type: "$sdffe" | "$sdffce";
     parameters: {
-        WIDTH: string;
-        CLK_POLARITY: string;
-        EN_POLARITY: string;
-        SRST_POLARITY: string;
-        SRST_VALUE: string;
+        WIDTH: number;
+        CLK_POLARITY: number;
+        EN_POLARITY: number;
+        SRST_POLARITY: number;
+        SRST_VALUE: number;
     };
     connections: {
         CLK: Conn;
@@ -209,11 +209,11 @@ export interface SDffe extends CellBase {
 export interface Dffsre extends CellBase {
     type: "$dffsre";
     parameters: {
-        WIDTH: string;
-        CLK_POLARITY: string;
-        EN_POLARITY: string;
-        SET_POLARITY: string;
-        CLR_POLARITY: string;
+        WIDTH: number;
+        CLK_POLARITY: number;
+        EN_POLARITY: number;
+        SET_POLARITY: number;
+        CLR_POLARITY: number;
     };
     connections: {
         CLK: Conn;
@@ -227,8 +227,8 @@ export interface Dffsre extends CellBase {
 
 export type Cell = UnaryCell | BinaryCell |
     Mux | PMux |
-    SR | Dff | ADff | SDff | Dffsr |
-    Dffe | ADffe | SDffe | Dffsre;
+    SR | Dff  | ADff  | SDff  | Dffsr |
+         Dffe | ADffe | SDffe | Dffsre;
 
 export interface Module {
     attributes: IDict<string>;

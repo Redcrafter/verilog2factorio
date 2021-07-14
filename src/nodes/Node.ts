@@ -33,9 +33,9 @@ export abstract class Node {
         this.outMask = (1 << bits.length) - 1;
     }
 
+    // find input nodes using given functions and creat internal combinators
     connect(getInputNode: nodeFunc, getMergeEls: mergeFunc) { }
 
-    abstract createComb(): void;
     abstract connectComb(): void;
     abstract output(): Endpoint;
     abstract combs(): Entity[];

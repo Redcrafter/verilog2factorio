@@ -3,7 +3,7 @@ import { options } from "./main.js";
 
 function dist(a: Point, b: Point) {
     const dx = a.x - b.x;
-    const dy = (a.y - b.y) * 2; // you counts double cause 2 heightl
+    const dy = (a.y - b.y) * 2; // y counts double because a cell is 2 heigh
 
     return Math.sqrt(dx * dx + dy * dy);
 }
@@ -32,6 +32,14 @@ class Point {
         }
         return [mx / this.connected.length, my / this.connected.length];
     }
+
+    edgeLength() {
+        let v = 0;
+        for (const o of this.connected) {
+            v += dist(this, o);
+        }
+        return v;
+    }
 }
 
 interface Edge {
@@ -43,7 +51,7 @@ export class Simulator {
     public nodes: Point[] = [];
     private edges: Edge[] = [];
 
-    private compactionDir: boolean;
+    // private compactionDir: boolean;
     private iterationCount: number;
     private T: number;
     private k: number;
@@ -67,12 +75,15 @@ export class Simulator {
     }
 
     addEdge(a: number, b: number) {
+        // node can't connect to itself
         if (a == b) return;
+
         let an = this.nodes[a];
         let bn = this.nodes[b];
 
-        if (!an || !bn) throw new Error("Invalid node")
+        if (!an || !bn) throw new Error("Invalid node");
 
+        // edge already exists
         if (this.edges.some(x => x.a == an && x.b == bn || x.b == an && x.a == bn)) return;
 
         an.connected.push(bn);
@@ -190,11 +201,7 @@ export class Simulator {
         // this.initBFS();
         this.initRandom();
 
-        /*for (const n of this.nodes) {
-            n.cost = n.getCost();
-        }*/
-
-        this.compactionDir = true;
+        // this.compactionDir = true;
         this.iterationCount = 2000 * Math.sqrt(this.nodes.length);
         this.T = 2 * Math.sqrt(this.nodes.length);
         this.k = (0.2 / this.T) ** (1 / this.iterationCount);
@@ -214,23 +221,72 @@ export class Simulator {
                 continue;
 
             if (n.x == fx && n.y == fy) {
-                // swapNeighbor(n);
+                // already at position
+                // this.swapNeighbor(n);
+            } else if (!this.getNode(fx, fy)) {
+                // position is empty
+                this.setNode(n.x, n.y, null);
+                this.setNode(fx, fy, n);
+                n.x = fx;
+                n.y = fy;
             } else {
-                if (!this.getNode(fx, fy)) {
-                    this.setNode(n.x, n.y, null);
-                    this.setNode(fx, fy, n);
-                    n.x = fx;
-                    n.y = fy;
-                } else {
-                    // insertNear(n, fx, fy);
-                }
+                // insertNear(n, fx, fy);
+                // currently not doing this because it is expensive
             }
         }
+
+        /*if (step % 9 == 0) {
+            compact(compactionDir, 3, false);
+            compactionDir = !compactionDir;
+        }*/
 
         this.T *= this.k;
     }
 
+    private swapNeighbor(n: Point) {
+        let off = this.randomOffset();
+
+        if (n.x + off.x < 0 || n.x + off.x >= this.gridSize || n.y + off.y < 0 || n.y + off.y >= this.gridSize) return;
+
+        let other = this.getNode(n.x + off.x, n.y + off.y);
+
+        let cost = n.edgeLength();
+        if (other) {
+            cost += other.edgeLength();
+
+            other.x -= off.x;
+            other.y -= off.y;
+        }
+        n.x += off.x;
+        n.y += off.y;
+
+        let newCost = n.edgeLength() + (other?.edgeLength() ?? 0);
+
+        if (newCost < cost) { // graph after swapping is better
+            this.setNode(n.x - off.x, n.y - off.y, other);
+            this.setNode(n.x, n.y, n);
+        } else {
+            n.x -= off.x;
+            n.y -= off.y
+
+            if (other) {
+                other.x += off.x;
+                other.y += off.y;
+            }
+        }
+    }
+
+    private randomOffset() {
+        switch (Math.abs(this.rng.int32()) % 4) {
+            case 0: return { x: 1, y: 0 };
+            case 1: return { x: -1, y: 0 };
+            case 2: return { x: 0, y: -1 };
+            case 3: return { x: 0, y: 1 };
+        }
+    }
+
     private getNode(x: number, y: number) {
+        if (x < 0 || x >= this.gridSize || y < 0 || y >= this.gridSize) throw new Error("element out of range");
         return this.grid[x + y * this.gridSize];
     }
     private setNode(x: number, y: number, v: Point) {

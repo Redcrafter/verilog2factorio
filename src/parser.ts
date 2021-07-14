@@ -115,7 +115,7 @@ function createNode(item: yosys.Cell): Node {
     return null;
 }
 
-function arrMatch<T>(a: T[], b: T[]) {
+function arrMatch<T>(a: T[], b: T[]): [number, number] {
     let start = -1;
     for (let i = 0; i < a.length; i++) {
         if (a[i] === b[0]) {
@@ -150,6 +150,9 @@ export function buildGraph(mod: yosys.Module) {
         let best: Node = null;
 
         for (const n of nodes) {
+            if (n instanceof MergeNode)
+                continue;
+
             let match = arrMatch(n.outputBits, arr);
             if (!match) continue;
             if (match[1] > current[1]) {
@@ -246,6 +249,11 @@ export function buildGraph(mod: yosys.Module) {
     let err = false;
     for (const key in mod.cells) {
         const item = mod.cells[key];
+
+        for (const key in item.parameters) {
+            //@ts-ignore
+            item.parameters[key] = parseInt(item.parameters[key], 2);
+        }
 
         let node = createNode(item);
         if (!node) {

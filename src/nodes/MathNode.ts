@@ -30,8 +30,8 @@ export class MathNode extends Node {
         this.data = data;
         this.method = method;
 
-        console.assert(parseInt(data.parameters.A_SIGNED, 2) == 0, "Only unsigned values allowed");
-        console.assert(parseInt(data.parameters.B_SIGNED, 2) == 0, "Only unsigned values allowed");
+        console.assert(data.parameters.A_SIGNED == 0, "Only unsigned values allowed");
+        console.assert(data.parameters.B_SIGNED == 0, "Only unsigned values allowed");
 
         // add has custom node
         console.assert(method != ArithmeticOperations.Add);
@@ -40,9 +40,7 @@ export class MathNode extends Node {
     connect(getInputNode: nodeFunc) {
         this.a = getInputNode(this.data.connections.A);
         this.b = getInputNode(this.data.connections.B);
-    }
 
-    createComb(): void {
         if (this.a instanceof ConstNode && this.b instanceof Constant) {
             throw new Error("Unnecessary operation");
         }

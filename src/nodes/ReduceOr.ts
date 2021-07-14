@@ -1,47 +1,72 @@
 import { ComparatorString, Decider } from "../entities/Decider.js";
 import { UnaryCell } from "../yosys.js";
 import { Color, Endpoint, Entity, makeConnection, signalV } from "../entities/Entity.js";
-import { MergeEl } from "./MergeNode.js";
-import { mergeFunc, Node, nodeFunc } from "./Node.js";
-import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
+import { createLimiter, mergeFunc, Node, nodeFunc } from "./Node.js";
 
 export class ReduceOr extends Node {
     data: UnaryCell;
-    els: MergeEl[];
 
-    elements: Entity[];
+    elements: {
+        comb: Entity;
+        a: Node;
+        b: Node;
+    }[] = [];
     out: Entity;
 
     constructor(data: UnaryCell) {
         super(data.connections.Y);
         this.data = data;
 
+        console.assert(data.parameters.A_SIGNED == 0, "Only unsigned values allowed")
         console.assert(data.connections.Y.length == 1);
     }
 
-    connect(getInputNode: nodeFunc, getMergeEls: mergeFunc) {
-        this.els = getMergeEls(this.data.connections.A);
-    }
+    connect(_: nodeFunc, getMergeEls: mergeFunc) {
+        let els = getMergeEls(this.data.connections.A);
+        // inputs that don't require masking
+        let good: typeof els = [];
+        // inputs that require masking
+        let bad: typeof els = [];
+        for (const el of els) {
+            if (el.start == 0 && el.count == el.node.outputBits.length) {
+                good.push(el);
+            } else {
+                bad.push(el);
+            }
+        }
+        // console.log(a.length, b.length);
 
-    createComb(): void {
-        let maxVal = 0;
-        this.elements = new Array(this.els.length);
-        for (let i = 0; i < this.els.length; i++) {
-            const item = this.els[i];
+        for (let i = 0; i < good.length;) {
+            const a = good[i++];
+            const b = good[i++];
 
-            maxVal += (2 ** item.count) * 1;
-            this.elements[i] = new Arithmetic({
+            let comb = new Decider({
                 first_signal: signalV,
-                second_constant: ((1 << item.count) - 1) << item.start,
-                operation: ArithmeticOperations.And,
+                constant: 0,
+                comparator: ComparatorString.NE,
+                copy_count_from_input: false,
                 output_signal: signalV
+            });
+
+            this.elements.push({ comb, a: a?.node, b: b?.node });
+        }
+
+        let maxVal = Math.ceil(good.length / 2);
+        for (const item of bad) {
+            let mask = ((1 << item.count) - 1) << item.start;
+            maxVal += mask;
+
+            this.elements.push({
+                comb: createLimiter(mask),
+                a: item.node,
+                b: undefined
             });
         }
 
         let maxBits = Math.floor(Math.log2(maxVal)) + 1;
         console.assert(maxBits < 32, "Reduce or overflow");
 
-        if (this.els.length > 1) {
+        if (this.elements.length > 1) {
             this.out = new Decider({
                 first_signal: signalV,
                 constant: 0,
@@ -50,28 +75,26 @@ export class ReduceOr extends Node {
                 output_signal: signalV
             });
 
-            for (let i = 0; i < this.els.length; i++) {
-                makeConnection(Color.Red, this.elements[i].output, this.out.input);
+            for (let i = 0; i < this.elements.length; i++) {
+                makeConnection(Color.Red, this.elements[i].comb.output, this.out.input);
             }
         } else {
-            this.out = this.elements[0];
+            this.out = this.elements[0].comb;
         }
     }
 
     connectComb(): void {
-        for (let i = 0; i < this.els.length; i++) {
-            makeConnection(Color.Red, this.els[i].node.output(), this.elements[i].input);
+        for (const el of this.elements) {
+            makeConnection(Color.Red, el.a.output(), el.comb.input);
+            if (el.b) makeConnection(Color.Green, el.b.output(), el.comb.input);
         }
     }
     output(): Endpoint {
         return this.out.output;
     }
     combs(): Entity[] {
-        let ret = [];
-        for (const item of this.elements) {
-            ret.push(item);
-        }
-        if(this.elements.length > 1) ret.push(this.out);
+        let ret = this.elements.map(x => x.comb);
+        if (this.elements.length > 1) ret.push(this.out);
         return ret;
     }
 }

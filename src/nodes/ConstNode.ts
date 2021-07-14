@@ -20,7 +20,6 @@ export class ConstNode extends Node {
         });
     }
 
-    createComb(): void { }
     connectComb(): void { }
 
     output() { return this.c?.output; }

@@ -16,15 +16,23 @@ export class SDFFE extends Node {
     d: Node;
     srst: Node;
 
+    clk1: Decider;
+    clk2: Decider;
+    dff1: Decider;
+    dff2: Decider;
+    rst: Arithmetic;
+    sel1: Decider;
+    sel2: Arithmetic;
+
     constructor(item: SDffe) {
         super(item.connections.Q);
         this.data = item;
 
-        this.rstVal = parseInt(item.parameters.SRST_VALUE, 2);
+        this.rstVal = item.parameters.SRST_VALUE;
 
-        console.assert(parseInt(item.parameters.CLK_POLARITY, 2) == 1, "revert clk polarity");
-        console.assert(parseInt(item.parameters.EN_POLARITY, 2) == 1, "revert enable polarity");
-        console.assert(parseInt(item.parameters.SRST_POLARITY, 2) == 1, "revert reset polarity");
+        console.assert(item.parameters.CLK_POLARITY == 1, "revert clk polarity");
+        console.assert(item.parameters.EN_POLARITY == 1, "revert enable polarity");
+        console.assert(item.parameters.SRST_POLARITY == 1, "revert reset polarity");
     }
 
     connect(getInputNode: nodeFunc) {
@@ -37,17 +45,7 @@ export class SDFFE extends Node {
             // need an edge detector
             throw new Error("Not implemented");
         }
-    }
 
-    clk1: Decider;
-    clk2: Decider;
-    dff1: Decider;
-    dff2: Decider;
-    rst: Arithmetic;
-    sel1: Decider;
-    sel2: Arithmetic;
-
-    createComb(): void {
         this.clk1 = new Decider({
             first_signal: signalV,
             constant: 2,
@@ -91,6 +89,9 @@ export class SDFFE extends Node {
                 operation: ArithmeticOperations.Mul,
                 output_signal: signalV
             });
+
+            makeConnection(Color.Green, this.sel1.input, this.sel2.input);
+            makeConnection(Color.Red, this.sel1.output, this.sel2.output);
         }
         if (this.d instanceof ConstNode) {
             this.d.forceCreate();
@@ -101,6 +102,7 @@ export class SDFFE extends Node {
         makeConnection(Color.Green, this.en.output(), this.clk1.input);
         makeConnection(Color.Green, this.srst.output(), this.clk2.input, this.rst.input);
         makeConnection(Color.Red, this.d.output(), this.sel1.input);
+
         makeConnection(Color.Green, this.clk2.output, this.clk1.output, this.dff1.input, this.dff2.input);
 
         makeConnection(Color.Green, this.rst.output, this.sel1.input);
@@ -108,11 +110,6 @@ export class SDFFE extends Node {
 
         makeConnection(Color.Red, this.dff1.input, this.dff1.output);
         makeConnection(Color.Both, this.dff1.output, this.dff2.output);
-
-        if (this.sel2) {
-            makeConnection(Color.Green, this.sel1.input, this.sel2.input);
-            makeConnection(Color.Red, this.sel1.output, this.sel2.output);
-        }
     }
     output(): Endpoint {
         return this.dff2.output;

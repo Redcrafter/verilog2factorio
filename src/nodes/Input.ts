@@ -2,12 +2,11 @@ import { Constant } from "../entities/Constant.js";
 import { Node } from "./Node.js";
 
 export class Input extends Node {
+    constant: Constant;
+
     constructor(bits: number[]) {
         super(bits);
-    }
 
-    constant: Constant;
-    createComb() {
         this.constant = new Constant({
             signal: {
                 type: "virtual",

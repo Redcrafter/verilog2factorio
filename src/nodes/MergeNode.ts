@@ -40,7 +40,7 @@ export class MergeNode extends Node {
     }[] = [];
     all: Entity[] = [];
 
-    createComb(): void {
+    connect(): void {
         let offset = 0;
         let constVal = 0;
 
@@ -92,6 +92,7 @@ export class MergeNode extends Node {
                     in: shift,
                     out: mask
                 });
+                makeConnection(Color.Red, shift.output, mask.input);
                 this.all.push(shift, mask);
             }
 
@@ -115,36 +116,17 @@ export class MergeNode extends Node {
     }
 
     connectComb(): void {
-        // could let the optimization pass do this but doing it here keeps combinator order neater
-        let groups = groupBy(this.layers, x => x.source);
+        let out = this.layers[0].out.output;
 
-        // used to chain outputs
-        let lastOut: Entity = null;
-        for (const [k, v] of groups) {
-            // chain nodes with same input node
-            let lastIn = k?.output();
-
-            for (const n of v) {
-                if (lastIn) { // lastIn is only null for constant combinator
-                    makeConnection(Color.Red, lastIn, n.in.input);
-                    lastIn = n.in.input;
-
-                    if (n.in != n.out) {
-                        makeConnection(Color.Red, n.in.output, n.out.input);
-                    }
-                }
-
-                if (lastOut) {
-                    makeConnection(Color.Both, lastOut.output, n.out.output);
-                }
-                lastOut = n.out;
-            }
+        for (const l of this.layers) {
+            if (l.source) makeConnection(Color.Red, l.source.output(), l.in.input);
+            makeConnection(Color.Both, l.out.output, out);
         }
     }
 
     output(): Endpoint {
         // use last as output so constant combinator can potentially extend path
-        return this.layers[this.layers.length - 1].out.output;
+        return this.layers[0].out.output;
     }
 
     combs(): Entity[] {

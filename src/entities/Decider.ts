@@ -41,6 +41,8 @@ export class Decider extends Entity {
 
         this.input = createEndpoint(this, 1);
         this.output = createEndpoint(this, 2);
+
+        console.assert((params.second_signal === undefined) !== (params.constant === undefined));
     }
 
     toObj(): DeciderCombinator {

@@ -4,7 +4,9 @@
         "moduleResolution": "Node",
         "module": "ESNext",
         "outDir": "dist",
-        "allowSyntheticDefaultImports": true
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "strictNullChecks": false
     },
     "include": ["src/"]
 }

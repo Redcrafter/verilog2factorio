@@ -60,8 +60,6 @@ function createLayout(combs: Entity[], ports: Set<Entity>) {
 }
 
 export function transform(nodes: Node[]) {
-    // create all combinators
-    for (const node of nodes) node.createComb();
     // connect nodes
     for (const node of nodes) node.connectComb();
 

@@ -15,9 +15,7 @@ export class Output extends Node {
 
     connect(getInputNode: nodeFunc) {
         this.src = getInputNode(this.bits);
-    }
 
-    createComb(): void {
         this.pole = new Pole();
         this.pole.keep = true;
     }

@@ -21,16 +21,14 @@ export class XNOR extends Node {
 
         console.assert(data.type == "$xnor", "only xnor allowed");
 
-        console.assert(parseInt(data.parameters.A_SIGNED, 2) == 0, "Only unsigned values allowed");
-        console.assert(parseInt(data.parameters.B_SIGNED, 2) == 0, "Only unsigned values allowed");
+        console.assert(data.parameters.A_SIGNED == 0, "Only unsigned values allowed");
+        console.assert(data.parameters.B_SIGNED == 0, "Only unsigned values allowed");
     }
 
     connect(getInputNode: nodeFunc) {
         this.a = getInputNode(this.data.connections.A);
         this.b = getInputNode(this.data.connections.B);
-    }
 
-    createComb(): void {
         if (this.a instanceof ConstNode || this.b instanceof Constant) {
             throw new Error("Unnecessary operation");
         }

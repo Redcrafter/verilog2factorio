@@ -12,6 +12,10 @@ export class MUX extends Node {
 
     data: Mux;
 
+    transformer: Arithmetic;
+    decider1: Decider;
+    decider2: Decider;
+
     constructor(item: Mux) {
         super(item.connections.Y);
         this.data = item;
@@ -25,13 +29,7 @@ export class MUX extends Node {
         console.assert(this.data.connections.A.length == this.data.connections.B.length);
         console.assert(this.data.connections.A.length == this.outputBits.length);
         console.assert(this.data.connections.S.length == 1);
-    }
 
-    transformer: Arithmetic;
-    decider1: Decider;
-    decider2: Decider;
-
-    createComb() {
         this.transformer = createTransformer();
         this.decider1 = new Decider({
             first_signal: signalC,
