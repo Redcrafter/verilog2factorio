@@ -1,22 +1,29 @@
 import * as yosys from "./yosys.js";
 
 // nodes
-import { ADD } from "./nodes/ADD.js";
-import { ConstNode } from "./nodes/ConstNode.js";
-import { DFF } from "./nodes/DFF.js";
-import { Input } from "./nodes/Input.js";
-import { LogicNode } from "./nodes/LogicNode.js";
-import { MathNode } from "./nodes/MathNode.js";
-import { MergeNode, MergeEl } from "./nodes/MergeNode.js";
-import { MUX } from "./nodes/MUX.js";
 import { Node } from "./nodes/Node.js";
-import { NOT } from "./nodes/NOT.js";
+
+import { Input } from "./nodes/Input.js";
 import { Output } from "./nodes/Output.js";
-import { PMUX } from "./nodes/PMUX.js";
+
+import { ConstNode } from "./nodes/ConstNode.js";
+
+import { MathNode } from "./nodes/MathNode.js";
+import { LogicNode } from "./nodes/LogicNode.js";
+import { ADD } from "./nodes/ADD.js";
+import { NOT } from "./nodes/NOT.js";
+import { XNOR } from "./nodes/XNOR.js";
 import { ReduceOr } from "./nodes/ReduceOr.js";
+
+import { MergeNode, MergeEl } from "./nodes/MergeNode.js";
+
+import { MUX } from "./nodes/MUX.js";
+import { PMUX } from "./nodes/PMUX.js";
+
+import { DFF } from "./nodes/DFF.js";
+import { SDFF } from "./nodes/SDFF.js";
 import { SDFFE } from "./nodes/SDFFE.js";
 import { SDFFCE } from "./nodes/SDFFCE.js";
-import { XNOR } from "./nodes/XNOR.js";
 
 // entities
 import { ArithmeticOperations } from "./entities/Arithmetic.js";
@@ -98,7 +105,7 @@ function createNode(item: yosys.Cell): Node {
         // TODO: case "$sr"
         case "$dff": return new DFF(item);
         // TODO: case "$adff"
-        // TODO: case "$sdff"
+        case "$sdff": return new SDFF(item);
         // TODO: case "$dffsr":
 
         case "$dffe": return new DFF(item);

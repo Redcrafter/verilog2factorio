@@ -124,7 +124,7 @@ function getOutputSignal(p: Endpoint) {
     if (ent instanceof Arithmetic || ent instanceof Decider) {
         if (ent.output == p)
             return ent.params.output_signal;
-    } else if(ent instanceof Constant) {
+    } else if (ent instanceof Constant) {
         return ent.params[0].signal;
     }
 
@@ -224,8 +224,7 @@ function extractNets(entities: Entity[]): Networks {
 }
 
 export function optimize(entities: Entity[]) {
-    opt_clean(entities);
-
-    let nets = extractNets(entities);
-    opt_chain(nets);
+    // opt_clean(entities);
+    // let nets = extractNets(entities);
+    // opt_chain(nets);
 }

@@ -42,7 +42,7 @@ async function validateOptions() {
 
     if (options.files.length == 0) {
         console.log("error: no input files");
-        if(options.modules) {
+        if (options.modules) {
             console.log("did you forget -f for files?");
         }
         process.exit(0);
