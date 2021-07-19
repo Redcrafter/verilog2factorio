@@ -1,12 +1,12 @@
 import { Command } from 'commander';
-import * as readline from 'readline';
+import readline from 'readline';
+import fs from "fs";
 
 import { buildGraph } from "./parser.js";
 import { transform } from "./transformer.js";
 import { genNetlist, Module } from "./yosys.js";
 import { Blueprint, createBlueprint, createBpString } from "./blueprint.js"
 
-import * as fs from "fs";
 
 const program = new Command("v2f");
 
@@ -34,30 +34,50 @@ export const options: {
 options.files = options.files ?? [];
 options.files.push(...program.args);
 
-async function validateOptions() {
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-    if (options.files.length == 0) {
-        console.log("error: no input files");
-        if (options.modules) {
-            console.log("did you forget -f for files?");
+if (options.files.length == 0) {
+    console.log("error: no input files");
+    if (options.modules) {
+        console.log("did you forget -f for files?");
+    }
+    process.exit(0);
+}
+
+if (options.output) {
+    if (fs.existsSync(options.output)) {
+        let res = await new Promise<string>(res => rl.question(`${options.output} already exists. Overwrite? [y/n] `, res));
+        if (res.toLowerCase() !== "y") {
+            process.exit(0);
         }
+    }
+}
+
+rl.close();
+
+const data = await genNetlist(options.files);
+const modules: Blueprint[] = [];
+
+let keys = new Set(options.modules ?? Object.keys(data.modules));
+
+for (const key of keys) {
+    let module = data.modules[key];
+    if (!module) {
+        console.log(`error: Module ${key} not found`);
         process.exit(0);
     }
+    modules.push(pipeline(key, module));
+}
 
-    if (options.output) {
-        if (fs.existsSync(options.output)) {
-            let res = await new Promise<string>(res => rl.question(`${options.output} already exists. Overwrite? [y/n] `, res));
-            if (res.toLowerCase() !== "y") {
-                process.exit(0);
-            }
-        }
-    }
+const string = createBpString(modules);
 
-    rl.close();
+if (options.output) {
+    fs.writeFileSync(options.output, string);
+} else {
+    console.log(string);
 }
 
 function pipeline(name: string, module: Module) {
@@ -69,31 +89,3 @@ function pipeline(name: string, module: Module) {
 
     return createBlueprint(entities, name);
 }
-
-async function main() {
-    await validateOptions();
-
-    const data = await genNetlist(options.files);
-    const modules: Blueprint[] = [];
-
-    let keys = new Set(options.modules ?? Object.keys(data.modules));
-
-    for (const key of keys) {
-        let module = data.modules[key];
-        if (!module) {
-            console.log(`error: Module ${key} not found`);
-            process.exit(0);
-        }
-        modules.push(pipeline(key, module));
-    }
-
-    const string = createBpString(modules);
-
-    if (options.output) {
-        fs.writeFileSync(options.output, string);
-    } else {
-        console.log(string);
-    }
-}
-
-main();
