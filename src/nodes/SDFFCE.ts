@@ -19,6 +19,8 @@ export class SDFFCE extends Node {
     dff2: Decider;
     arith: Arithmetic;
 
+    srstInv: Decider;
+
     constructor(item: SDffe) {
         super(item.connections.Q);
         this.data = item;
@@ -26,7 +28,17 @@ export class SDFFCE extends Node {
         console.assert(item.parameters.SRST_VALUE == 0, "reset value != 0");
         console.assert(item.parameters.CLK_POLARITY == 1, "revert clk polarity");
         console.assert(item.parameters.EN_POLARITY == 1, "revert enable polarity");
-        console.assert(item.parameters.SRST_POLARITY == 1, "revert reset polarity"); // TODO: revert reset polarity
+
+        // pretty lazy just invert the signal
+        if(item.parameters.SRST_POLARITY == 1) {
+            this.srstInv = new Decider({
+                first_signal: signalV,
+                constant: 0,
+                comparator: ComparatorString.EQ,
+                copy_count_from_input: false,
+                output_signal: signalV
+            });
+        }
     }
 
     connect(getInputNode: nodeFunc) {
@@ -80,7 +92,12 @@ export class SDFFCE extends Node {
         makeConnection(Color.Both, this.dff1.output, this.dff2.output);
         makeConnection(Color.Red, this.dff2.output, this.dff2.input);
 
-        makeConnection(Color.Red, this.srst.output(), this.arith.input);
+        if(this.srstInv) {
+            makeConnection(Color.Red, this.srst.output(), this.srstInv.input);
+            makeConnection(Color.Red, this.srstInv.output, this.arith.input);
+        } else {
+            makeConnection(Color.Red, this.srst.output(), this.arith.input);
+        }
         makeConnection(Color.Green, this.transformer.output, this.arith.input);
     }
 
@@ -88,5 +105,9 @@ export class SDFFCE extends Node {
         return this.dff1.output;
     }
 
-    combs(): Entity[] { return [this.transformer, this.dff1, this.dff2, this.arith]; }
+    combs(): Entity[] { 
+        let ret = [this.transformer, this.dff1, this.dff2, this.arith]; 
+        if(this.srstInv) ret.push(this.srstInv);
+        return ret;
+    }
 }

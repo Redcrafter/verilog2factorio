@@ -17,9 +17,6 @@ export class ADD extends Node {
         this.data = item;
 
         console.assert(item.type == "$add", "Only add allowed");
-
-        console.assert(item.parameters.A_SIGNED == 0, "Only unsigned values allowed");
-        console.assert(item.parameters.B_SIGNED == 0, "Only unsigned values allowed");
     }
 
     connect(getInputNode: nodeFunc) {

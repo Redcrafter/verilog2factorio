@@ -30,9 +30,9 @@ export class SDFFE extends Node {
 
         this.rstVal = item.parameters.SRST_VALUE;
 
-        console.assert(item.parameters.CLK_POLARITY == 1, "revert clk polarity");
-        console.assert(item.parameters.EN_POLARITY == 1, "revert enable polarity");
-        console.assert(item.parameters.SRST_POLARITY == 1, "revert reset polarity");
+        console.assert(item.parameters.CLK_POLARITY == 1, "SDFFE: revert clk polarity");
+        console.assert(item.parameters.EN_POLARITY == 1, "SDFFE:revert enable polarity");
+        console.assert(item.parameters.SRST_POLARITY == 1, "SDFFE: revert reset polarity");
     }
 
     connect(getInputNode: nodeFunc) {

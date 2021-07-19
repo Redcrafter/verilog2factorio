@@ -21,8 +21,8 @@ export class XNOR extends Node {
 
         console.assert(data.type == "$xnor", "only xnor allowed");
 
-        console.assert(data.parameters.A_SIGNED == 0, "Only unsigned values allowed");
-        console.assert(data.parameters.B_SIGNED == 0, "Only unsigned values allowed");
+        console.assert(data.parameters.A_SIGNED == 0, "XNOR: Only unsigned values allowed");
+        console.assert(data.parameters.B_SIGNED == 0, "XNOR: Only unsigned values allowed");
     }
 
     connect(getInputNode: nodeFunc) {

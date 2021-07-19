@@ -17,7 +17,7 @@ export class ReduceOr extends Node {
         super(data.connections.Y);
         this.data = data;
 
-        console.assert(data.parameters.A_SIGNED == 0, "Only unsigned values allowed")
+        console.assert(data.parameters.A_SIGNED == 0, "ReduceOr: Only unsigned values allowed");
         console.assert(data.connections.Y.length == 1);
     }
 

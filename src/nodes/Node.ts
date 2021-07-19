@@ -15,6 +15,10 @@ export function createTransformer() {
 }
 
 export function createLimiter(mask: number) {
+    if(mask == -1) {
+        throw new Error("not implemented: mask can be ignored");
+    }
+
     return new Arithmetic({
         first_signal: signalV,
         second_constant: mask,
@@ -28,9 +32,10 @@ export abstract class Node {
     outMask: number;
 
     constructor(bits: number[]) {
-        console.assert(bits.length <= 31, `Wire width too big: ${bits.length}`); // factorio uses 32bit signed integers so for now only safely support 31 bits
+        console.assert(bits.length <= 32, `Wire width too big: ${bits.length}`);
+
         this.outputBits = bits;
-        this.outMask = ((1 << bits.length) - 1) | 0;
+        this.outMask = bits.length == 32 ? -1 : (((1 << bits.length) - 1) | 0);
     }
 
     // find input nodes using given functions and creat internal combinators

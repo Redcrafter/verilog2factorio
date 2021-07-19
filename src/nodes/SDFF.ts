@@ -23,8 +23,8 @@ export class SDFF extends Node {
         super(item.connections.Q);
         this.data = item;
 
-        console.assert(item.parameters.CLK_POLARITY == 1, "revert clk polarity");
-        console.assert(item.parameters.SRST_POLARITY == 1, "revert reset polarity");
+        console.assert(item.parameters.CLK_POLARITY == 1, "SDFF: revert clk polarity");
+        console.assert(item.parameters.SRST_POLARITY == 1, "SDFF: revert reset polarity");
     }
 
     connect(getInputNode: nodeFunc) {

@@ -15,7 +15,7 @@ export class NOT extends Node {
         super(data.connections.Y);
         this.data = data;
 
-        console.assert(data.parameters.A_SIGNED == 0, "Only unsigned values allowed");
+        console.assert(data.parameters.A_SIGNED == 0, "NOT: Only unsigned values allowed");
     }
 
     connect(getInputNode: nodeFunc) {

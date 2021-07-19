@@ -8,7 +8,6 @@ export class ConstNode extends Node {
 
     constructor(value: number, bits: number) {
         super([]);
-        this.outMask = (1 << bits) - 1;
         this.value = value;
     }
 

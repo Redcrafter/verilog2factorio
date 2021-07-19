@@ -30,8 +30,10 @@ export class MathNode extends Node {
         this.data = data;
         this.method = method;
 
-        console.assert(data.parameters.A_SIGNED == 0, "Only unsigned values allowed");
-        console.assert(data.parameters.B_SIGNED == 0, "Only unsigned values allowed");
+        if(method == ArithmeticOperations.Div || method == ArithmeticOperations.Mod) { // sign only matters for division and modulo
+            console.assert(data.parameters.A_SIGNED == 0, `${method}: Only unsigned values allowed`);
+            console.assert(data.parameters.B_SIGNED == 0, `${method}: Only unsigned values allowed`);
+        }
 
         // add has custom node
         console.assert(method != ArithmeticOperations.Add);
