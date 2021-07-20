@@ -118,19 +118,6 @@ interface Networks {
     };
 }
 
-function getOutputSignal(p: Endpoint) {
-    let ent = p.entity;
-
-    if (ent instanceof Arithmetic || ent instanceof Decider) {
-        if (ent.output == p)
-            return ent.params.output_signal;
-    } else if (ent instanceof Constant) {
-        return ent.params[0].signal;
-    }
-
-    return null;
-}
-
 function extractNets(entities: Entity[]): Networks {
     let networks = {
         red: {
@@ -145,7 +132,7 @@ function extractNets(entities: Entity[]): Networks {
 
     function addEntity(entity: Entity) {
         function addEndpoint(endpoint: Endpoint) {
-            let signal = getOutputSignal(endpoint);
+            let signal = endpoint.outSignal;
 
             function addColor(color: "red" | "green") {
                 let other = endpoint[color];
@@ -166,7 +153,7 @@ function extractNets(entities: Entity[]): Networks {
                     net = nets.values().next().value;
                     if (!net.signal) net.signal = signal;
 
-                    console.assert(net.signal == signal)
+                    console.assert(!signal || net.signal == signal);
 
                     net.points.push(endpoint);
                     fuck.map.set(endpoint, net);
@@ -224,7 +211,7 @@ function extractNets(entities: Entity[]): Networks {
 }
 
 export function optimize(entities: Entity[]) {
-    // opt_clean(entities);
-    // let nets = extractNets(entities);
-    // opt_chain(nets);
+    opt_clean(entities);
+    let nets = extractNets(entities);
+    opt_chain(nets);
 }

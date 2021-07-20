@@ -11,7 +11,7 @@ export interface MediumElectricPole extends EntityBase {
 export class Pole extends Entity {
     constructor() {
         super(1, 1);
-        this.input = this.output = createEndpoint(this, 1);
+        this.input = this.output = createEndpoint(this, 1, null);
     }
 
     toObj(): MediumElectricPole {

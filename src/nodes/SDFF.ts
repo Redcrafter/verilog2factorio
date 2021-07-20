@@ -68,7 +68,7 @@ export class SDFF extends Node {
         });
 
         makeConnection(Color.Green, this.clkIn.output, this.rstIn.output, this.dff1.input, this.dff2.input);
-        makeConnection(Color.Red, this.dff2.input, this.dff2.output, this.dff1.output);
+        makeConnection(Color.Red, this.dff2.input, this.dff2.output);
         makeConnection(Color.Both, this.dff2.output, this.dff1.output);
 
         if (this.data.parameters.SRST_VALUE != 0) {

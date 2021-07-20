@@ -15,9 +15,7 @@ export function createTransformer() {
 }
 
 export function createLimiter(mask: number) {
-    if(mask == -1) {
-        throw new Error("not implemented: mask can be ignored");
-    }
+    if(mask == -1) throw new Error("not implemented: mask can be ignored");
 
     return new Arithmetic({
         first_signal: signalV,

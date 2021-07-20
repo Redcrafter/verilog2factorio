@@ -24,6 +24,7 @@ export const enum Color {
 export interface Endpoint {
     entity: Entity;
     type: number;
+    outSignal: SignalID | null;
 
     red: Endpoint[];
     green: Endpoint[];
@@ -50,10 +51,11 @@ export abstract class Entity {
     abstract toObj(): RawEntity;
 }
 
-export function createEndpoint(ent: Entity, type: number): Endpoint {
+export function createEndpoint(ent: Entity, type: number, outSignal: SignalID | null): Endpoint {
     return {
         entity: ent,
         type,
+        outSignal,
         red: [],
         green: []
     };

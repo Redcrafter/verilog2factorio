@@ -1,6 +1,5 @@
-import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Decider, ComparatorString } from "../entities/Decider.js";
-import { Color, Entity, makeConnection, signalC, signalR, signalV } from "../entities/Entity.js";
+import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 import { Node, nodeFunc } from "./Node.js";
 import { Input } from "./Input.js";
 import { SDffe } from "../yosys.js";
@@ -14,10 +13,10 @@ export class SDFFCE extends Node {
     d: Node;
     srst: Node;
 
-    transformer: Decider;
+    clkIn: Decider;
     dff1: Decider;
     dff2: Decider;
-    arith: Arithmetic;
+    rstIn: Decider;
 
     srstInv: Decider;
 
@@ -52,13 +51,21 @@ export class SDFFCE extends Node {
             throw new Error("Not implemented");
         }
 
-        this.transformer = new Decider({
+        this.clkIn = new Decider({
             first_signal: signalV,
             constant: 2,
             comparator: ComparatorString.EQ,
             copy_count_from_input: false,
             output_signal: signalC
         }); // if c + en == 2
+        this.rstIn = new Decider({
+            first_signal: signalV,
+            constant: 2,
+            comparator: ComparatorString.EQ,
+            copy_count_from_input: false,
+            output_signal: signalC
+        }); // if c + en + srst
+
         this.dff1 = new Decider({
             first_signal: signalC,
             constant: 1,
@@ -68,37 +75,31 @@ export class SDFFCE extends Node {
         }); // if c == 1 output a
         this.dff2 = new Decider({
             first_signal: signalC,
-            second_signal: signalR,
+            constant: 0,
             comparator: ComparatorString.EQ,
             copy_count_from_input: true,
             output_signal: signalV
         }); // if c == 0 output b
-        this.arith = new Arithmetic({
-            first_signal: signalV,
-            second_signal: signalC,
-            operation: ArithmeticOperations.And,
-            output_signal: signalR
-        }); // if c + en + srst
     }
 
     connectComb() {
-        makeConnection(Color.Red, this.clk.output(), this.transformer.input);
-        makeConnection(Color.Green, this.en.output(), this.transformer.input);
+        makeConnection(Color.Red, this.clk.output(), this.clkIn.input);
+        makeConnection(Color.Green, this.en.output(), this.clkIn.input);
 
-        makeConnection(Color.Green, this.transformer.output, this.dff1.input, this.dff2.input, this.arith.output);
+        makeConnection(Color.Red, this.clkIn.output, this.rstIn.input);
+        if(this.srstInv) {
+            makeConnection(Color.Green, this.srst.output(), this.srstInv.input);
+            makeConnection(Color.Green, this.srstInv.output, this.rstIn.input);
+        } else {
+            makeConnection(Color.Green, this.srst.output(), this.rstIn.input);
+        }
+
+        makeConnection(Color.Green, this.clkIn.output, this.rstIn.output, this.dff1.input, this.dff2.input);
 
         makeConnection(Color.Red, this.d.output(), this.dff1.input);
 
         makeConnection(Color.Both, this.dff1.output, this.dff2.output);
         makeConnection(Color.Red, this.dff2.output, this.dff2.input);
-
-        if(this.srstInv) {
-            makeConnection(Color.Red, this.srst.output(), this.srstInv.input);
-            makeConnection(Color.Red, this.srstInv.output, this.arith.input);
-        } else {
-            makeConnection(Color.Red, this.srst.output(), this.arith.input);
-        }
-        makeConnection(Color.Green, this.transformer.output, this.arith.input);
     }
 
     output() {
@@ -106,7 +107,7 @@ export class SDFFCE extends Node {
     }
 
     combs(): Entity[] { 
-        let ret = [this.transformer, this.dff1, this.dff2, this.arith]; 
+        let ret = [this.clkIn, this.dff1, this.dff2, this.rstIn]; 
         if(this.srstInv) ret.push(this.srstInv);
         return ret;
     }
