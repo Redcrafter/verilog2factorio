@@ -21,7 +21,7 @@ function createLayout(combs: Entity[], ports: Set<Entity>) {
 
     // add connectiosn to simulator
     for (const n of combs) {
-        function add(dat: Endpoint[]) {
+        function add(dat: Set<Endpoint>) {
             for (const c of dat) {
                 simulator.addEdge(n.id - 1, c.entity.id - 1);
             }
@@ -60,9 +60,6 @@ function createLayout(combs: Entity[], ports: Set<Entity>) {
 }
 
 export function transform(nodes: Node[]) {
-    // connect nodes
-    for (const node of nodes) node.connectComb();
-
     let combs = nodes.flatMap(x => x.combs());
     let ports = new Set(nodes.filter(x => x instanceof Input || x instanceof Output).flatMap(x => x.combs()));
 

@@ -7,20 +7,13 @@ export class Input extends Node {
     constructor(bits: number[]) {
         super(bits);
 
-        this.constant = new Constant({
-            signal: {
-                type: "virtual",
-                name: "signal-V"
-            },
-            count: 0,
-            index: 1
-        });
+        this.constant = Constant.simple(0);
         this.constant.keep = true;
     }
 
-    connectComb() { }
-
-    output() { return this.constant.output; }
+    override _connect() {
+        return this.constant.output;
+    }
 
     combs() { return [this.constant]; }
 }

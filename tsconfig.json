@@ -6,7 +6,8 @@
         "outDir": "dist",
         "allowSyntheticDefaultImports": true,
         "strict": true,
-        "strictNullChecks": false
+        "strictNullChecks": false,
+        "noImplicitOverride": true
     },
     "include": ["src/"]
 }

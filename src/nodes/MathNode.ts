@@ -1,11 +1,10 @@
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Constant } from "../entities/Constant.js";
-import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
+import { ComparatorString, Decider } from "../entities/Decider.js";
+import { Color, each, Entity, makeConnection, signalC, signalGreen, signalGrey, signalV } from "../entities/Entity.js";
 import { BinaryCell } from "../yosys.js";
 import { ConstNode } from "./ConstNode.js";
 import { createLimiter, createTransformer, Node, nodeFunc } from "./Node.js";
-
-// TODO: add support for chained operations?
 
 const needsLimiter = new Set([
     ArithmeticOperations.Mul,
@@ -18,91 +17,132 @@ export class MathNode extends Node {
     data: BinaryCell;
     method: ArithmeticOperations;
 
-    a: Node;
-    b: Node;
-
-    transformer: Arithmetic;
-    calculator: Arithmetic;
-    limiter: Arithmetic;
+    entities: Entity[];
 
     constructor(data: BinaryCell, method: ArithmeticOperations) {
         super(data.connections.Y);
         this.data = data;
         this.method = method;
 
-        if(method == ArithmeticOperations.Div || method == ArithmeticOperations.Mod) { // sign only matters for division and modulo
-            console.assert(data.parameters.A_SIGNED == 0, `${method}: Only unsigned values allowed`);
-            console.assert(data.parameters.B_SIGNED == 0, `${method}: Only unsigned values allowed`);
+        console.assert(data.parameters.A_SIGNED == data.parameters.B_SIGNED);
+
+        if (method == ArithmeticOperations.Div || method == ArithmeticOperations.Mod) { // sign only matters for division and modulo
+            console.assert(data.parameters.A_WIDTH == data.parameters.B_WIDTH);
+
+            if (data.parameters.A_WIDTH == 32) {
+                console.assert(data.parameters.A_SIGNED == 1, `${method}: Only 32-bit signed values allowed`);
+                console.assert(data.parameters.B_SIGNED == 1, `${method}: Only 32-bit signed values allowed`);
+            } else {
+                console.assert(data.parameters.A_SIGNED == 0, `${method}: Only unsigned values allowed`);
+                console.assert(data.parameters.B_SIGNED == 0, `${method}: Only unsigned values allowed`);
+            }
         }
 
         // add has custom node
         console.assert(method != ArithmeticOperations.Add);
     }
 
-    connect(getInputNode: nodeFunc) {
-        this.a = getInputNode(this.data.connections.A);
-        this.b = getInputNode(this.data.connections.B);
+    _connect(getInputNode: nodeFunc) {
+        const a = getInputNode(this.data.connections.A);
+        const b = getInputNode(this.data.connections.B);
 
-        if (this.a instanceof ConstNode && this.b instanceof Constant) {
+        if (a instanceof ConstNode && b instanceof Constant) {
             throw new Error("Unnecessary operation");
         }
 
-        if (this.a instanceof ConstNode) {
-            this.calculator = new Arithmetic({
-                first_constant: this.a.value,
+        if (this.method == ArithmeticOperations.RShift && this.data.parameters.A_WIDTH == 32 && this.data.parameters.A_SIGNED == 0) {
+            // factorios numbers are signed so if a number is 32 bits and we use shift it does an arithmetic shift instead of a logic shift
+
+            // a >>> b = ((a + (int)0x80000000) >> b) + (0x40000000 >> b) * 2 + (b >> b) + (b == 31 ? 1 : 0)
+
+            let trans = createTransformer();
+            let constant = new Constant({
+                index: 1,
+                signal: signalV,
+                count: 0x80000000 | 0
+            }, {
+                index: 2,
+                signal: signalGreen,
+                count: 0x40000000
+            }, {
+                index: 3,
+                signal: signalGrey,
+                count: 0x40000000
+            });
+            let shift = new Arithmetic({
+                first_signal: each,
+                second_signal: signalC,
+                operation: ArithmeticOperations.RShift,
+                output_signal: signalV
+            });
+            let fix = new Decider({
+                first_signal: signalC,
+                constant: 31,
+                comparator: ComparatorString.EQ,
+                copy_count_from_input: false,
+                output_signal: signalV
+            });
+            this.entities = [trans, constant, shift, fix];
+
+            makeConnection(Color.Red, a.output(), shift.input);
+            makeConnection(Color.Red, b.output(), trans.input);
+
+            makeConnection(Color.Green, trans.output, constant.output, fix.input, shift.input);
+
+            if (this.data.parameters.B_WIDTH > Math.floor(Math.log2(this.data.parameters.A_WIDTH))) {
+                throw new Error("not implemented");
+            } else {
+                makeConnection(Color.Both, shift.output, fix.output);
+                return shift.output;
+            }
+        }
+
+        let calculator;
+        if (a instanceof ConstNode) {
+            calculator = new Arithmetic({
+                first_constant: a.value,
                 second_signal: signalV,
                 operation: this.method,
                 output_signal: signalV
             });
-        } else if (this.b instanceof ConstNode) {
-            this.calculator = new Arithmetic({
+            this.entities = [calculator];
+            makeConnection(Color.Red, b.output(), calculator.input);
+        } else if (b instanceof ConstNode) {
+            calculator = new Arithmetic({
                 first_signal: signalV,
-                second_constant: this.b.value,
+                second_constant: b.value,
                 operation: this.method,
                 output_signal: signalV
             });
+            this.entities = [calculator];
+            makeConnection(Color.Red, a.output(), calculator.input);
         } else {
-            this.transformer = createTransformer();
-            this.calculator = new Arithmetic({
+            let transformer = createTransformer();
+            calculator = new Arithmetic({
                 first_signal: signalV,
                 second_signal: signalC,
                 operation: this.method,
                 output_signal: signalV
             });
+            this.entities = [transformer, calculator];
+
+            makeConnection(Color.Red, a.output(), transformer.input);
+            makeConnection(Color.Green, transformer.output, calculator.input);
+            makeConnection(Color.Red, b.output(), calculator.input);
         }
 
-        if (needsLimiter.has(this.method)) {
-            this.limiter = createLimiter(this.outMask);
-        }
-    }
+        if (needsLimiter.has(this.method) && this.outMask != -1) {
+            let limiter = createLimiter(this.outMask);
+            makeConnection(Color.Red, calculator.output, limiter.input);
+            this.entities.push(limiter);
 
-    connectComb(): void {
-        if (this.a instanceof ConstNode) {
-            makeConnection(Color.Red, this.b.output(), this.calculator.input);
-        } else if (this.b instanceof ConstNode) {
-            makeConnection(Color.Red, this.a.output(), this.calculator.input);
-        } else {
-            makeConnection(Color.Red, this.b.output(), this.transformer.input);
-            makeConnection(Color.Green, this.a.output(), this.calculator.input);
-            makeConnection(Color.Red, this.transformer.output, this.calculator.input);
+            return limiter.output;
         }
 
-        if (this.limiter) {
-            makeConnection(Color.Red, this.calculator.output, this.limiter.input);
-        }
-    }
-
-    output(): Endpoint {
-        return (this.limiter ?? this.calculator).output;
+        return calculator.output;
     }
 
     combs(): Entity[] {
-        let res = [];
-
-        if (this.transformer) res.push(this.transformer);
-        res.push(this.calculator);
-        if (this.limiter) res.push(this.limiter);
-
-        return res;
+        return this.entities;
     }
 }

@@ -6,15 +6,12 @@ import { Input } from "./Input.js";
 import { ConstNode } from "./ConstNode.js";
 import { SDffe } from "../yosys.js";
 
+// welcome to hell
+// i have no idea what i did here anymore but i sure hope it works
 
 export class SDFFE extends Node {
     data: SDffe;
     rstVal: number;
-
-    clk: Node;
-    en: Node;
-    d: Node;
-    srst: Node;
 
     clk1: Decider;
     clk2: Decider;
@@ -23,6 +20,7 @@ export class SDFFE extends Node {
     rst: Arithmetic;
     sel1: Decider;
     sel2: Arithmetic;
+    srstInv: Decider;
 
     constructor(item: SDffe) {
         super(item.connections.Q);
@@ -32,16 +30,15 @@ export class SDFFE extends Node {
 
         console.assert(item.parameters.CLK_POLARITY == 1, "SDFFE: revert clk polarity");
         console.assert(item.parameters.EN_POLARITY == 1, "SDFFE:revert enable polarity");
-        console.assert(item.parameters.SRST_POLARITY == 1, "SDFFE: revert reset polarity");
     }
 
-    connect(getInputNode: nodeFunc) {
-        this.clk = getInputNode(this.data.connections.CLK);
-        this.d = getInputNode(this.data.connections.D);
-        this.en = getInputNode(this.data.connections.EN);
-        this.srst = getInputNode(this.data.connections.SRST);
+    _connect(getInputNode: nodeFunc) {
+        const clk = getInputNode(this.data.connections.CLK);
+        const d = getInputNode(this.data.connections.D);
+        const en = getInputNode(this.data.connections.EN);
+        const srst = getInputNode(this.data.connections.SRST);
 
-        if (!(this.clk instanceof Input)) {
+        if (!(clk instanceof Input)) {
             // need an edge detector
             throw new Error("Not implemented");
         }
@@ -93,15 +90,31 @@ export class SDFFE extends Node {
             makeConnection(Color.Green, this.sel1.input, this.sel2.input);
             makeConnection(Color.Red, this.sel1.output, this.sel2.output);
         }
-        if (this.d instanceof ConstNode) {
-            this.d.forceCreate();
+        if (d instanceof ConstNode) {
+            d.forceCreate();
         }
-    }
-    connectComb(): void {
-        makeConnection(Color.Red, this.clk.output(), this.clk1.input, this.clk2.input);
-        makeConnection(Color.Green, this.en.output(), this.clk1.input);
-        makeConnection(Color.Green, this.srst.output(), this.clk2.input, this.rst.input);
-        makeConnection(Color.Red, this.d.output(), this.sel1.input);
+
+        // pretty lazy just invert the signal
+        if (this.data.parameters.SRST_POLARITY == 0) {
+            this.srstInv = new Decider({
+                first_signal: signalV,
+                constant: 0,
+                comparator: ComparatorString.EQ,
+                copy_count_from_input: false,
+                output_signal: signalV
+            });
+        }
+
+        makeConnection(Color.Red, clk.output(), this.clk1.input, this.clk2.input);
+        makeConnection(Color.Green, en.output(), this.clk1.input);
+
+        if (this.srstInv) {
+            makeConnection(Color.Red, srst.output(), this.srstInv.input);
+            makeConnection(Color.Green, this.srstInv.output, this.clk2.input, this.rst.input);
+        } else {
+            makeConnection(Color.Green, srst.output(), this.clk2.input, this.rst.input);
+        }
+        makeConnection(Color.Red, d.output(), this.sel1.input);
 
         makeConnection(Color.Green, this.clk2.output, this.clk1.output, this.dff1.input, this.dff2.input);
 
@@ -110,14 +123,13 @@ export class SDFFE extends Node {
 
         makeConnection(Color.Red, this.dff1.input, this.dff1.output);
         makeConnection(Color.Both, this.dff1.output, this.dff2.output);
-    }
-    output(): Endpoint {
+
         return this.dff2.output;
     }
     combs(): Entity[] {
         let res = [this.clk1, this.clk2, this.dff1, this.dff2, this.rst, this.sel1];
-        if (this.sel2)
-            res.push(this.sel2);
+        if (this.sel2) res.push(this.sel2);
+        if (this.srstInv) res.push(this.srstInv);
         return res;
     }
 }

@@ -1,4 +1,3 @@
-import { Arithmetic } from "../entities/Arithmetic.js";
 import { ConstNode } from "./ConstNode.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
@@ -6,39 +5,33 @@ import { createTransformer, Node, nodeFunc } from "./Node.js";
 import { Mux } from "../yosys.js";
 
 export class MUX extends Node {
-    a: Node;
-    b: Node;
-    s: Node;
-
     data: Mux;
 
-    transformer: Arithmetic;
-    decider1: Decider;
-    decider2: Decider;
+    entities: Entity[];
 
     constructor(item: Mux) {
         super(item.connections.Y);
         this.data = item;
     }
 
-    connect(getInputNode: nodeFunc) {
-        this.a = getInputNode(this.data.connections.A);
-        this.b = getInputNode(this.data.connections.B);
-        this.s = getInputNode(this.data.connections.S);
+    _connect(getInputNode: nodeFunc) {
+        const a = getInputNode(this.data.connections.A);
+        const b = getInputNode(this.data.connections.B);
+        const s = getInputNode(this.data.connections.S);
 
         console.assert(this.data.connections.A.length == this.data.connections.B.length);
         console.assert(this.data.connections.A.length == this.outputBits.length);
         console.assert(this.data.connections.S.length == 1);
 
-        this.transformer = createTransformer();
-        this.decider1 = new Decider({
+        let transformer = createTransformer();
+        let decider1 = new Decider({
             first_signal: signalC,
             constant: 0,
             comparator: ComparatorString.EQ,
             copy_count_from_input: true,
             output_signal: signalV
         }); // if c == 0 output value
-        this.decider2 = new Decider({
+        let decider2 = new Decider({
             first_signal: signalC,
             constant: 1,
             comparator: ComparatorString.EQ,
@@ -46,46 +39,46 @@ export class MUX extends Node {
             output_signal: signalV
         }); // if c == 1 save input value
 
-        if (this.a instanceof ConstNode) {
-            if (this.a.value == 0) {
+        if (a instanceof ConstNode) {
+            if (a.value == 0) {
                 // can be completely ignored
-                this.decider1 = null;
+                decider1 = null;
             } else {
-                this.a.forceCreate();
+                a.forceCreate();
             }
         }
-        if (this.b instanceof ConstNode) {
-            if (this.b.value == 0) {
+        if (b instanceof ConstNode) {
+            if (b.value == 0) {
                 // can be completely ignored
-                this.decider2 = null;
+                decider2 = null;
             } else {
-                this.b.forceCreate();
+                b.forceCreate();
             }
         }
-    }
 
-    connectComb() {
-        makeConnection(Color.Red, this.s.output(), this.transformer.input);
+        this.entities = [transformer];
+        makeConnection(Color.Red, s.output(), transformer.input);
 
-        if (this.decider1) makeConnection(Color.Red, this.a.output(), this.decider1.input);
-        if (this.decider2) makeConnection(Color.Red, this.b.output(), this.decider2.input);
+        if (decider1) {
+            makeConnection(Color.Red, a.output(), decider1.input);
+            this.entities.push(decider1);
+        }
+        if (decider2) {
+            makeConnection(Color.Red, b.output(), decider2.input);
+            this.entities.push(decider2);
+        }
 
-        if (this.decider1 && this.decider2) {
-            makeConnection(Color.Green, this.transformer.output, this.decider1.input, this.decider2.input);
-            makeConnection(Color.Both, this.decider1.output, this.decider2.output);
+        if (decider1 && decider2) {
+            makeConnection(Color.Green, transformer.output, decider1.input, decider2.input);
+            makeConnection(Color.Both, decider1.output, decider2.output);
         } else {
-            makeConnection(Color.Green, this.transformer.output, (this.decider1 ?? this.decider2).input);
+            makeConnection(Color.Green, transformer.output, (decider1 ?? decider2).input);
         }
+
+        return (decider1 ?? decider2).output;
     }
 
-    output() {
-        return (this.decider2 ?? this.decider1).output;
-    }
-
-    combs(): Entity[] {
-        let r: Entity[] = [this.transformer];
-        if (this.decider1) r.push(this.decider1);
-        if (this.decider2) r.push(this.decider2);
-        return r;
+    combs() {
+        return this.entities;
     }
 }

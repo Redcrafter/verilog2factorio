@@ -8,10 +8,6 @@ import { Node, nodeFunc } from "./Node.js";
 export class SDFF extends Node {
     private data: SDff;
 
-    private clk: Node;
-    private d: Node;
-    private srst: Node;
-
     private clkIn: Decider;
     private rstIn: Decider;
 
@@ -27,12 +23,12 @@ export class SDFF extends Node {
         console.assert(item.parameters.SRST_POLARITY == 1, "SDFF: revert reset polarity");
     }
 
-    connect(getInputNode: nodeFunc) {
-        this.clk = getInputNode(this.data.connections.CLK);
-        this.d = getInputNode(this.data.connections.D);
-        this.srst = getInputNode(this.data.connections.SRST);
+    _connect(getInputNode: nodeFunc) {
+        const clk = getInputNode(this.data.connections.CLK);
+        const d = getInputNode(this.data.connections.D);
+        const srst = getInputNode(this.data.connections.SRST);
 
-        if (!(this.clk instanceof Input)) {
+        if (!(clk instanceof Input)) {
             // need an edge detector
             throw new Error("Not implemented");
         }
@@ -67,6 +63,10 @@ export class SDFF extends Node {
             output_signal: signalV
         });
 
+        makeConnection(Color.Red, clk.output(), this.clkIn.input, this.rstIn.input);
+        makeConnection(Color.Green, srst.output(), this.rstIn.input);
+        makeConnection(Color.Red, d.output(), this.dff1.input);
+
         makeConnection(Color.Green, this.clkIn.output, this.rstIn.output, this.dff1.input, this.dff2.input);
         makeConnection(Color.Red, this.dff2.input, this.dff2.output);
         makeConnection(Color.Both, this.dff2.output, this.dff1.output);
@@ -82,16 +82,10 @@ export class SDFF extends Node {
             makeConnection(Color.Red, this.rstIn.output, this.dff3.input);
             makeConnection(Color.Both, this.dff1.output, this.dff3.output);
         }
-    }
 
-    connectComb(): void {
-        makeConnection(Color.Red, this.clk.output(), this.clkIn.input, this.rstIn.input);
-        makeConnection(Color.Green, this.srst.output(), this.rstIn.input);
-        makeConnection(Color.Red, this.d.output(), this.dff1.input);
-    }
-    output(): Endpoint {
         return this.dff1.output;
     }
+
     combs(): Entity[] {
         let ret: Entity[] = [this.clkIn, this.rstIn, this.dff1, this.dff2];
         if (this.dff3) ret.push(this.dff3);

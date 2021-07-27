@@ -2,18 +2,15 @@ import { RawEntity, ConnectionPoint, SignalID } from "../blueprint.js";
 
 export const dir = 4;
 
-export const signalV: SignalID = {
-    type: "virtual",
-    name: "signal-V"
-};
-export const signalC: SignalID = {
-    type: "virtual",
-    name: "signal-C"
-};
-export const signalR: SignalID = {
-    type: "virtual",
-    name: "signal-R"
-}
+export const signalV: SignalID = { type: "virtual", name: "signal-V" };
+export const signalC: SignalID = { type: "virtual", name: "signal-C" };
+export const signalR: SignalID = { type: "virtual", name: "signal-R" }
+export const signalGreen: SignalID = { type: "virtual", name: "signal-green" };
+export const signalGrey: SignalID = { type: "virtual", name: "signal-grey" };
+
+export const anything: SignalID = { type: "virtual", name: "signal-anything" };
+export const everything: SignalID = { type: "virtual", name: "signal-everything" };
+export const each: SignalID = { type: "virtual", name: "signal-each" };
 
 export const enum Color {
     Red = 1,
@@ -24,10 +21,10 @@ export const enum Color {
 export interface Endpoint {
     entity: Entity;
     type: number;
-    outSignal: SignalID | null;
+    outSignals: Set<SignalID>,
 
-    red: Endpoint[];
-    green: Endpoint[];
+    red: Set<Endpoint>;
+    green: Set<Endpoint>;
 }
 
 export abstract class Entity {
@@ -51,13 +48,13 @@ export abstract class Entity {
     abstract toObj(): RawEntity;
 }
 
-export function createEndpoint(ent: Entity, type: number, outSignal: SignalID | null): Endpoint {
+export function createEndpoint(ent: Entity, type: number, ...outSignals: SignalID[]): Endpoint {
     return {
         entity: ent,
         type,
-        outSignal,
-        red: [],
-        green: []
+        outSignals: new Set(outSignals),
+        red: new Set(),
+        green: new Set()
     };
 }
 export function convertEndpoint(p: Endpoint): ConnectionPoint {
@@ -66,8 +63,8 @@ export function convertEndpoint(p: Endpoint): ConnectionPoint {
     }
 
     return {
-        red: map(p.red),
-        green: map(p.green)
+        red: map([...p.red]),
+        green: map([...p.green])
     }
 }
 
@@ -77,13 +74,13 @@ export function makeConnection(c: Color, ...points: Endpoint[]) {
         const b = points[i];
 
         if (c & Color.Red) {
-            a.red.push(b);
-            b.red.push(a);
+            a.red.add(b);
+            b.red.add(a);
         }
 
         if (c & Color.Green) {
-            a.green.push(b);
-            b.green.push(a);
+            a.green.add(b);
+            b.green.add(a);
         }
     }
 }

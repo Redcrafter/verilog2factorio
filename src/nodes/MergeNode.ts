@@ -32,17 +32,13 @@ export class MergeNode extends Node {
         this.inputs = inputs;
     }
 
-    layers: {
-        source: Node;
+    entities: Entity[] = [];
 
-        in: Arithmetic;
-        out: Entity;
-    }[] = [];
-    all: Entity[] = [];
-
-    connect(): void {
+    _connect() {
         let offset = 0;
         let constVal = 0;
+
+        let last: Endpoint;
 
         for (const n of this.inputs) {
             if (n.node instanceof ConstNode) {
@@ -71,65 +67,41 @@ export class MergeNode extends Node {
                 output_signal: signalV
             });
 
+            let inp;
+            let out;
             if ((n.start == 0 || n.start + shiftVal <= 0) && n.start + n.count == n.node.outputBits.length) { // don't need a limiter
                 // if(shiftVal == 0) don't need either but need a separator so signals don't get mixed
-                this.layers.push({
-                    source: n.node,
-                    in: shift,
-                    out: shift
-                });
-                this.all.push(shift);
+                inp = out = shift;
+                this.entities.push(shift);
             } else if (shiftVal == 0) { // don't need shifter
-                this.layers.push({
-                    source: n.node,
-                    in: mask,
-                    out: mask
-                });
-                this.all.push(mask);
+                inp = out = mask;
+                this.entities.push(mask);
             } else {
-                this.layers.push({
-                    source: n.node,
-                    in: shift,
-                    out: mask
-                });
+                inp = shift;
+                out = mask;
                 makeConnection(Color.Red, shift.output, mask.input);
-                this.all.push(shift, mask);
+                this.entities.push(shift, mask);
             }
+
+            makeConnection(Color.Red, n.node.output(), inp.input);
+            if (last) makeConnection(Color.Both, out.output, last);
+            last = out.output;
 
             offset += n.count;
         }
 
         // if merged constant != 0 add one with all values combined
         if (constVal != 0) {
-            let c = new Constant({
-                count: constVal,
-                index: 1,
-                signal: signalV
-            });
-            this.all.push(c);
-            this.layers.push({
-                source: null,
-                in: null,
-                out: c
-            });
+            let c = Constant.simple(constVal);
+            this.entities.push(c);
+            makeConnection(Color.Both, c.output, last);
+            last = c.output;
         }
-    }
 
-    connectComb(): void {
-        let out = this.layers[0].out.output;
-
-        for (const l of this.layers) {
-            if (l.source) makeConnection(Color.Red, l.source.output(), l.in.input);
-            makeConnection(Color.Both, l.out.output, out);
-        }
-    }
-
-    output(): Endpoint {
-        // use last as output so constant combinator can potentially extend path
-        return this.layers[0].out.output;
+        return last;
     }
 
     combs(): Entity[] {
-        return this.all;
+        return this.entities;
     }
 }

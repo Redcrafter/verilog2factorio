@@ -1,27 +1,24 @@
 import { Constant } from "../entities/Constant.js";
-import { signalV } from "../entities/Entity.js";
-import { Node } from "./Node.js";
+import { Endpoint, signalV } from "../entities/Entity.js";
+import { mergeFunc, Node, nodeFunc } from "./Node.js";
 
 export class ConstNode extends Node {
     value: number;
     c: Constant;
 
-    constructor(value: number, bits: number) {
+    constructor(value: number) {
         super([]);
         this.value = value;
     }
 
     forceCreate() {
-        this.c = new Constant({
-            count: this.value,
-            index: 1,
-            signal: signalV
-        });
+        this.c = Constant.simple(this.value);
     }
 
-    connectComb(): void { }
+    _connect(getInputNode: nodeFunc, getMergeEls: mergeFunc): Endpoint {
+        return this.c?.output;
+    }
 
-    output() { return this.c?.output; }
     combs() {
         if (this.c) return [this.c];
         else return [];

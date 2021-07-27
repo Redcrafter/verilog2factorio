@@ -4,31 +4,25 @@ import { Constant } from "./entities/Constant.js";
 import { Decider } from "./entities/Decider.js";
 import { Entity, Endpoint, makeConnection, Color } from "./entities/Entity.js";
 
-function delCon(e: Entity, cons: Endpoint[]) {
-    function filter(cons: Endpoint[]) {
-        return cons.filter(x => x.entity !== e);
-    }
 
-    for (const c of cons) {
-        let n = c.entity;
-
-        // TODO: could use n.type?
-        if (n.input) {
-            n.input.red.filter(x => x.entity != e);
-            n.input.red = filter(n.input.red);
-            n.input.green = filter(n.input.green);
-        }
-        n.output.red = filter(n.output.red);
-        n.output.green = filter(n.output.green);
-    }
-}
 function del(entity: Entity) {
-    if (entity.input) {
-        delCon(entity, entity.input.red);
-        delCon(entity, entity.input.green);
+    function delCon(e: Endpoint, color: "red" | "green") {
+        for (const c of e[color]) {
+            let n = c.entity;
+
+            if (n.input) {
+                n.input[color].delete(e);
+            }
+            n.output[color].delete(e);
+        }
     }
-    delCon(entity, entity.output.red);
-    delCon(entity, entity.output.green);
+
+    if (entity.input) {
+        delCon(entity.input, "red");
+        delCon(entity.input, "green");
+    }
+    delCon(entity.output, "red");
+    delCon(entity.output, "green");
 }
 
 /** Removes entities which have no effect */
@@ -53,7 +47,7 @@ function opt_clean(entities: Entity[]) {
             continue;
         }
 
-        if (e.input.red.length + e.input.green.length == 0) {
+        if (e.input.red.size + e.input.green.size == 0) {
             // not constant and input is not connected
             del(e);
             entities.splice(entities.indexOf(e), 1);
@@ -63,7 +57,7 @@ function opt_clean(entities: Entity[]) {
             continue;
         }
 
-        if (e.output.red.length + e.output.green.length == 0) {
+        if (e.output.red.size + e.output.green.size == 0) {
             // output is not connected
             del(e);
             entities.splice(entities.indexOf(e), 1);
@@ -92,7 +86,7 @@ function opt_chain(nets: Networks) {
 
         // delete all endpoints
         for (const p of n.points) {
-            p[prop] = [];
+            p[prop] = new Set();
         }
 
         makeConnection(color, ...n.points);
@@ -101,10 +95,13 @@ function opt_chain(nets: Networks) {
     nets.green.nets.forEach(x => chain(x, Color.Green));
 }
 
-interface Network {
+// TODO: add functions to get neibours/signals
+class Network {
     points: Endpoint[];
-    signal: SignalID;
-    neighbors: Network[];
+
+    constructor(points: Endpoint[]) {
+        this.points = points;
+    }
 }
 
 interface Networks {
@@ -130,79 +127,58 @@ function extractNets(entities: Entity[]): Networks {
         }
     }
 
-    function addEntity(entity: Entity) {
-        function addEndpoint(endpoint: Endpoint) {
-            let signal = endpoint.outSignal;
+    function addColor(endpoint: Endpoint, color: "red" | "green"): void {
+        const other = endpoint[color];
+        if (other.size == 0) return null;
 
-            function addColor(color: "red" | "green") {
-                let other = endpoint[color];
-                if (other.length == 0) return null;
+        let colorNet = networks[color];
+        let connected = new Set<Network>([...other].map(x => colorNet.map.get(x)));
+        connected.delete(undefined);
 
-                let fuck = networks[color];
-                let nets = new Set<Network>(other.map(x => fuck.map.get(x)));
-                nets.delete(undefined);
+        let net: Network;
+        if (connected.size == 0) {
+            // make new
+            net = new Network([endpoint]);
+            colorNet.map.set(endpoint, net);
+            colorNet.nets.add(net);
+        } else if (connected.size == 1) {
+            // add
+            net = connected.values().next().value;
 
-                let net: Network;
-                if (nets.size == 0) {
-                    // make new
-                    net = { points: [endpoint], signal, neighbors: [] };
-                    fuck.map.set(endpoint, net);
-                    fuck.nets.add(net);
-                } else if (nets.size == 1) {
-                    // add
-                    net = nets.values().next().value;
-                    if (!net.signal) net.signal = signal;
+            net.points.push(endpoint);
+            colorNet.map.set(endpoint, net);
+        } else {
+            let points: Endpoint[] = [endpoint];
 
-                    console.assert(!signal || net.signal == signal);
-
-                    net.points.push(endpoint);
-                    fuck.map.set(endpoint, net);
-                } else {
-                    let points: Endpoint[] = [endpoint];
-                    let neighbors: Network[] = [];
-                    // merge
-
-                    for (const n of nets) {
-                        if (!signal) {
-                            signal = n.signal;
-                        } else if (n.signal && n.signal !== signal) {
-                            // Should not be reachable
-                            throw new Error("Nerwork signal mismatch");
-                        }
-
-                        points.push(...n.points);
-                        neighbors.push(...n.neighbors);
-                        fuck.nets.delete(n);
-                    }
-
-                    net = { points, signal, neighbors };
-                    for (const p of points) {
-                        fuck.map.set(p, net);
-                    }
-                    fuck.nets.add(net);
-                }
-
-                return net;
+            for (const n of connected) {
+                points.push(...n.points);
+                // neighbors.push(...n.neighbors);
+                colorNet.nets.delete(n);
             }
 
-            let a = addColor("red");
-            let b = addColor("green");
-
-            if (a && b) {
-                a.neighbors.push(b);
-                b.neighbors.push(a);
+            net = new Network(points);
+            for (const p of points) {
+                colorNet.map.set(p, net);
             }
+            colorNet.nets.add(net);
         }
-
-        addEndpoint(entity.input);
-        if (entity.output != entity.input) addEndpoint(entity.output);
     }
 
     // insert entities and assign entity id's
     for (let i = 0; i < entities.length; i++) {
-        addEntity(entities[i]);
+        let entity = entities[i];
+
+        addColor(entity.input, "red");
+        addColor(entity.input, "green");
+
+        if (entity.output != entity.input) {
+            addColor(entity.output, "red");
+            addColor(entity.output, "green");
+        };
+
         entities[i].id = i + 1;
     }
+    // sort networks points
     for (const n of [...networks.red.nets, ...networks.green.nets]) {
         n.points.sort((a, b) => a.entity.id - b.entity.id);
     }

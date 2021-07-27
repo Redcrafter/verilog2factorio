@@ -46,7 +46,7 @@ export class Decider extends Entity {
     }
 
     toObj(): DeciderCombinator {
-        if (this.input.red.length == 0 && this.input.green.length == 0 || this.output.red.length == 0 && this.output.green.length == 0) {
+        if (this.input.red.size == 0 && this.input.green.size == 0 || this.output.red.size == 0 && this.output.green.size == 0) {
             throw new Error("Unconnected Decider");
         }
 

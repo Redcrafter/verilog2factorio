@@ -14,6 +14,7 @@ import { ADD } from "./nodes/ADD.js";
 import { NOT } from "./nodes/NOT.js";
 import { XNOR } from "./nodes/XNOR.js";
 import { ReduceOr } from "./nodes/ReduceOr.js";
+import { SSHR } from "./nodes/SSHR.js";
 
 import { MergeNode, MergeEl } from "./nodes/MergeNode.js";
 
@@ -50,6 +51,8 @@ function createNode(item: yosys.Cell): Node {
             // @ts-ignore
             item.connections.B = new Array(item.connections.A.length).fill("1");
             // @ts-ignore
+            item.parameters.B_SIGNED = 0;
+            // @ts-ignore
             return new LogicNode(item, ComparatorString.EQ);
         case "$reduce_or": return new ReduceOr(item);
         // TODO: case "$reduce_xor":
@@ -59,6 +62,8 @@ function createNode(item: yosys.Cell): Node {
         case "$logic_not": // same as == 0
             // @ts-ignore
             item.connections.B = ["0"];
+            // @ts-ignore
+            item.parameters.B_SIGNED = 0;
             // @ts-ignore
             return new LogicNode(item, ComparatorString.EQ);
 
@@ -70,7 +75,7 @@ function createNode(item: yosys.Cell): Node {
         case "$shl": return new MathNode(item, ArithmeticOperations.LShift);
         case "$shr": return new MathNode(item, ArithmeticOperations.RShift);
         // TODO: case "$sshl":
-        // TODO: case "$sshr":
+        case "$sshr": return new SSHR(item);
 
         case "$logic_and":
             console.assert(item.connections.A.length == 1);
@@ -185,7 +190,7 @@ export function buildGraph(mod: yosys.Module) {
 
             if (typeof bit == "string") {
                 offset++;
-                let c = new ConstNode(bit === "1" ? 1 : 0, 1);
+                let c = new ConstNode(bit === "1" ? 1 : 0);
                 sub.push({ start: 0, count: 1, node: c });
                 continue;
             }
@@ -218,7 +223,7 @@ export function buildGraph(mod: yosys.Module) {
         }
 
         if (allConst) {
-            let n = new ConstNode(value, bits.length);
+            let n = new ConstNode(value);
             nodes.push(n);
             return n;
         }

@@ -1,6 +1,6 @@
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Constant } from "../entities/Constant.js";
-import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
+import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 import { BinaryCell } from "../yosys.js";
 import { ConstNode } from "./ConstNode.js";
 import { Node, nodeFunc } from "./Node.js";
@@ -8,9 +8,6 @@ import { Node, nodeFunc } from "./Node.js";
 // reduces overhead by replacing the converter with an inverter because ~(x ^ y) = ~x ^ y
 export class XNOR extends Node {
     data: BinaryCell;
-
-    a: Node;
-    b: Node;
 
     inverter: Arithmetic;
     calculator: Arithmetic;
@@ -25,17 +22,17 @@ export class XNOR extends Node {
         console.assert(data.parameters.B_SIGNED == 0, "XNOR: Only unsigned values allowed");
     }
 
-    connect(getInputNode: nodeFunc) {
-        this.a = getInputNode(this.data.connections.A);
-        this.b = getInputNode(this.data.connections.B);
+    _connect(getInputNode: nodeFunc) {
+        const a = getInputNode(this.data.connections.A);
+        const b = getInputNode(this.data.connections.B);
 
-        if (this.a instanceof ConstNode || this.b instanceof Constant) {
+        if (a instanceof ConstNode || b instanceof Constant) {
             throw new Error("Unnecessary operation");
         }
 
         this.inverter = new Arithmetic({
             first_signal: signalV,
-            second_constant: this.a.outMask,
+            second_constant: a.outMask,
             operation: ArithmeticOperations.Xor,
             output_signal: signalC
         });
@@ -45,15 +42,11 @@ export class XNOR extends Node {
             operation: ArithmeticOperations.Xor,
             output_signal: signalV
         });
-    }
 
-    connectComb(): void {
-        makeConnection(Color.Red, this.a.output(), this.inverter.input);
-        makeConnection(Color.Red, this.b.output(), this.calculator.input);
+        makeConnection(Color.Red, a.output(), this.inverter.input);
+        makeConnection(Color.Red, b.output(), this.calculator.input);
         makeConnection(Color.Green, this.inverter.output, this.calculator.input);
-    }
 
-    output(): Endpoint {
         return this.calculator.output;
     }
 

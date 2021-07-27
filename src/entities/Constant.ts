@@ -1,5 +1,5 @@
 import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
-import { Entity, convertEndpoint, dir, createEndpoint } from "./Entity.js";
+import { Entity, convertEndpoint, dir, createEndpoint, signalV } from "./Entity.js";
 
 export interface ConstantControlBehavior {
     signal: SignalID;
@@ -24,12 +24,11 @@ export class Constant extends Entity {
         super(1, 1);
         this.params = param;
 
-        this.input = this.output = createEndpoint(this, 1, this.params[0].signal);
-        console.assert(param.length == 1);
+        this.input = this.output = createEndpoint(this, 1, ...this.params.map(x => x.signal));
     }
 
     toObj(): ConstantCombinator {
-        if (this.output.red.length == 0 && this.output.green.length == 0) {
+        if (this.output.red.size == 0 && this.output.green.size == 0) {
             throw new Error("Unconnected Constant");
         }
 
@@ -45,5 +44,13 @@ export class Constant extends Entity {
                 "1": convertEndpoint(this.input)
             }
         };
+    }
+
+    static simple(value: number) {
+        return new Constant({
+            count: value,
+            index: 1,
+            signal: signalV
+        });
     }
 }

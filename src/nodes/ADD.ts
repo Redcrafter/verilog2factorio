@@ -5,9 +5,6 @@ import { Color, makeConnection } from "../entities/Entity.js";
 import { BinaryCell } from "../yosys.js";
 
 export class ADD extends Node {
-    a: Node;
-    b: Node;
-
     limiter: Arithmetic;
 
     data: BinaryCell;
@@ -19,36 +16,22 @@ export class ADD extends Node {
         console.assert(item.type == "$add", "Only add allowed");
     }
 
-    connect(getInputNode: nodeFunc) {
-        this.a = getInputNode(this.data.connections.A);
-        this.b = getInputNode(this.data.connections.B);
+    _connect(getInputNode: nodeFunc) {
+        const a = getInputNode(this.data.connections.A);
+        const b = getInputNode(this.data.connections.B);
 
         this.limiter = createLimiter(this.outMask);
 
-        if (this.a instanceof ConstNode && this.b instanceof ConstNode)
-            throw new Error("Unnecessary operation");
+        if (a instanceof ConstNode) a.forceCreate();
+        if (b instanceof ConstNode) b.forceCreate();
 
-        if (this.a instanceof ConstNode) {
-            if (this.a.value == 0) throw new Error("Unnecessary operation");
-            this.a.forceCreate();
-        }
+        makeConnection(Color.Red, a.output(), this.limiter.input);
+        makeConnection(Color.Green, b.output(), this.limiter.input);
 
-        if (this.b instanceof ConstNode) {
-            if (this.b.value == 0) throw new Error("Unnecessary operation");
-            this.b.forceCreate();
-        }
-    }
-
-    connectComb() {
-        makeConnection(Color.Red, this.a.output(), this.limiter.input);
-        makeConnection(Color.Green, this.b.output(), this.limiter.input);
-    }
-
-    output() {
         return this.limiter.output;
     }
 
-    combs() {
+    override combs() {
         return [this.limiter];
     }
 }

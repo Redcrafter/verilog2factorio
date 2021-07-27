@@ -5,14 +5,8 @@ import { Node, nodeFunc } from "./Node.js";
 import { Input } from "./Input.js";
 import { Dff, Dffe } from "../yosys.js";
 
-// TODO: check parameters.EN_POLARITY
-
 export class DFF extends Node {
     data: Dff | Dffe;
-
-    clk: Node;
-    en: Node;
-    d: Node;
 
     transformer: Decider;
     decider1: Decider;
@@ -27,14 +21,17 @@ export class DFF extends Node {
             console.assert(item.parameters.EN_POLARITY == 1, "revert enable polarity");
     }
 
-    connect(getInputNode: nodeFunc) {
-        this.clk = getInputNode(this.data.connections.CLK);
-        this.d = getInputNode(this.data.connections.D);
+    _connect(getInputNode: nodeFunc) {
+        const clk = getInputNode(this.data.connections.CLK);
+        const d = getInputNode(this.data.connections.D);
 
-        // @ts-ignore
-        if (this.data.connections.EN) {
-            // @ts-ignore
-            this.en = getInputNode(this.data.connections.EN);
+        if (!(clk instanceof Input)) {
+            // need an edge detector
+            throw new Error("Not implemented");
+        }
+
+        if (this.data.type == "$dffe") {
+            const en = getInputNode(this.data.connections.EN);
 
             this.transformer = new Decider({
                 first_signal: signalV,
@@ -43,6 +40,7 @@ export class DFF extends Node {
                 copy_count_from_input: false,
                 output_signal: signalC
             });
+            makeConnection(Color.Green, en.output(), this.transformer.input);
         } else {
             this.transformer = new Decider({
                 first_signal: signalV,
@@ -51,11 +49,6 @@ export class DFF extends Node {
                 copy_count_from_input: false,
                 output_signal: signalC
             });
-        }
-
-        if (!(this.clk instanceof Input)) {
-            // need an edge detector
-            throw new Error("Not implemented");
         }
 
         this.decider1 = new Decider({
@@ -72,24 +65,14 @@ export class DFF extends Node {
             copy_count_from_input: true,
             output_signal: signalV
         }); // if c == 0 output b
-    }
 
-    connectComb() {
-        makeConnection(Color.Red, this.clk.output(), this.transformer.input);
-        if (this.en) {
-            makeConnection(Color.Green, this.en.output(), this.transformer.input);
-        }
+        makeConnection(Color.Red, clk.output(), this.transformer.input);
+        makeConnection(Color.Red, d.output(), this.decider1.input);
 
-        makeConnection(Color.Green, this.transformer.output, this.decider1.input);
-        makeConnection(Color.Green, this.decider1.input, this.decider2.input);
-
-        makeConnection(Color.Red, this.d.output(), this.decider1.input);
-
+        makeConnection(Color.Green, this.transformer.output, this.decider1.input, this.decider2.input);
         makeConnection(Color.Both, this.decider1.output, this.decider2.output);
         makeConnection(Color.Red, this.decider2.output, this.decider2.input);
-    }
 
-    output() {
         return this.decider1.output;
     }
 
