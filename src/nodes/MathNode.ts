@@ -55,7 +55,7 @@ export class MathNode extends Node {
 
             // a >>> b = ((a + (int)0x80000000) >> b) + (0x40000000 >> b) * 2 + (b >> b) + (b == 31 ? 1 : 0)
 
-            let trans = createTransformer();
+            let trans = createTransformer(b.output());
             let constant = new Constant({
                 index: 1,
                 signal: signalV,
@@ -85,7 +85,6 @@ export class MathNode extends Node {
             this.entities = [trans, constant, shift, fix];
 
             makeConnection(Color.Red, a.output(), shift.input);
-            makeConnection(Color.Red, b.output(), trans.input);
 
             makeConnection(Color.Green, trans.output, constant.output, fix.input, shift.input);
 
@@ -117,7 +116,7 @@ export class MathNode extends Node {
             this.entities = [calculator];
             makeConnection(Color.Red, a.output(), calculator.input);
         } else {
-            let transformer = createTransformer();
+            let transformer = createTransformer(a.output());
             calculator = new Arithmetic({
                 first_signal: signalV,
                 second_signal: signalC,
@@ -126,7 +125,6 @@ export class MathNode extends Node {
             });
             this.entities = [transformer, calculator];
 
-            makeConnection(Color.Red, a.output(), transformer.input);
             makeConnection(Color.Green, transformer.output, calculator.input);
             makeConnection(Color.Red, b.output(), calculator.input);
         }

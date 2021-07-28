@@ -1,17 +1,21 @@
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
-import { createEndpoint, Endpoint, Entity, signalC, signalV } from "../entities/Entity.js";
+import { Color, createEndpoint, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 import { MergeEl } from "./MergeNode.js";
 
 export type nodeFunc = (n: (number | string)[]) => Node;
 export type mergeFunc = (n: (number | string)[]) => MergeEl[];
 
-export function createTransformer() {
-    return new Arithmetic({
+export function createTransformer(input?: Endpoint) {
+    let trans = new Arithmetic({
         first_signal: signalV,
         second_constant: 0,
         operation: ArithmeticOperations.Or,
         output_signal: signalC
     });
+
+    if(input) makeConnection(Color.Red, input, trans.input);
+
+    return trans;
 }
 
 export function createLimiter(mask: number) {
@@ -63,15 +67,14 @@ export abstract class Node {
     protected _setOutput(e: Endpoint) {
         for (const n of this.outputPlaceholder.red) {
             n.red.delete(this.outputPlaceholder);
-            n.red.add(e)
+            n.red.add(e);
+            e.red.add(n);
         }
         for (const n of this.outputPlaceholder.green) {
             n.green.delete(this.outputPlaceholder);
-            n.green.add(e)
+            n.green.add(e);
+            e.green.add(n);
         }
-
-        e.red = this.outputPlaceholder.red;
-        e.green = this.outputPlaceholder.green;
 
         this.outputPlaceholder = e;
     }

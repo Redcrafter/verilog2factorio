@@ -16,7 +16,7 @@ export class Pole extends Entity {
 
     toObj(): MediumElectricPole {
         if (this.input.red.size == 0 && this.input.green.size == 0 && this.output.red.size == 0 && this.output.green.size == 0) {
-            throw new Error("Unconnected Arithmetic");
+            throw new Error("Unconnected Pole");
         }
 
         return {

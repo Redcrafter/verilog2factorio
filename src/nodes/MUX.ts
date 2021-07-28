@@ -23,7 +23,7 @@ export class MUX extends Node {
         console.assert(this.data.connections.A.length == this.outputBits.length);
         console.assert(this.data.connections.S.length == 1);
 
-        let transformer = createTransformer();
+        let transformer = createTransformer(s.output());
         let decider1 = new Decider({
             first_signal: signalC,
             constant: 0,
@@ -57,7 +57,6 @@ export class MUX extends Node {
         }
 
         this.entities = [transformer];
-        makeConnection(Color.Red, s.output(), transformer.input);
 
         if (decider1) {
             makeConnection(Color.Red, a.output(), decider1.input);

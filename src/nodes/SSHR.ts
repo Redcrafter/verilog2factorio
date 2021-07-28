@@ -22,7 +22,7 @@ export class SSHR extends Node {
 
         if (this.data.parameters.A_WIDTH == 32) {
             // same as normal shift
-            let trans = createTransformer();
+            let trans = createTransformer(a.output());
             let shift = new Arithmetic({
                 first_signal: signalV,
                 second_signal: signalC,
@@ -31,7 +31,6 @@ export class SSHR extends Node {
             });
             this.entities = [trans, shift];
 
-            makeConnection(Color.Red, a.output(), trans.input);
             makeConnection(Color.Green, trans.output, shift.input);
             makeConnection(Color.Red, b.output(), shift.input);
 

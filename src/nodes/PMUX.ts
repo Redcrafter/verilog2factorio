@@ -56,7 +56,7 @@ export class PMUX extends Node {
             console.assert(item.start == 0);
             console.assert(item.start + item.count == item.node.outputBits.length);
 
-            let trans = createTransformer();
+            let trans = createTransformer(item.node.output());
             this.entities.push(trans);
             if (def) makeConnection(Color.Red, trans.output, def.input);
 
@@ -82,8 +82,6 @@ export class PMUX extends Node {
                 makeConnection(Color.Green, trans.output, comp.input);
                 makeConnection(Color.Red, comp.output, limiter.input);
             }
-
-            makeConnection(Color.Red, item.node.output(), trans.input);
         }
 
         if (def) {

@@ -1,5 +1,6 @@
 import { Color, Endpoint, makeConnection } from "../entities/Entity.js";
 import { Pole } from "../entities/Pole.js";
+import { ConstNode } from "./ConstNode.js";
 import { Node, nodeFunc } from "./Node.js";
 
 export class Output extends Node {
@@ -14,6 +15,10 @@ export class Output extends Node {
 
     _connect(getInputNode: nodeFunc): Endpoint {
         const src = getInputNode(this.bits);
+
+        if(src instanceof ConstNode) {
+            src.forceCreate();
+        }
 
         this.pole = new Pole();
         this.pole.keep = true;

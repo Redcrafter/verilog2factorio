@@ -103,17 +103,16 @@ export class SDFFE extends Node {
                 copy_count_from_input: false,
                 output_signal: signalV
             });
-        }
 
-        makeConnection(Color.Red, clk.output(), this.clk1.input, this.clk2.input);
-        makeConnection(Color.Green, en.output(), this.clk1.input);
-
-        if (this.srstInv) {
             makeConnection(Color.Red, srst.output(), this.srstInv.input);
             makeConnection(Color.Green, this.srstInv.output, this.clk2.input, this.rst.input);
         } else {
             makeConnection(Color.Green, srst.output(), this.clk2.input, this.rst.input);
         }
+
+        makeConnection(Color.Red, clk.output(), this.clk1.input, this.clk2.input);
+        makeConnection(Color.Green, en.output(), this.clk1.input);
+
         makeConnection(Color.Red, d.output(), this.sel1.input);
 
         makeConnection(Color.Green, this.clk2.output, this.clk1.output, this.dff1.input, this.dff2.input);

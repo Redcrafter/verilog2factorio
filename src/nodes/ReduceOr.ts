@@ -69,7 +69,7 @@ export class ReduceOr extends Node {
         let maxBits = Math.floor(Math.log2(maxVal)) + 1;
         console.assert(maxBits < 32, "Reduce or overflow");
 
-        if (this.entities.length > 1) {
+        if (this.entities.length > 1 || bad.length > 0) {
             let out = new Decider({
                 first_signal: signalV,
                 constant: 0,

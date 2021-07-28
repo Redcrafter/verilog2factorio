@@ -15,7 +15,7 @@ type Conn = (number | string)[];
 interface CellBase {
     hide_name: number;
     type: string;
-    parameters: IDict<number>;
+    parameters: IDict<number | string>;
     attributes: {
         src: string;
         full_case?: string;
@@ -225,10 +225,40 @@ export interface Dffsre extends CellBase {
     };
 }
 
+export interface Mem extends CellBase {
+    type: "$mem";
+    parameters: {
+        ABITS: number;
+        INIT: string;
+        MEMID: string;
+        OFFSET: number;
+        RD_CLK_ENABLE: number;
+        RD_CLK_POLARITY: number;
+        RD_PORTS: number;
+        RD_TRANSPARENT: number;
+        SIZE: number;
+        WIDTH: number;
+        WR_CLK_ENABLE: number;
+        WR_CLK_POLARITY: number;
+        WR_PORTS: number;
+    };
+    connections: {
+        RD_ADDR: Conn;
+        RD_CLK: Conn;
+        RD_DATA: number[];
+        RD_EN: Conn;
+        WR_ADDR: Conn;
+        WR_CLK: Conn;
+        WR_DATA: Conn;
+        WR_EN: Conn;
+    }
+}
+
 export type Cell = UnaryCell | BinaryCell |
     Mux | PMux |
-    SR | Dff  | ADff  | SDff  | Dffsr |
-         Dffe | ADffe | SDffe | Dffsre;
+    SR | Dff | ADff | SDff | Dffsr |
+    Dffe | ADffe | SDffe | Dffsre | 
+    Mem;
 
 export interface Module {
     attributes: IDict<string>;
@@ -251,7 +281,7 @@ export function genNetlist(files: string[]): Promise<YosysData> {
             console.log(`error: file ${file} not found`);
         }
     }
-    const commands = "proc; flatten; wreduce; opt; fsm; opt; memory; opt; muxpack; peepopt; async2sync; wreduce; opt -full -fine";
+    const commands = "proc; flatten; wreduce; opt; fsm; opt; memory -nomap; opt; muxpack; peepopt; async2sync; wreduce; opt -full -fine";
     const proc = exec(`yosys -p "${commands}" -o temp.json "${files.join('" "')}"`);
 
     return new Promise(res => {

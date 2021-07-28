@@ -21,6 +21,7 @@ import { MergeNode, MergeEl } from "./nodes/MergeNode.js";
 import { MUX } from "./nodes/MUX.js";
 import { PMUX } from "./nodes/PMUX.js";
 
+import { MemNode } from "./nodes/Mem.js";
 import { DFF } from "./nodes/DFF.js";
 import { SDFF } from "./nodes/SDFF.js";
 import { SDFFE } from "./nodes/SDFFE.js";
@@ -118,6 +119,8 @@ function createNode(item: yosys.Cell): Node {
         case "$sdffe": return new SDFFE(item);
         case "$sdffce": return new SDFFCE(item);
         // TODO: case "$dffsre":
+
+        case "$mem": return new MemNode(item);
 
         default:
             console.error(`Unknown node type ${item.type}`);
@@ -241,6 +244,13 @@ export function buildGraph(mod: yosys.Module) {
         return node;
     }
 
+    function addNode(node: Node) {
+        nodes.push(node);
+        for (const n of node.outputBits) {
+            knownWires.add(n);
+        }
+    }
+
     for (const name in mod.ports) {
         const item = mod.ports[name];
 
@@ -263,6 +273,10 @@ export function buildGraph(mod: yosys.Module) {
         const item = mod.cells[key];
 
         for (const key in item.parameters) {
+            if (item.type == "$mem" && (key == "INIT" || key == "MEMID")) {
+                continue;
+            }
+
             //@ts-ignore
             item.parameters[key] = parseInt(item.parameters[key], 2);
         }
@@ -272,9 +286,11 @@ export function buildGraph(mod: yosys.Module) {
             err = true;
             continue;
         }
-        nodes.push(node);
-        for (const n of node.outputBits) {
-            knownWires.add(n);
+        addNode(node);
+        if(node instanceof MemNode) {
+            for (const rdPort of node.outputSegments) {
+                addNode(rdPort);
+            }
         }
     }
     if (err) {

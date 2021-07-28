@@ -1,6 +1,6 @@
 import { Color, Endpoint, Entity, makeConnection, signalV } from "../entities/Entity.js";
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
-import { Node } from "./Node.js";
+import { createLimiter, Node } from "./Node.js";
 import { ConstNode } from "./ConstNode.js";
 import { Constant } from "../entities/Constant.js";
 
@@ -40,7 +40,9 @@ export class MergeNode extends Node {
 
         let last: Endpoint;
 
-        for (const n of this.inputs) {
+        for (let i = 0; i < this.inputs.length; i++) {
+            const n = this.inputs[i];
+
             if (n.node instanceof ConstNode) {
                 // count absolute constant value to merge it into one
                 console.assert(n.start == 0);
@@ -49,6 +51,57 @@ export class MergeNode extends Node {
 
                 offset += n.count;
                 continue;
+            }
+
+            if (n.count == 1) {
+                let j = i + 1;
+                for (; j < this.inputs.length; j++) {
+                    let next = this.inputs[j];
+                    if (!(next.node == n.node && next.count == 1 && next.start == n.start)) {
+                        break;
+                    }
+                }
+
+                let count = j - i;
+                if (count > 1) {
+                    debugger;
+
+                    let prev = n.node.output();
+                    if(n.start != 0) { // need a shift
+                        let shift = new Arithmetic({
+                            first_signal: signalV,
+                            second_constant: n.start,
+                            operation: ArithmeticOperations.RShift,
+                            output_signal: signalV
+                        });
+                        this.entities.push(shift);
+                        makeConnection(Color.Red, prev, shift.input);
+                        prev = shift.output;
+                    }
+                    if(n.start + n.count != n.node.outputBits.length || n.node.outputBits.length == 32) {
+                        let mask = createLimiter(1);
+                        this.entities.push(mask);
+                        makeConnection(Color.Red, prev, mask.input);
+                        prev = mask.output;
+                    }
+
+                    let mul = new Arithmetic({
+                        first_signal: signalV,
+                        second_constant: (((2 ** count) - 1) | 0) << offset,
+                        operation: ArithmeticOperations.Mul,
+                        output_signal: signalV
+                    });
+
+                    makeConnection(Color.Red, prev, mul.input);
+                    this.entities.push(mul);
+
+                    if (last) makeConnection(Color.Both, mul.output, last);
+                    last = mul.output;
+
+                    i += count - 1;
+                    offset += count;
+                    continue;
+                }
             }
 
             let shiftVal = offset - n.start;
@@ -60,16 +113,16 @@ export class MergeNode extends Node {
                 operation: op,
                 output_signal: signalV
             });
-            let mask = new Arithmetic({
-                first_signal: signalV,
-                second_constant: ((1 << n.count) - 1) << offset,
-                operation: ArithmeticOperations.And,
-                output_signal: signalV
-            });
+            let mask = createLimiter(((2 ** n.count) - 1) << offset);
 
             let inp;
             let out;
-            if ((n.start == 0 || n.start + shiftVal <= 0) && n.start + n.count == n.node.outputBits.length) { // don't need a limiter
+
+            const noLowMask = n.start == 0 || n.start + shiftVal <= 0;
+            const noHeighMask = n.start + n.count == n.node.outputBits.length || n.start + n.count + shiftVal >= 32;
+            const arithShift = n.node.outputBits.length == 32 && shiftVal < 0;
+
+            if (noLowMask && noHeighMask && !arithShift) { // don't need a limiter
                 // if(shiftVal == 0) don't need either but need a separator so signals don't get mixed
                 inp = out = shift;
                 this.entities.push(shift);

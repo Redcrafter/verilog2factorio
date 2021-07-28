@@ -6,8 +6,6 @@ import { ConstNode } from "./ConstNode.js";
 import { createTransformer, Node, nodeFunc } from "./Node.js";
 import { BinaryCell } from "../yosys.js";
 
-// TODO: add support for chained operations?
-
 export class LogicNode extends Node {
     data: BinaryCell;
     method: ComparatorString;
@@ -53,7 +51,7 @@ export class LogicNode extends Node {
                 });
                 let out = new Decider({
                     first_signal: signalV,
-                    second_signal: signalR,
+                    second_signal: signalC,
                     comparator: this.method,
                     copy_count_from_input: false,
                     output_signal: signalV
@@ -101,7 +99,7 @@ export class LogicNode extends Node {
             return comp.output;
         }
 
-        let t = createTransformer();
+        let t = createTransformer(a.output());
         let out = new Decider({
             first_signal: signalV,
             second_signal: signalC,
@@ -111,7 +109,6 @@ export class LogicNode extends Node {
         });
         this.entities = [t, out];
 
-        makeConnection(Color.Red, a.output(), t.input);
         makeConnection(Color.Red, b.output(), out.input);
         makeConnection(Color.Green, t.output, out.input);
 
