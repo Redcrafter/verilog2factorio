@@ -35,30 +35,10 @@ function opt_clean(entities: Entity[]) {
         const e = entities[i];
         if (e.keep) continue;
 
-        if (e instanceof Constant) {
-            if (e.params[0].count == 0) {
-                // constant with 0 output
-                del(e);
-                entities.splice(entities.indexOf(e), 1);
-                i--;
-                count++;
-            }
+        if ((e instanceof Constant && e.params[0].count == 0) || // constant with 0 output
+            (e.input.red.size + e.input.green.size == 0) || // not constant and input is not connected
+            (e.output.red.size + e.output.green.size == 0)) { // output is not connected
 
-            continue;
-        }
-
-        if (e.input.red.size + e.input.green.size == 0) {
-            // not constant and input is not connected
-            del(e);
-            entities.splice(entities.indexOf(e), 1);
-            i--;
-            count++;
-
-            continue;
-        }
-
-        if (e.output.red.size + e.output.green.size == 0) {
-            // output is not connected
             del(e);
             entities.splice(entities.indexOf(e), 1);
             i--;
