@@ -45,7 +45,7 @@ function createLayout(combs: Entity[], ports: Set<Entity>) {
         errors++;
     });
     if (errors != 0) {
-        console.error(`${errors} error(s) occurred while trying to layout the circuit`);
+        console.error(`${errors} overlong wire(s) have been found after trying to layout the circuit`);
         // process.exit(0);
     }
 

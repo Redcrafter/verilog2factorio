@@ -1,14 +1,14 @@
 import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
 
-import { Node, nodeFunc } from "./Node.js";
+import { createTransformer, Node, nodeFunc } from "./Node.js";
 import { Input } from "./Input.js";
 import { Dff, Dffe } from "../yosys.js";
 
 export class DFF extends Node {
     data: Dff | Dffe;
 
-    transformer: Decider;
+    transformer: Entity;
     decider1: Decider;
     decider2: Decider;
 
@@ -42,13 +42,7 @@ export class DFF extends Node {
             });
             makeConnection(Color.Green, en.output(), this.transformer.input);
         } else {
-            this.transformer = new Decider({
-                first_signal: signalV,
-                constant: 1,
-                comparator: ComparatorString.EQ,
-                copy_count_from_input: false,
-                output_signal: signalC
-            });
+            this.transformer = createTransformer();
         }
 
         this.decider1 = new Decider({

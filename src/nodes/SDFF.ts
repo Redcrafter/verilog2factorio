@@ -20,7 +20,6 @@ export class SDFF extends Node {
         this.data = item;
 
         console.assert(item.parameters.CLK_POLARITY == 1, "SDFF: revert clk polarity");
-        console.assert(item.parameters.SRST_POLARITY == 1, "SDFF: revert reset polarity");
     }
 
     _connect(getInputNode: nodeFunc) {
@@ -50,7 +49,7 @@ export class SDFF extends Node {
 
         this.dff1 = new Decider({
             first_signal: signalC,
-            constant: 1,
+            constant: this.data.parameters.SRST_POLARITY == 1 ? 1 : 2,
             comparator: ComparatorString.EQ,
             copy_count_from_input: true,
             output_signal: signalV

@@ -47,7 +47,7 @@ export abstract class Node {
         this.outputBits = bits;
         this.outMask = bits.length == 32 ? -1 : (((1 << bits.length) - 1) | 0);
 
-        this.outputPlaceholder = createEndpoint(null, -1, null);
+        this.outputPlaceholder = createEndpoint(null, -1);
     }
 
     public connect(getInputNode: nodeFunc, getMergeEls: mergeFunc) {

@@ -43,7 +43,7 @@ export class Arithmetic extends Entity {
         super(1, 2);
         this.params = params;
 
-        this.input = createEndpoint(this, 1, null);
+        this.input = createEndpoint(this, 1);
         this.output = createEndpoint(this, 2, params.output_signal);
 
         console.assert(params.first_signal ? params.first_constant === undefined : params.first_constant !== undefined);

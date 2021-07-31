@@ -64,8 +64,6 @@ export class MergeNode extends Node {
 
                 let count = j - i;
                 if (count > 1) {
-                    debugger;
-
                     let prev = n.node.output();
                     if(n.start != 0) { // need a shift
                         let shift = new Arithmetic({

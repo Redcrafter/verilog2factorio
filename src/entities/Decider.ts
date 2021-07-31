@@ -39,7 +39,7 @@ export class Decider extends Entity {
         super(1, 2);
         this.params = params;
 
-        this.input = createEndpoint(this, 1, null);
+        this.input = createEndpoint(this, 1);
         this.output = createEndpoint(this, 2, this.params.output_signal);
 
         console.assert((params.second_signal === undefined) !== (params.constant === undefined));

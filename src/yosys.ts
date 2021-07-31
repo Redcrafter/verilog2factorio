@@ -281,7 +281,8 @@ export function genNetlist(files: string[]): Promise<YosysData> {
             console.log(`error: file ${file} not found`);
         }
     }
-    const commands = "proc; flatten; wreduce; opt; fsm; opt; memory -nomap; opt; muxpack; peepopt; async2sync; wreduce; opt -full -fine";
+
+    const commands = "proc; flatten; wreduce; opt; fsm; opt; memory -nomap; opt; muxpack; peepopt; async2sync; wreduce; opt -mux_bool";
     const proc = exec(`yosys -p "${commands}" -o temp.json "${files.join('" "')}"`);
 
     return new Promise(res => {
