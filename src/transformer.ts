@@ -7,7 +7,7 @@ import { Output } from "./nodes/Output.js";
 import { Endpoint, Entity } from "./entities/Entity.js";
 
 import { Simulator } from "./sim.js";
-import { optimize } from "./optimize.js";
+import { optimize } from "./optimization/optimize.js";
 
 function createLayout(combs: Entity[], ports: Set<Entity>) {
     console.log(`Running layout simulation`);

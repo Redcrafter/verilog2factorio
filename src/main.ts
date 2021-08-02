@@ -18,7 +18,8 @@ program
     .option("-o, --output <file>", "File to output the compiled blueprint to.")
     .option("-m, --modules <names...>", "Verilog modules to output blueprint for. (defaults to all).")
     .option("-f, --files <files...>", "List of Verilog files to compile. (only has to be explicitly specified after -m).")
-    .option("-r, --retry", "Retry until there are no longer layout errors.");
+    .option("-r, --retry", "Retry until there are no longer layout errors.")
+    .option("-x, --experimental", "Enable experimental optimization.");
 program.parse(process.argv);
 
 export const options: {
@@ -27,6 +28,7 @@ export const options: {
     modules?: string[];
     files?: string[];
     retry?: Boolean;
+    experimental?: Boolean;
 } = program.opts();
 // options.seed
 
