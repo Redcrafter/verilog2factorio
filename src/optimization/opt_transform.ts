@@ -1,6 +1,6 @@
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Decider } from "../entities/Decider.js";
-import { allSignals, Color, deleteEntity, Entity, makeConnection } from "../entities/Entity.js";
+import { allSignals, Color, Entity, makeConnection } from "../entities/Entity.js";
 import { extractSignalGroups, GroupCollection } from "./groups.js";
 import { extractNets } from "./nets.js";
 
@@ -54,52 +54,50 @@ export function opt_transform(entities: Entity[]) {
 
         let oldSignal = getSignals(e);
 
-        if (oldSignal.in == oldSignal.out) {
-            // TODO: signals already the same
-            debugger;
-            continue;
-        }
-
         let newColor;
         if (inColor === outColor) {
             newColor = inColor
         } else {
-            if (inNet.points.size == 2) {
+            if (!inNet.hasColor(inColor == Color.Red ? "green" : "red")) {
                 newColor = outColor;
+            } else if (!outNet.hasColor(outColor == Color.Red ? "green" : "red")) {
+                newColor = inColor;
             } else {
                 continue;
             }
         }
 
-        let inGroup = groups.get(oldSignal.in).nets.get(inNet);
-        let outGroup = groups.get(oldSignal.out).nets.get(outNet);
-
-        let newSignal;
-        for (const s of allSignals) {
-            if (!inGroup.networkSignals.has(s) && !outGroup.networkSignals.has(s)) {
-                newSignal = s;
-                break;
-            }
-        }
-        if (!newSignal) throw new Error("graph coloring failed");
-
-        deleteEntity(e);
+        e.delete();
         entities.splice(i--, 1);
         inNet.points.delete(e.input);
         outNet.points.delete(e.output);
 
-        inGroup.points.delete(e.input);
-        outGroup.points.delete(e.output);
+        if (oldSignal.in !== oldSignal.out) {
+            let inGroup = groups.get(oldSignal.in).nets.get(inNet);
+            let outGroup = groups.get(oldSignal.out).nets.get(outNet);
 
-        groups.get(oldSignal.in).changeSignal(inGroup, oldSignal.in, newSignal);
-        groups.get(oldSignal.out).changeSignal(outGroup, oldSignal.out, newSignal);
+            let newSignal;
+            for (const s of allSignals) {
+                if (!inGroup.networkSignals.has(s) && !outGroup.networkSignals.has(s)) {
+                    newSignal = s;
+                    break;
+                }
+            }
+            if (!newSignal) throw new Error("graph coloring failed");
 
-        let newGroup = groups.get(newSignal)
-        if (!newGroup) {
-            newGroup = new GroupCollection();
-            groups.set(newSignal, newGroup);
+            inGroup.points.delete(e.input);
+            outGroup.points.delete(e.output);
+
+            groups.get(oldSignal.in).changeSignal(inGroup, oldSignal.in, newSignal);
+            groups.get(oldSignal.out).changeSignal(outGroup, oldSignal.out, newSignal);
+
+            let newGroup = groups.get(newSignal)
+            if (!newGroup) {
+                newGroup = new GroupCollection();
+                groups.set(newSignal, newGroup);
+            }
+            newGroup.merge(inGroup, outGroup);
         }
-        newGroup.merge(inGroup, outGroup);
 
         makeConnection(newColor, ...e.input.red, ...e.input.green, ...e.output.red, ...e.output.green);
 

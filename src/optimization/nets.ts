@@ -30,6 +30,14 @@ export class Network {
         return false;
     }
 
+    hasColor(color: "red" | "green") {
+        for (const o of this.points) {
+            if(o[color].size != 0) return true;
+        }
+
+        return false;
+    }
+
     get signals() {
         let signals = new Set<SignalID>();
         for (const p of this.points) {

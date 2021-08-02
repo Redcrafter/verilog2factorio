@@ -4,7 +4,7 @@ export const dir = 4;
 
 export const signalV: SignalID = { type: "virtual", name: "signal-V" };
 export const signalC: SignalID = { type: "virtual", name: "signal-C" };
-export const signalR: SignalID = { type: "virtual", name: "signal-R" }
+export const signalR: SignalID = { type: "virtual", name: "signal-R" };
 export const signalGreen: SignalID = { type: "virtual", name: "signal-green" };
 export const signalGrey: SignalID = { type: "virtual", name: "signal-grey" };
 
@@ -308,6 +308,26 @@ export abstract class Entity {
     }
 
     abstract toObj(): RawEntity;
+
+    delete() {
+        function delCon(e: Endpoint, color: "red" | "green") {
+            for (const c of e[color]) {
+                let n = c.entity;
+
+                if (n.input) {
+                    n.input[color].delete(e);
+                }
+                n.output[color].delete(e);
+            }
+        }
+
+        if (this.input) {
+            delCon(this.input, "red");
+            delCon(this.input, "green");
+        }
+        delCon(this.output, "red");
+        delCon(this.output, "green");
+    }
 }
 
 export function createEndpoint(ent: Entity, type: number, ...outSignals: SignalID[]): Endpoint {
@@ -319,6 +339,7 @@ export function createEndpoint(ent: Entity, type: number, ...outSignals: SignalI
         green: new Set()
     };
 }
+
 export function convertEndpoint(p: Endpoint): ConnectionPoint {
     function map(el: Endpoint[]) {
         return el.map(x => ({ entity_id: x.entity.id, circuit_id: x.type }))
@@ -345,24 +366,4 @@ export function makeConnection(c: Color, ...points: Endpoint[]) {
             b.green.add(a);
         }
     }
-}
-
-export function deleteEntity(entity: Entity) {
-    function delCon(e: Endpoint, color: "red" | "green") {
-        for (const c of e[color]) {
-            let n = c.entity;
-
-            if (n.input) {
-                n.input[color].delete(e);
-            }
-            n.output[color].delete(e);
-        }
-    }
-
-    if (entity.input) {
-        delCon(entity.input, "red");
-        delCon(entity.input, "green");
-    }
-    delCon(entity.output, "red");
-    delCon(entity.output, "green");
 }

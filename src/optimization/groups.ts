@@ -5,25 +5,23 @@ import { Decider } from "../entities/Decider.js";
 import { each, Endpoint, Entity, signalC } from "../entities/Entity.js";
 import { Network, Networks } from "./nets.js";
 
-function _changeSignal(e: Endpoint, from: SignalID, to: SignalID) {
-    let node = e.entity;
+function _changeSignal(endpoint: Endpoint, from: SignalID, to: SignalID) {
+    let entity = endpoint.entity;
 
-    if (node instanceof Arithmetic || node instanceof Decider) {
-        if (e == node.input) {
-            if (node.params.first_signal == from) node.params.first_signal = to;
-            else if (node.params.second_signal == from) node.params.second_signal = to;
+    if (entity instanceof Arithmetic || entity instanceof Decider) {
+        if (endpoint == entity.input) {
+            if (entity.params.first_signal == from) entity.params.first_signal = to;
+            else if (entity.params.second_signal == from) entity.params.second_signal = to;
             else console.assert(false);
         } else {
-            console.assert(node.params.output_signal == from);
-            node.params.output_signal = to;
+            console.assert(entity.params.output_signal == from);
+            entity.params.output_signal = to;
         }
-    } else if (node instanceof Constant) {
-        for (const el of node.params) {
-            if (el.signal == from) {
-                el.signal = to;
-            }
+    } else if (entity instanceof Constant) {
+        for (const el of entity.params) {
+            if (el.signal == from) el.signal = to;
         }
-    } else throw new Error(`node is not of type Arithmetic, Decider, or Constant.`)
+    } else throw new Error(`node is not of type Arithmetic, Decider, or Constant.`);
 }
 
 export class Group {
@@ -106,39 +104,39 @@ export function extractSignalGroups(entities: Entity[], nets: Networks) {
         return signal;
     }
 
-    // create all nets
+    // create all groups
     for (const entity of entities) {
         let rNet = nets.red.map.get(entity.output);
         let gNet = nets.green.map.get(entity.output);
 
         function processSignal(signal: SignalID) {
-            let signalGroup = getGroup(signal);
+            let signalGroups = getGroup(signal);
 
-            let rGroup = signalGroup.nets.get(rNet);
-            let gGroup = signalGroup.nets.get(gNet);
+            let rGroup = signalGroups.nets.get(rNet);
+            let gGroup = signalGroups.nets.get(gNet);
 
             let g;
             if (rGroup && gGroup) {
                 // merge
-                g = signalGroup.merge(rGroup, gGroup);
+                g = signalGroups.merge(rGroup, gGroup);
 
                 // somehow rGroup === gGroup is always true
             } else {
-                 g = rGroup ?? gGroup
+                g = rGroup ?? gGroup
             }
-            
+
             if (!g) {
                 g = new Group();
-                signalGroup.groups.add(g);
+                signalGroups.groups.add(g);
             }
 
             g.points.add(entity.output);
             if (rNet) {
-                signalGroup.nets.set(rNet, g);
+                signalGroups.nets.set(rNet, g);
                 g.nets.add(rNet);
             }
             if (gNet) {
-                signalGroup.nets.set(gNet, g);
+                signalGroups.nets.set(gNet, g);
                 g.nets.add(gNet);
             }
         }
@@ -149,7 +147,7 @@ export function extractSignalGroups(entities: Entity[], nets: Networks) {
             }
         } else if (entity instanceof Arithmetic || entity instanceof Decider) {
             processSignal(entity.params.output_signal);
-        } else {}
+        }
     }
 
     // merge input groups with same signal type
@@ -159,15 +157,15 @@ export function extractSignalGroups(entities: Entity[], nets: Networks) {
         let rNet = nets.red.map.get(entity.input);
         let gNet = nets.green.map.get(entity.input);
 
-        function doShit(signalId: SignalID) {
-            let signalGroup = groups.get(signalId);
+        function mergeInput(signalId: SignalID) {
+            let signalGroups = groups.get(signalId);
 
-            let rGroup = signalGroup.nets.get(rNet);
-            let gGroup = signalGroup.nets.get(gNet);
+            let rGroup = signalGroups.nets.get(rNet);
+            let gGroup = signalGroups.nets.get(gNet);
 
             let g;
             if (rGroup && gGroup) {
-                g = signalGroup.merge(rGroup, gGroup);
+                g = signalGroups.merge(rGroup, gGroup);
             } else {
                 g = rGroup ?? gGroup;
             }
@@ -178,26 +176,24 @@ export function extractSignalGroups(entities: Entity[], nets: Networks) {
         // merge all inputs if each
         if (entity.params.first_signal == each || entity.params.second_signal == each) {
             for (const [s, g] of groups) {
-                doShit(s);
+                mergeInput(s);
             }
         } else {
             // merge if both inputs share a signal
-            if (entity.params.first_signal) doShit(entity.params.first_signal)?.points.add(entity.input);
-            if (entity.params.second_signal) doShit(entity.params.second_signal)?.points.add(entity.input);
+            if (entity.params.first_signal) mergeInput(entity.params.first_signal)?.points.add(entity.input);
+            if (entity.params.second_signal) mergeInput(entity.params.second_signal)?.points.add(entity.input);
 
             // merge input and output if passthrough
             if (entity instanceof Decider && entity.params.copy_count_from_input) {
-                let help = groups.get(entity.params.output_signal);
-                let g = doShit(entity.params.output_signal);
+                let signalGroups = groups.get(entity.params.output_signal);
+                let g = mergeInput(entity.params.output_signal);
 
-                let why = help.nets.get(nets.red.map.get(entity.output) ?? nets.green.map.get(entity.output));
+                let why = signalGroups.nets.get(nets.red.map.get(entity.output) ?? nets.green.map.get(entity.output));
 
-                help.merge(why, g);
+                signalGroups.merge(why, g);
             }
         }
     }
-
-    // console.assert(groups.netMap.size == nets.red.nets.size + nets.green.nets.size);
 
     return groups;
 }

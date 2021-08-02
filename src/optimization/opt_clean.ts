@@ -1,5 +1,5 @@
 import { Constant } from "../entities/Constant.js";
-import { deleteEntity, Entity } from "../entities/Entity.js";
+import { Entity } from "../entities/Entity.js";
 
 /** Removes entities which have no effect */
 export function opt_clean(entities: Entity[]) {
@@ -15,7 +15,7 @@ export function opt_clean(entities: Entity[]) {
             (e.input.red.size + e.input.green.size == 0) || //  input is not connected
             (e.output.red.size + e.output.green.size == 0)) { // output is not connected
 
-            deleteEntity(e);
+            e.delete();
             entities.splice(entities.indexOf(e), 1);
             i--;
             count++;
