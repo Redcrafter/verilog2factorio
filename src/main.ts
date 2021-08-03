@@ -1,11 +1,8 @@
+import { createBpFromFiles } from './driver.js';
+
 import { Command } from 'commander';
 import readline from 'readline';
 import fs from "fs";
-
-import { buildGraph } from "./parser.js";
-import { transform } from "./transformer.js";
-import { genNetlist, Module } from "./yosys.js";
-import { Blueprint, createBlueprint, createBpString } from "./blueprint.js"
 
 
 const program = new Command("v2f");
@@ -21,13 +18,14 @@ program
     .option("-r, --retry", "Retry until there are no longer layout errors.");
 program.parse(process.argv);
 
-export const options: {
+export type optionsType = {
     seed?: string;
     output?: string;
     modules?: string[];
     files?: string[];
     retry?: Boolean;
-} = program.opts();
+}
+export const options: optionsType = program.opts();
 // options.seed
 
 // merge default and file options
@@ -58,34 +56,10 @@ if (options.output) {
 
 rl.close();
 
-const data = await genNetlist(options.files);
-const modules: Blueprint[] = [];
-
-let keys = new Set(options.modules ?? Object.keys(data.modules));
-
-for (const key of keys) {
-    let module = data.modules[key];
-    if (!module) {
-        console.log(`error: Module ${key} not found`);
-        process.exit(0);
-    }
-    modules.push(pipeline(key, module));
-}
-
-const string = createBpString(modules);
+const string = await createBpFromFiles(options);
 
 if (options.output) {
     fs.writeFileSync(options.output, string);
 } else {
     console.log(string);
-}
-
-function pipeline(name: string, module: Module) {
-    console.log(`Building graph for ${name}`);
-    const graph = buildGraph(module);
-
-    console.log(`Translating graph to combinators`);
-    const entities = transform(graph.nodes);
-
-    return createBlueprint(entities, name);
 }
