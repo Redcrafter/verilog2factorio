@@ -39,42 +39,14 @@ export class MUX extends Node {
             output_signal: signalV
         }); // if c == 1 save input value
 
-        if (a instanceof ConstNode) {
-            if (a.value == 0) {
-                // can be completely ignored
-                decider1 = null;
-            } else {
-                a.forceCreate();
-            }
-        }
-        if (b instanceof ConstNode) {
-            if (b.value == 0) {
-                // can be completely ignored
-                decider2 = null;
-            } else {
-                b.forceCreate();
-            }
-        }
+        this.entities = [transformer, decider1, decider2];
 
-        this.entities = [transformer];
+        makeConnection(Color.Red, a.output(), decider1.input);
+        makeConnection(Color.Red, b.output(), decider2.input);
+        makeConnection(Color.Green, transformer.output, decider1.input, decider2.input);
+        makeConnection(Color.Both, decider1.output, decider2.output);
 
-        if (decider1) {
-            makeConnection(Color.Red, a.output(), decider1.input);
-            this.entities.push(decider1);
-        }
-        if (decider2) {
-            makeConnection(Color.Red, b.output(), decider2.input);
-            this.entities.push(decider2);
-        }
-
-        if (decider1 && decider2) {
-            makeConnection(Color.Green, transformer.output, decider1.input, decider2.input);
-            makeConnection(Color.Both, decider1.output, decider2.output);
-        } else {
-            makeConnection(Color.Green, transformer.output, (decider1 ?? decider2).input);
-        }
-
-        return (decider1 ?? decider2).output;
+        return decider1.output;
     }
 
     combs() {

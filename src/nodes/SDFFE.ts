@@ -90,9 +90,6 @@ export class SDFFE extends Node {
             makeConnection(Color.Green, this.sel1.input, this.sel2.input);
             makeConnection(Color.Red, this.sel1.output, this.sel2.output);
         }
-        if (d instanceof ConstNode) {
-            d.forceCreate();
-        }
 
         // pretty lazy just invert the signal
         if (this.data.parameters.SRST_POLARITY == 0) {

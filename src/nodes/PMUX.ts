@@ -29,6 +29,9 @@ export class PMUX extends Node {
 
         const s = getMergeEls(this.data.connections.S);
 
+        let limiter = createLimiter(this.outMask);
+        this.entities.push(limiter);
+
         let def = new Decider({
             first_signal: signalC,
             constant: 0,
@@ -37,18 +40,9 @@ export class PMUX extends Node {
             output_signal: signalV
         });
 
-        // if a is constant can be ignored
-        if (a instanceof ConstNode) {
-            if (a.value == 0) {
-                // can be ignored
-                def = null;
-            } else {
-                a.forceCreate();
-            }
-        }
-
-        let limiter = createLimiter(this.outMask);
-        this.entities.push(limiter);
+        makeConnection(Color.Green, a.output(), def.input);
+        makeConnection(Color.Red, def.output, limiter.input);
+        this.entities.push(def);
 
         let bIndex = 0;
         for (let i = 0; i < s.length; i++) {
@@ -56,16 +50,13 @@ export class PMUX extends Node {
             console.assert(item.start == 0);
             console.assert(item.start + item.count == item.node.outputBits.length);
 
+            // output might not be connected but idc
             let trans = createTransformer(item.node.output());
             this.entities.push(trans);
-            if (def) makeConnection(Color.Red, trans.output, def.input);
+            makeConnection(Color.Red, trans.output, def.input);
 
             for (let j = 0; j < item.count; j++) {
                 const element = b[bIndex++];
-                if (element instanceof ConstNode) {
-                    if (element.value == 0) continue;
-                    element.forceCreate();
-                }
 
                 let comp = new Decider({
                     first_signal: signalC,
@@ -84,12 +75,6 @@ export class PMUX extends Node {
             }
         }
 
-        if (def) {
-            makeConnection(Color.Green, a.output(), def.input);
-            makeConnection(Color.Red, def.output, limiter.input);
-
-            this.entities.push(def);
-        }
 
         return limiter.output;
     }

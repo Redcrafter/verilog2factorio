@@ -26,10 +26,6 @@ export class XNOR extends Node {
         const a = getInputNode(this.data.connections.A);
         const b = getInputNode(this.data.connections.B);
 
-        if (a instanceof ConstNode || b instanceof Constant) {
-            throw new Error("Unnecessary operation");
-        }
-
         this.inverter = new Arithmetic({
             first_signal: signalV,
             second_constant: a.outMask,

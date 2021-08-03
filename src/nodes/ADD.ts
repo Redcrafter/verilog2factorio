@@ -22,9 +22,6 @@ export class ADD extends Node {
 
         this.limiter = createLimiter(this.outMask);
 
-        if (a instanceof ConstNode) a.forceCreate();
-        if (b instanceof ConstNode) b.forceCreate();
-
         makeConnection(Color.Red, a.output(), this.limiter.input);
         makeConnection(Color.Green, b.output(), this.limiter.input);
 

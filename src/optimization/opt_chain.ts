@@ -5,7 +5,7 @@ import { extractNets, Network } from "./nets.js";
  * replaces all wires with wire chains 
 */
 export function opt_chain(entities: Entity[]) {
-    console.log("Running opt_chain \n");
+    console.log("Running opt_chain");
 
     let nets = extractNets(entities);
 

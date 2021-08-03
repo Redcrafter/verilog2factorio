@@ -16,10 +16,6 @@ export class Output extends Node {
     _connect(getInputNode: nodeFunc): Endpoint {
         const src = getInputNode(this.bits);
 
-        if(src instanceof ConstNode) {
-            src.forceCreate();
-        }
-
         this.pole = new Pole();
         this.pole.keep = true;
 

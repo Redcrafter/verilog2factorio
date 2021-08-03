@@ -6,6 +6,8 @@ import { BinaryCell } from "../yosys.js";
 import { ConstNode } from "./ConstNode.js";
 import { createLimiter, createTransformer, Node, nodeFunc } from "./Node.js";
 
+// TODO: optimize constant subtraction
+
 const needsLimiter = new Set([
     ArithmeticOperations.Mul,
     ArithmeticOperations.Add,
@@ -45,10 +47,6 @@ export class MathNode extends Node {
     _connect(getInputNode: nodeFunc) {
         const a = getInputNode(this.data.connections.A);
         const b = getInputNode(this.data.connections.B);
-
-        if (a instanceof ConstNode && b instanceof Constant) {
-            throw new Error("Unnecessary operation");
-        }
 
         if (this.method == ArithmeticOperations.RShift && this.data.parameters.A_WIDTH == 32 && this.data.parameters.A_SIGNED == 0) {
             // factorios numbers are signed so if a number is 32 bits and we use shift it does an arithmetic shift instead of a logic shift
@@ -96,38 +94,17 @@ export class MathNode extends Node {
             }
         }
 
-        let calculator;
-        if (a instanceof ConstNode) {
-            calculator = new Arithmetic({
-                first_constant: a.value,
-                second_signal: signalV,
-                operation: this.method,
-                output_signal: signalV
-            });
-            this.entities = [calculator];
-            makeConnection(Color.Red, b.output(), calculator.input);
-        } else if (b instanceof ConstNode) {
-            calculator = new Arithmetic({
-                first_signal: signalV,
-                second_constant: b.value,
-                operation: this.method,
-                output_signal: signalV
-            });
-            this.entities = [calculator];
-            makeConnection(Color.Red, a.output(), calculator.input);
-        } else {
-            let transformer = createTransformer(a.output());
-            calculator = new Arithmetic({
-                first_signal: signalV,
-                second_signal: signalC,
-                operation: this.method,
-                output_signal: signalV
-            });
-            this.entities = [transformer, calculator];
+        let transformer = createTransformer(a.output());
+        let calculator = new Arithmetic({
+            first_signal: signalV,
+            second_signal: signalC,
+            operation: this.method,
+            output_signal: signalV
+        });
+        this.entities = [transformer, calculator];
 
-            makeConnection(Color.Green, transformer.output, calculator.input);
-            makeConnection(Color.Red, b.output(), calculator.input);
-        }
+        makeConnection(Color.Green, transformer.output, calculator.input);
+        makeConnection(Color.Red, b.output(), calculator.input);
 
         if (needsLimiter.has(this.method) && this.outMask != -1) {
             let limiter = createLimiter(this.outMask);

@@ -1,7 +1,6 @@
-import { Constant } from "../entities/Constant.js";
 import { Entity } from "../entities/Entity.js";
 
-/** Removes entities which have no effect */
+/** Removes entities which have no output */
 export function opt_clean(entities: Entity[]) {
     let count = 0;
 
@@ -11,10 +10,7 @@ export function opt_clean(entities: Entity[]) {
         const e = entities[i];
         if (e.keep) continue;
 
-        if ((e instanceof Constant && e.params[0].count == 0) || // constant with 0 output
-            (e.input.red.size + e.input.green.size == 0) || //  input is not connected
-            (e.output.red.size + e.output.green.size == 0)) { // output is not connected
-
+        if (e.output.red.size + e.output.green.size == 0) { // output is not connected
             e.delete();
             entities.splice(entities.indexOf(e), 1);
             i--;
@@ -24,5 +20,7 @@ export function opt_clean(entities: Entity[]) {
         }
     }
 
-    console.log(`Removed ${count} combinators\n`);
+    console.log(`Removed ${count} combinators`);
+
+    return count != 0;
 }

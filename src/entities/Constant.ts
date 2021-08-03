@@ -46,6 +46,12 @@ export class Constant extends Entity {
         };
     }
 
+    getValue(s: SignalID) {
+        for (const el of this.params) {
+            if(el.signal == s) return el.count;
+        }
+    }
+
     static simple(value: number) {
         return new Constant({
             count: value,

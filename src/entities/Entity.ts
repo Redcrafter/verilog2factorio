@@ -310,23 +310,26 @@ export abstract class Entity {
     abstract toObj(): RawEntity;
 
     delete() {
-        function delCon(e: Endpoint, color: "red" | "green") {
-            for (const c of e[color]) {
-                let n = c.entity;
+        this.delCon(this.input, Color.Red);
+        this.delCon(this.input, Color.Green);
 
-                if (n.input) {
-                    n.input[color].delete(e);
-                }
-                n.output[color].delete(e);
-            }
-        }
+        this.delCon(this.output, Color.Red);
+        this.delCon(this.output, Color.Green);
+    }
 
-        if (this.input) {
-            delCon(this.input, "red");
-            delCon(this.input, "green");
+    delCon(e: Endpoint, c: Color) {
+        const color = c == Color.Red ? "red" : "green";
+
+        // connect endpoints together to keep network connected
+        makeConnection(c, ...e[color]);
+
+        for (const c of e[color]) {
+            let n = c.entity;
+
+            n.input[color].delete(e);
+            n.output[color].delete(e);
         }
-        delCon(this.output, "red");
-        delCon(this.output, "green");
+        e[color].clear();
     }
 }
 

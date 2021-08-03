@@ -4,6 +4,7 @@ import { Entity, Endpoint } from "../entities/Entity.js";
 export class Network {
     points: Set<Endpoint>;
     id: number = -1;
+    private _signals: Set<SignalID>;
 
     constructor(points: Endpoint[]) {
         this.points = new Set(points);
@@ -32,20 +33,22 @@ export class Network {
 
     hasColor(color: "red" | "green") {
         for (const o of this.points) {
-            if(o[color].size != 0) return true;
+            if (o[color].size != 0) return true;
         }
 
         return false;
     }
 
     get signals() {
-        let signals = new Set<SignalID>();
-        for (const p of this.points) {
-            for (const s of p.outSignals) {
-                signals.add(s);
+        if (!this._signals) {
+            this._signals = new Set<SignalID>();
+            for (const p of this.points) {
+                for (const s of p.outSignals) {
+                    this._signals.add(s);
+                }
             }
         }
-        return signals;
+        return this._signals;
     }
 }
 

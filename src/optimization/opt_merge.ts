@@ -53,12 +53,9 @@ export function opt_merge(entities: Entity[]) {
         }
     }
 
-    let valid = [...groups.values()].filter(x => x.length > 1);
-
     let total = 0;
-    // for (const [key, n] of groups) {
-    //     if (n.length == 1) continue;
-    for (const group of valid) {
+    for (const [key, group] of groups) {
+        if (group.length == 1) continue;
 
         for (let i = 0; i < group.length; i++) {
             let entity = group[i];
@@ -69,18 +66,16 @@ export function opt_merge(entities: Entity[]) {
             for (let j = i + 1; j < group.length; j++) {
                 let other = group[j];
 
+                if (!eq(entity, other)) continue;
+
                 let orNet = nets.red.map.get(other.output);
                 let ogNet = nets.green.map.get(other.output);
-
-                if (!eq(entity, other)) continue;
 
                 let doMerge = false;
                 if (!arNet && !orNet) { // only green output
                     doMerge = !agNet.hasOtherInputs(entity.output) && !ogNet.hasOtherInputs(other.output);
                 } else if (!agNet && !ogNet) { // only red output
                     doMerge = !arNet.hasOtherInputs(entity.output) && !orNet.hasOtherInputs(other.output);
-                } else {
-                    debugger;
                 }
 
                 if (doMerge) {
@@ -88,16 +83,20 @@ export function opt_merge(entities: Entity[]) {
                     entities.splice(entities.indexOf(other), 1);
                     j--;
 
-                    other.delete();
+                    // input networks are the same but we have to connect the individual enpoints to preven networks being split in half
+                    makeConnection(Color.Red, ...other.input.red, entity.input);
+                    makeConnection(Color.Green, ...other.input.green, entity.input);
+
                     makeConnection(Color.Red, entity.output, ...other.output.red);
                     makeConnection(Color.Green, entity.output, ...other.output.green);
+                    other.delete();
 
                     total++;
                 }
-
             }
         }
     }
 
-    console.log(`Removed ${total} combinators\n`);
+    console.log(`Removed ${total} combinators`);
+    return total != 0;
 }

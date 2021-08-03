@@ -16,13 +16,14 @@ function getSignals(e: Entity) {
 
 function isNop(e: Entity) {
     if (e instanceof Arithmetic) {
-        return e.params.second_constant == 0 && (
+        return (e.params.second_constant == 0 && (
             e.params.operation == ArithmeticOperations.Add ||
             e.params.operation == ArithmeticOperations.LShift ||
             e.params.operation == ArithmeticOperations.Or ||
             e.params.operation == ArithmeticOperations.RShift ||
             e.params.operation == ArithmeticOperations.Sub ||
-            e.params.operation == ArithmeticOperations.Xor);
+            e.params.operation == ArithmeticOperations.Xor)) ||
+            (e.params.operation == ArithmeticOperations.And && e.params.second_constant == -1);
     }
     return false;
 }
@@ -67,7 +68,6 @@ export function opt_transform(entities: Entity[]) {
             }
         }
 
-        e.delete();
         entities.splice(i--, 1);
         inNet.points.delete(e.input);
         outNet.points.delete(e.output);
@@ -100,9 +100,11 @@ export function opt_transform(entities: Entity[]) {
         }
 
         makeConnection(newColor, ...e.input.red, ...e.input.green, ...e.output.red, ...e.output.green);
+        e.delete();
 
         count++;
     }
 
-    console.log(`Removed ${count} combinators\n`);
+    console.log(`Removed ${count} combinators`);
+    return count != 0;
 }

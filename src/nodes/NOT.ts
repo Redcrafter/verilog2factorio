@@ -17,8 +17,6 @@ export class NOT extends Node {
 
     _connect(getInputNode: nodeFunc) {
         const a = getInputNode(this.data.connections.A);
-        if (a instanceof ConstNode)
-            throw new Error("unnecessary operation");
 
         this.inverter = new Arithmetic({
             first_signal: signalV,

@@ -190,7 +190,7 @@ export function extractSignalGroups(entities: Entity[], nets: Networks) {
 
                 let why = signalGroups.nets.get(nets.red.map.get(entity.output) ?? nets.green.map.get(entity.output));
 
-                signalGroups.merge(why, g);
+                if (g) signalGroups.merge(why, g);
             }
         }
     }

@@ -26,10 +26,6 @@ export class LogicNode extends Node {
         const a = getInputNode(this.data.connections.A);
         const b = getInputNode(this.data.connections.B);
 
-        if (a instanceof ConstNode && b instanceof Constant) {
-            throw new Error("Unnecessary operation");
-        }
-
         if (this.method == ComparatorString.LT || this.method == ComparatorString.LE || this.method == ComparatorString.GT || this.method == ComparatorString.GE) {
             if (this.data.parameters.A_WIDTH == 32 && this.data.parameters.A_SIGNED == 0) {
                 // a < b == (a ^ (0x80000000 | 0)) < (b ^ (0x80000000 | 0));
@@ -69,34 +65,6 @@ export class LogicNode extends Node {
                 // same idea as before?
                 throw new Error("not implemented");
             }
-        }
-
-        if (a instanceof ConstNode) {
-            let comp = new Decider({
-                first_signal: signalV,
-                constant: a.value,
-                comparator: this.method,
-                copy_count_from_input: false,
-                output_signal: signalV
-            });
-            this.entities = [comp];
-
-            makeConnection(Color.Red, b.output(), comp.input);
-
-            return comp.output;
-        }
-
-        if (b instanceof ConstNode) {
-            let comp = new Decider({
-                first_signal: signalV,
-                constant: b.value,
-                comparator: this.method,
-                copy_count_from_input: false,
-                output_signal: signalV
-            });
-            this.entities = [comp];
-            makeConnection(Color.Red, a.output(), comp.input);
-            return comp.output;
         }
 
         let t = createTransformer(a.output());
