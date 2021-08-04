@@ -1,16 +1,21 @@
-import { createBpFromFiles } from './driver.js';
-
 import { Command } from 'commander';
 import readline from 'readline';
 import fs from "fs";
 
+import { options } from './options.js';
+import { buildGraph } from "./parser.js";
+import { transform } from "./transformer.js";
+import { genNetlist, Module } from "./yosys.js";
+import { Blueprint, createBlueprint, createBpString } from "./blueprint.js";
+
+import { logger } from "./logger.js";
 
 const program = new Command("v2f");
 
 program
     .arguments("<files..>")
-    // .option("-v, --verbose")
     .helpOption("-h, --help", "Display this information.")
+    .option("-v, --verbose")
     .option("-s, --seed <seed>", "Specify a seed for the layout generation.")
     .option("-o, --output <file>", "File to output the compiled blueprint to.")
     .option("-m, --modules <names...>", "Verilog modules to output blueprint for. (defaults to all).")
@@ -18,15 +23,12 @@ program
     .option("-r, --retry", "Retry until there are no longer layout errors.");
 program.parse(process.argv);
 
-export type optionsType = {
-    seed?: string;
-    output?: string;
-    modules?: string[];
-    files?: string[];
-    retry?: Boolean;
+let _options = program.opts();
+
+for (const key in _options) {
+    // @ts-ignore
+    options[key] = _options[key];
 }
-export const options: optionsType = program.opts();
-// options.seed
 
 // merge default and file options
 options.files = options.files ?? [];
@@ -38,9 +40,9 @@ const rl = readline.createInterface({
 });
 
 if (options.files.length == 0) {
-    console.log("error: no input files");
+    logger.log("error: no input files");
     if (options.modules) {
-        console.log("did you forget -f for files?");
+        logger.log("did you forget -f for files?");
     }
     process.exit(0);
 }
@@ -56,10 +58,34 @@ if (options.output) {
 
 rl.close();
 
-const string = await createBpFromFiles(options);
+const data = await genNetlist(options.files);
+const modules: Blueprint[] = [];
+
+let keys = new Set(options.modules ?? Object.keys(data.modules));
+
+for (const key of keys) {
+    let module = data.modules[key];
+    if (!module) {
+        logger.log(`error: Module ${key} not found`);
+        throw new Error();
+    }
+    modules.push(pipeline(key, module));
+}
+
+const string = createBpString(modules);
 
 if (options.output) {
     fs.writeFileSync(options.output, string);
 } else {
-    console.log(string);
+    logger.log(string);
+}
+
+function pipeline(name: string, module: Module) {
+    logger.log(`Building graph for ${name}`);
+    const graph = buildGraph(module);
+
+    logger.log(`Translating graph to combinators`);
+    const entities = transform(graph.nodes);
+
+    return createBlueprint(entities, name);
 }

@@ -1,27 +1,16 @@
-import { Color, Endpoint, Entity, makeConnection, signalV } from "../entities/Entity.js";
+import { logger } from "../logger.js";
+
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
-import { createLimiter, Node } from "./Node.js";
-import { ConstNode } from "./ConstNode.js";
 import { Constant } from "../entities/Constant.js";
+import { Color, Endpoint, Entity, makeConnection, signalV } from "../entities/Entity.js";
+
+import { ConstNode } from "./ConstNode.js";
+import { createLimiter, Node } from "./Node.js";
 
 export interface MergeEl {
     node: Node;
     start: number;
     count: number;
-}
-
-function groupBy<T, K>(arr: T[], keyGetter: (a: T) => K) {
-    let map = new Map<K, T[]>();
-    for (const item of arr) {
-        const key = keyGetter(item);
-        const sub = map.get(key);
-        if (!sub) {
-            map.set(key, [item]);
-        } else {
-            sub.push(item);
-        }
-    }
-    return map;
 }
 
 export class MergeNode extends Node {
@@ -45,8 +34,8 @@ export class MergeNode extends Node {
 
             if (n.node instanceof ConstNode) {
                 // count absolute constant value to merge it into one
-                console.assert(n.start == 0);
-                console.assert(n.count == 1);
+                logger.assert(n.start == 0);
+                logger.assert(n.count == 1);
                 constVal |= n.node.value << offset;
 
                 offset += n.count;
@@ -65,7 +54,7 @@ export class MergeNode extends Node {
                 let count = j - i;
                 if (count > 1) {
                     let prev = n.node.output();
-                    if(n.start != 0) { // need a shift
+                    if (n.start != 0) { // need a shift
                         let shift = new Arithmetic({
                             first_signal: signalV,
                             second_constant: n.start,
@@ -76,7 +65,7 @@ export class MergeNode extends Node {
                         makeConnection(Color.Red, prev, shift.input);
                         prev = shift.output;
                     }
-                    if(n.start + n.count != n.node.outputBits.length || n.node.outputBits.length == 32) {
+                    if (n.start + n.count != n.node.outputBits.length || n.node.outputBits.length == 32) {
                         let mask = createLimiter(1);
                         this.entities.push(mask);
                         makeConnection(Color.Red, prev, mask.input);

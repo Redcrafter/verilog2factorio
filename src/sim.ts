@@ -1,5 +1,6 @@
 import seedrandom from "seedrandom";
-import { options } from "./main.js";
+import { options } from "./options.js";
+import { logger } from "./logger.js";
 
 function dist(a: Point, b: Point) {
     const dx = a.x - b.x;
@@ -128,7 +129,7 @@ export class Simulator {
                 }
             }
 
-            console.log(`Iteration: ${iter} Errors: ${errorCount}`);
+            logger.log(`Iteration: ${iter} Errors: ${errorCount}`);
         }
     }
 

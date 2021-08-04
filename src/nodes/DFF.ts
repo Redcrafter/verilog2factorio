@@ -1,9 +1,11 @@
-import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
-import { ComparatorString, Decider } from "../entities/Decider.js";
-
-import { createTransformer, Node, nodeFunc } from "./Node.js";
-import { Input } from "./Input.js";
+import { logger } from "../logger.js";
 import { Dff, Dffe } from "../yosys.js";
+
+import { ComparatorString, Decider } from "../entities/Decider.js";
+import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
+
+import { Input } from "./Input.js";
+import { createTransformer, Node, nodeFunc } from "./Node.js";
 
 export class DFF extends Node {
     data: Dff | Dffe;
@@ -16,9 +18,9 @@ export class DFF extends Node {
         super(item.connections.Q);
         this.data = item;
 
-        console.assert(item.parameters.CLK_POLARITY == 1, "revert clk polarity");
+        logger.assert(item.parameters.CLK_POLARITY == 1, "revert clk polarity");
         if (item.type == "$dffe")
-            console.assert(item.parameters.EN_POLARITY == 1, "revert enable polarity");
+            logger.assert(item.parameters.EN_POLARITY == 1, "revert enable polarity");
     }
 
     _connect(getInputNode: nodeFunc) {

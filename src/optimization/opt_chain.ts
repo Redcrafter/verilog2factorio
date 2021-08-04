@@ -1,3 +1,5 @@
+import { logger } from "../logger.js";
+
 import { Color, Entity, makeConnection } from "../entities/Entity.js";
 import { extractNets, Network } from "./nets.js";
 
@@ -5,7 +7,7 @@ import { extractNets, Network } from "./nets.js";
  * replaces all wires with wire chains 
 */
 export function opt_chain(entities: Entity[]) {
-    console.log("Running opt_chain");
+    logger.log("Running opt_chain");
 
     let nets = extractNets(entities);
 

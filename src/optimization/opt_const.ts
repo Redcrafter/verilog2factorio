@@ -1,10 +1,12 @@
 import { SignalID } from "../blueprint.js";
+import { logger } from "../logger.js";
+
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Constant } from "../entities/Constant.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Color, each, Entity } from "../entities/Entity.js";
-import { extractNets, Network } from "./nets.js";
 
+import { extractNets, Network } from "./nets.js";
 
 function constNetwork(net: Network, s: SignalID) {
     if (!net || !net.signals.has(s)) return 0;
@@ -72,7 +74,7 @@ function flipOperator(op: ComparatorString) {
 }
 
 export function opt_const(entities: Entity[]) {
-    console.log("Running opt_const");
+    logger.log("Running opt_const");
 
     let nets = extractNets(entities);
 
@@ -205,8 +207,8 @@ export function opt_const(entities: Entity[]) {
         }
     }
 
-    console.log(`Removed ${deleted} combinators`);
-    console.log(`Changed ${changed} combinators`);
+    logger.log(`Removed ${deleted} combinators`);
+    logger.log(`Changed ${changed} combinators`);
 
     return deleted != 0 && changed != 0;
 }

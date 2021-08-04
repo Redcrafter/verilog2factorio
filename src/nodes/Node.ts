@@ -1,5 +1,8 @@
+import { logger } from "../logger.js";
+
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Color, createEndpoint, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
+
 import { MergeEl } from "./MergeNode.js";
 
 export type nodeFunc = (n: (number | string)[]) => Node;
@@ -13,7 +16,7 @@ export function createTransformer(input?: Endpoint) {
         output_signal: signalC
     });
 
-    if(input) makeConnection(Color.Red, input, trans.input);
+    if (input) makeConnection(Color.Red, input, trans.input);
 
     return trans;
 }
@@ -42,7 +45,7 @@ export abstract class Node {
     outputPlaceholder: Endpoint;
 
     constructor(bits: number[]) {
-        console.assert(bits.length <= 32, `Wire width too big: ${bits.length}`);
+        logger.assert(bits.length <= 32, `Wire width too big: ${bits.length}`);
 
         this.outputBits = bits;
         this.outMask = bits.length == 32 ? -1 : (((1 << bits.length) - 1) | 0);

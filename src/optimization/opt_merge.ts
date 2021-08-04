@@ -1,7 +1,10 @@
+import { logger } from "../logger.js";
+
 import { Arithmetic } from "../entities/Arithmetic.js";
 import { Decider } from "../entities/Decider.js";
 import { Color, Entity, makeConnection } from "../entities/Entity.js";
 import { Pole } from "../entities/Pole.js";
+
 import { extractNets } from "./nets.js";
 
 function eq(a: Entity, b: Entity) {
@@ -25,7 +28,7 @@ function eq(a: Entity, b: Entity) {
 }
 
 export function opt_merge(entities: Entity[]) {
-    console.log("Running opt_merge");
+    logger.log("Running opt_merge");
 
     let nets = extractNets(entities);
     // let asd = extractSignalGroups(entities, nets);
@@ -97,6 +100,6 @@ export function opt_merge(entities: Entity[]) {
         }
     }
 
-    console.log(`Removed ${total} combinators`);
+    logger.log(`Removed ${total} combinators`);
     return total != 0;
 }

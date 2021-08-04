@@ -1,6 +1,9 @@
+import { logger } from "../logger.js";
+import { BinaryCell } from "../yosys.js";
+
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
-import { BinaryCell } from "../yosys.js";
+
 import { createTransformer, Node, nodeFunc } from "./Node.js";
 
 export class SSHR extends Node {
@@ -11,9 +14,9 @@ export class SSHR extends Node {
         super(item.connections.Y);
         this.data = item;
 
-        console.assert(item.parameters.A_SIGNED == 1);
-        console.assert(item.parameters.B_SIGNED == 0);
-        console.assert(item.type == "$sshr", "Only add allowed");
+        logger.assert(item.parameters.A_SIGNED == 1);
+        logger.assert(item.parameters.B_SIGNED == 0);
+        logger.assert(item.type == "$sshr", "Only add allowed");
     }
 
     _connect(getInputNode: nodeFunc) {

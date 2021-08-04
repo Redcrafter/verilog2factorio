@@ -1,7 +1,10 @@
+import { logger } from "../logger.js";
+import { SDff } from "../yosys.js";
+
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
-import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
-import { SDff } from "../yosys.js";
+import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
+
 import { Input } from "./Input.js";
 import { Node, nodeFunc } from "./Node.js";
 
@@ -19,7 +22,7 @@ export class SDFF extends Node {
         super(item.connections.Q);
         this.data = item;
 
-        console.assert(item.parameters.CLK_POLARITY == 1, "SDFF: revert clk polarity");
+        logger.assert(item.parameters.CLK_POLARITY == 1, "SDFF: revert clk polarity");
     }
 
     _connect(getInputNode: nodeFunc) {

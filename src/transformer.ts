@@ -4,13 +4,16 @@ import { Node } from "./nodes/Node.js";
 import { Output } from "./nodes/Output.js";
 
 // entities
-import { Endpoint, Entity } from "./entities/Entity.js";
+import { Color, Endpoint, Entity } from "./entities/Entity.js";
 
-import { Simulator } from "./sim.js";
 import { optimize } from "./optimization/optimize.js";
 
+import { logger } from "./logger.js";
+import { options } from "./options.js";
+import { Simulator } from "./sim.js";
+
 function createLayout(combs: Entity[], ports: Set<Entity>) {
-    console.log(`Running layout simulation`);
+    logger.log(`Running layout simulation`);
     let simulator = new Simulator();
 
     // add combinators to simulator
@@ -45,7 +48,7 @@ function createLayout(combs: Entity[], ports: Set<Entity>) {
         errors++;
     });
     if (errors != 0) {
-        console.error(`${errors} overlong wire(s) have been found after trying to layout the circuit`);
+        logger.error(`${errors} overlong wire(s) have been found after trying to layout the circuit`);
         // process.exit(0);
     }
 
@@ -59,7 +62,36 @@ function createLayout(combs: Entity[], ports: Set<Entity>) {
     }
 }
 
+function logNodes(nodes: Node[]) {
+    let map = new Map<string, any>();
+    for (const c of nodes) {
+        let name = c.constructor.name;
+
+        let val = map.get(name);
+        if (!val) {
+            val = {
+                count: 0,
+                comb: 0
+            };
+            map.set(name, val);
+        }
+        val.count++;
+
+        let combs = c.combs();
+        if (combs == undefined) debugger;
+        val.comb += combs.length;
+    }
+    logger.table([...map].map(x => ({
+        name: x[0],
+        count: x[1].count,
+        comb: x[1].comb,
+        ratio: Math.round((x[1].comb / x[1].count) * 100) / 100,
+    })));
+}
+
 export function transform(nodes: Node[]) {
+    if(options.verbose) logNodes(nodes);
+
     let combs = nodes.flatMap(x => x.combs());
     let ports = new Set(nodes.filter(x => x instanceof Input || x instanceof Output).flatMap(x => x.combs()));
 

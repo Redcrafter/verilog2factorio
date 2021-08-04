@@ -1,4 +1,6 @@
 import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
+import { logger } from "../logger.js";
+
 import { Entity, createEndpoint, convertEndpoint, dir } from "./Entity.js";
 
 export enum ComparatorString {
@@ -42,7 +44,7 @@ export class Decider extends Entity {
         this.input = createEndpoint(this, 1);
         this.output = createEndpoint(this, 2, this.params.output_signal);
 
-        console.assert((params.second_signal === undefined) !== (params.constant === undefined));
+        logger.assert((params.second_signal === undefined) !== (params.constant === undefined));
     }
 
     toObj(): DeciderCombinator {

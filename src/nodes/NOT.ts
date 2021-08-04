@@ -1,7 +1,8 @@
-import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
-import { Color, Endpoint, Entity, makeConnection, signalV } from "../entities/Entity.js";
 import { UnaryCell } from "../yosys.js";
-import { ConstNode } from "./ConstNode.js";
+
+import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
+import { Color, Entity, makeConnection, signalV } from "../entities/Entity.js";
+
 import { Node, nodeFunc } from "./Node.js";
 
 // ~x == x^(1 << n - 1)

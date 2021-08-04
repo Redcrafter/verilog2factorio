@@ -1,8 +1,9 @@
-import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
-import { Constant } from "../entities/Constant.js";
-import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
+import { logger } from "../logger.js";
 import { BinaryCell } from "../yosys.js";
-import { ConstNode } from "./ConstNode.js";
+
+import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
+import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
+
 import { Node, nodeFunc } from "./Node.js";
 
 // reduces overhead by replacing the converter with an inverter because ~(x ^ y) = ~x ^ y
@@ -16,10 +17,10 @@ export class XNOR extends Node {
         super(data.connections.Y);
         this.data = data;
 
-        console.assert(data.type == "$xnor", "only xnor allowed");
+        logger.assert(data.type == "$xnor", "only xnor allowed");
 
-        console.assert(data.parameters.A_SIGNED == 0, "XNOR: Only unsigned values allowed");
-        console.assert(data.parameters.B_SIGNED == 0, "XNOR: Only unsigned values allowed");
+        logger.assert(data.parameters.A_SIGNED == 0, "XNOR: Only unsigned values allowed");
+        logger.assert(data.parameters.B_SIGNED == 0, "XNOR: Only unsigned values allowed");
     }
 
     _connect(getInputNode: nodeFunc) {

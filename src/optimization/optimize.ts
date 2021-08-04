@@ -1,3 +1,5 @@
+import { logger } from "../logger.js";
+
 import { Entity } from "../entities/Entity.js";
 
 import { opt_chain } from "./opt_chain.js";
@@ -12,12 +14,12 @@ export function optimize(entities: Entity[]) {
         changed = false;
 
         // somehow ||= does not work?
-        if(opt_const(entities)) changed = true;
-        if(opt_clean(entities)) changed = true;
-        if(opt_merge(entities)) changed = true;
-        if(opt_transform(entities)) changed = true;
+        if (opt_const(entities)) changed = true;
+        if (opt_clean(entities)) changed = true;
+        if (opt_merge(entities)) changed = true;
+        if (opt_transform(entities)) changed = true;
 
-        console.log("");
+        logger.log("");
     }
 
     opt_chain(entities);

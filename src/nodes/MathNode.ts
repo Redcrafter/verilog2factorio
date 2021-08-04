@@ -1,9 +1,11 @@
+import { logger } from "../logger.js";
+import { BinaryCell } from "../yosys.js";
+
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Constant } from "../entities/Constant.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Color, each, Entity, makeConnection, signalC, signalGreen, signalGrey, signalV } from "../entities/Entity.js";
-import { BinaryCell } from "../yosys.js";
-import { ConstNode } from "./ConstNode.js";
+
 import { createLimiter, createTransformer, Node, nodeFunc } from "./Node.js";
 
 // TODO: optimize constant subtraction
@@ -26,22 +28,22 @@ export class MathNode extends Node {
         this.data = data;
         this.method = method;
 
-        console.assert(data.parameters.A_SIGNED == data.parameters.B_SIGNED);
+        logger.assert(data.parameters.A_SIGNED == data.parameters.B_SIGNED);
 
         if (method == ArithmeticOperations.Div || method == ArithmeticOperations.Mod) { // sign only matters for division and modulo
-            console.assert(data.parameters.A_WIDTH == data.parameters.B_WIDTH);
+            logger.assert(data.parameters.A_WIDTH == data.parameters.B_WIDTH);
 
             if (data.parameters.A_WIDTH == 32) {
-                console.assert(data.parameters.A_SIGNED == 1, `${method}: Only 32-bit signed values allowed`);
-                console.assert(data.parameters.B_SIGNED == 1, `${method}: Only 32-bit signed values allowed`);
+                logger.assert(data.parameters.A_SIGNED == 1, `${method}: Only 32-bit signed values allowed`);
+                logger.assert(data.parameters.B_SIGNED == 1, `${method}: Only 32-bit signed values allowed`);
             } else {
-                console.assert(data.parameters.A_SIGNED == 0, `${method}: Only unsigned values allowed`);
-                console.assert(data.parameters.B_SIGNED == 0, `${method}: Only unsigned values allowed`);
+                logger.assert(data.parameters.A_SIGNED == 0, `${method}: Only unsigned values allowed`);
+                logger.assert(data.parameters.B_SIGNED == 0, `${method}: Only unsigned values allowed`);
             }
         }
 
         // add has custom node
-        console.assert(method != ArithmeticOperations.Add);
+        logger.assert(method != ArithmeticOperations.Add);
     }
 
     _connect(getInputNode: nodeFunc) {

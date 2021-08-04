@@ -1,4 +1,5 @@
 import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
+
 import { Entity, convertEndpoint, dir, createEndpoint, signalV } from "./Entity.js";
 
 export interface ConstantControlBehavior {
@@ -48,7 +49,7 @@ export class Constant extends Entity {
 
     getValue(s: SignalID) {
         for (const el of this.params) {
-            if(el.signal == s) return el.count;
+            if (el.signal == s) return el.count;
         }
     }
 

@@ -1,8 +1,10 @@
-import { ConstNode } from "./ConstNode.js";
+import { logger } from "../logger.js";
+import { Mux } from "../yosys.js";
+
 import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
+
 import { createTransformer, Node, nodeFunc } from "./Node.js";
-import { Mux } from "../yosys.js";
 
 export class MUX extends Node {
     data: Mux;
@@ -19,9 +21,9 @@ export class MUX extends Node {
         const b = getInputNode(this.data.connections.B);
         const s = getInputNode(this.data.connections.S);
 
-        console.assert(this.data.connections.A.length == this.data.connections.B.length);
-        console.assert(this.data.connections.A.length == this.outputBits.length);
-        console.assert(this.data.connections.S.length == 1);
+        logger.assert(this.data.connections.A.length == this.data.connections.B.length);
+        logger.assert(this.data.connections.A.length == this.outputBits.length);
+        logger.assert(this.data.connections.S.length == 1);
 
         let transformer = createTransformer(s.output());
         let decider1 = new Decider({

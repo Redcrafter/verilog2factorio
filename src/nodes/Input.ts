@@ -1,4 +1,5 @@
 import { Constant } from "../entities/Constant.js";
+
 import { Node } from "./Node.js";
 
 export class Input extends Node {

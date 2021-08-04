@@ -1,8 +1,11 @@
+import { logger } from "../logger.js";
+import { SDffe } from "../yosys.js";
+
 import { Decider, ComparatorString } from "../entities/Decider.js";
 import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
-import { createTransformer, Node, nodeFunc } from "./Node.js";
+
 import { Input } from "./Input.js";
-import { SDffe } from "../yosys.js";
+import { createTransformer, Node, nodeFunc } from "./Node.js";
 
 export class SDFFCE extends Node {
     data: SDffe;
@@ -13,9 +16,9 @@ export class SDFFCE extends Node {
         super(item.connections.Q);
         this.data = item;
 
-        console.assert(item.parameters.SRST_VALUE == 0, "reset value != 0");
-        console.assert(item.parameters.CLK_POLARITY == 1, "revert clk polarity");
-        console.assert(item.parameters.EN_POLARITY == 1, "revert enable polarity");
+        logger.assert(item.parameters.SRST_VALUE == 0, "reset value != 0");
+        logger.assert(item.parameters.CLK_POLARITY == 1, "revert clk polarity");
+        logger.assert(item.parameters.EN_POLARITY == 1, "revert enable polarity");
     }
 
     _connect(getInputNode: nodeFunc) {

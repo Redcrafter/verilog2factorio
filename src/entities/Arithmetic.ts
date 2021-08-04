@@ -1,4 +1,6 @@
 import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
+import { logger } from "../logger.js";
+
 import { Entity, createEndpoint, convertEndpoint, dir } from "./Entity.js";
 
 export enum ArithmeticOperations {
@@ -46,8 +48,8 @@ export class Arithmetic extends Entity {
         this.input = createEndpoint(this, 1);
         this.output = createEndpoint(this, 2, params.output_signal);
 
-        console.assert(params.first_signal ? params.first_constant === undefined : params.first_constant !== undefined);
-        console.assert(params.second_signal ? params.second_constant === undefined : params.second_constant !== undefined);
+        logger.assert(params.first_signal ? params.first_constant === undefined : params.first_constant !== undefined);
+        logger.assert(params.second_signal ? params.second_constant === undefined : params.second_constant !== undefined);
     }
 
     toObj(): ArithmeticCombinator {

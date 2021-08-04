@@ -1,7 +1,7 @@
+import { Node, nodeFunc } from "./Node.js";
+
 import { Color, Endpoint, makeConnection } from "../entities/Entity.js";
 import { Pole } from "../entities/Pole.js";
-import { ConstNode } from "./ConstNode.js";
-import { Node, nodeFunc } from "./Node.js";
 
 export class Output extends Node {
     bits: number[];

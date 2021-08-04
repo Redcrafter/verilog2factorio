@@ -1,10 +1,11 @@
+import { logger } from "../logger.js";
+import { BinaryCell } from "../yosys.js";
+
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Decider, ComparatorString } from "../entities/Decider.js"
-import { Constant } from "../entities/Constant.js";
-import { Color, Endpoint, Entity, makeConnection, signalC, signalR, signalV } from "../entities/Entity.js";
-import { ConstNode } from "./ConstNode.js";
+import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
+
 import { createTransformer, Node, nodeFunc } from "./Node.js";
-import { BinaryCell } from "../yosys.js";
 
 export class LogicNode extends Node {
     data: BinaryCell;
@@ -17,9 +18,9 @@ export class LogicNode extends Node {
         this.data = data;
         this.method = method;
 
-        console.assert(data.parameters.A_SIGNED === data.parameters.B_SIGNED, "compare sign has to be the same");
+        logger.assert(data.parameters.A_SIGNED === data.parameters.B_SIGNED, "compare sign has to be the same");
 
-        console.assert(this.outputBits.length == 1);
+        logger.assert(this.outputBits.length == 1);
     }
 
     _connect(getInputNode: nodeFunc) {
@@ -29,7 +30,7 @@ export class LogicNode extends Node {
         if (this.method == ComparatorString.LT || this.method == ComparatorString.LE || this.method == ComparatorString.GT || this.method == ComparatorString.GE) {
             if (this.data.parameters.A_WIDTH == 32 && this.data.parameters.A_SIGNED == 0) {
                 // a < b == (a ^ (0x80000000 | 0)) < (b ^ (0x80000000 | 0));
-                console.assert(this.data.parameters.A_WIDTH == this.data.parameters.B_WIDTH);
+                logger.assert(this.data.parameters.A_WIDTH == this.data.parameters.B_WIDTH);
 
                 let mask = 1 << (this.data.parameters.A_WIDTH - 1);
 

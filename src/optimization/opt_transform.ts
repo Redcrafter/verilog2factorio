@@ -1,8 +1,12 @@
+import { extractSignalGroups, GroupCollection } from "./groups.js";
+import { logger } from "../logger.js";
+import { extractNets } from "./nets.js";
+
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Decider } from "../entities/Decider.js";
 import { allSignals, Color, Entity, makeConnection } from "../entities/Entity.js";
-import { extractSignalGroups, GroupCollection } from "./groups.js";
-import { extractNets } from "./nets.js";
+
+import { options } from "../options.js";
 
 function getSignals(e: Entity) {
     if (e instanceof Arithmetic || e instanceof Decider) {
@@ -29,19 +33,25 @@ function isNop(e: Entity) {
 }
 
 export function opt_transform(entities: Entity[]) {
-    console.log("Running opt_transform");
+    logger.log("Running opt_transform");
 
     let nets = extractNets(entities);
     let groups = extractSignalGroups(entities, nets);
 
     let count = 0;
+    let filter1 = 0;
+    let filter2 = 0;
+    let filter3 = 0;
     for (let i = 0; i < entities.length; i++) {
         const e = entities[i];
 
         if (!isNop(e)) continue;
 
         // TODO: allow for multiple differnt colored outputs when inNet.points.size == 2
-        if ((e.input.red.size != 0) == (e.input.green.size != 0) || (e.output.red.size != 0) == (e.output.green.size != 0)) continue;
+        if ((e.input.red.size != 0) == (e.input.green.size != 0) || (e.output.red.size != 0) == (e.output.green.size != 0)) {
+            filter1++;
+            continue;
+        }
 
         let inColor = e.input.red.size != 0 ? Color.Red : Color.Green;
         let outColor = e.output.red.size != 0 ? Color.Red : Color.Green;
@@ -50,6 +60,7 @@ export function opt_transform(entities: Entity[]) {
         let outNet = nets[outColor == Color.Red ? "red" : "green"].map.get(e.output);
 
         if (outNet.hasOtherInputs(e.output) && !inNet.hasOtherOutputs(e.input)) {
+            filter2++;
             continue;
         }
 
@@ -64,6 +75,7 @@ export function opt_transform(entities: Entity[]) {
             } else if (!outNet.hasColor(outColor == Color.Red ? "green" : "red")) {
                 newColor = inColor;
             } else {
+                filter3++;
                 continue;
             }
         }
@@ -105,6 +117,7 @@ export function opt_transform(entities: Entity[]) {
         count++;
     }
 
-    console.log(`Removed ${count} combinators`);
+    if (options.verbose) logger.log(`Filter: ${filter1}, ${filter2}, ${filter3}`);
+    logger.log(`Removed ${count} combinators`);
     return count != 0;
 }

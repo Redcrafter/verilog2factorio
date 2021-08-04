@@ -1,8 +1,11 @@
 import { SignalID } from "../blueprint.js";
+import { logger } from "../logger.js";
+
 import { Arithmetic } from "../entities/Arithmetic.js";
 import { Constant } from "../entities/Constant.js";
 import { Decider } from "../entities/Decider.js";
-import { each, Endpoint, Entity, signalC } from "../entities/Entity.js";
+import { each, Endpoint, Entity } from "../entities/Entity.js";
+
 import { Network, Networks } from "./nets.js";
 
 function _changeSignal(endpoint: Endpoint, from: SignalID, to: SignalID) {
@@ -12,9 +15,9 @@ function _changeSignal(endpoint: Endpoint, from: SignalID, to: SignalID) {
         if (endpoint == entity.input) {
             if (entity.params.first_signal == from) entity.params.first_signal = to;
             else if (entity.params.second_signal == from) entity.params.second_signal = to;
-            else console.assert(false);
+            else logger.assert(false);
         } else {
-            console.assert(entity.params.output_signal == from);
+            logger.assert(entity.params.output_signal == from);
             entity.params.output_signal = to;
         }
     } else if (entity instanceof Constant) {

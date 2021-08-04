@@ -1,4 +1,5 @@
 import { ConnectionPoint, EntityBase } from "../blueprint.js";
+
 import { convertEndpoint, createEndpoint, Entity } from "./Entity.js";
 
 export interface MediumElectricPole extends EntityBase {

@@ -1,10 +1,12 @@
+import { logger } from "../logger.js";
+import { SDffe } from "../yosys.js";
+
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Decider, ComparatorString } from "../entities/Decider.js";
-import { Endpoint, Entity, signalV, signalC, makeConnection, Color } from "../entities/Entity.js";
-import { createTransformer, Node, nodeFunc } from "./Node.js";
+import { Entity, signalV, signalC, makeConnection, Color } from "../entities/Entity.js";
+
 import { Input } from "./Input.js";
-import { ConstNode } from "./ConstNode.js";
-import { SDffe } from "../yosys.js";
+import { createTransformer, Node, nodeFunc } from "./Node.js";
 
 // welcome to hell
 // i have no idea what i did here anymore but i sure hope it works
@@ -28,8 +30,8 @@ export class SDFFE extends Node {
 
         this.rstVal = item.parameters.SRST_VALUE;
 
-        console.assert(item.parameters.CLK_POLARITY == 1, "SDFFE: revert clk polarity");
-        console.assert(item.parameters.EN_POLARITY == 1, "SDFFE:revert enable polarity");
+        logger.assert(item.parameters.CLK_POLARITY == 1, "SDFFE: revert clk polarity");
+        logger.assert(item.parameters.EN_POLARITY == 1, "SDFFE:revert enable polarity");
     }
 
     _connect(getInputNode: nodeFunc) {

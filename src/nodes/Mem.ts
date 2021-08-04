@@ -1,8 +1,9 @@
-import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
-import { Constant } from "../entities/Constant.js";
+import { logger } from "../logger.js";
+import { Mem } from "../yosys.js";
+
 import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
-import { Mem } from "../yosys.js";
+
 import { Input } from "./Input.js";
 import { createTransformer, mergeFunc, Node, nodeFunc } from "./Node.js";
 
@@ -32,19 +33,19 @@ export class MemNode extends Node {
             this.outputSegments.push(new MemRead(bits));
         }
 
-        console.assert(item.parameters.ABITS <= 32, "too many address bits");
-        console.assert(item.parameters.WIDTH <= 32, "cannot store > 32 bit numbers");
-        console.assert(arraySame(item.parameters.INIT, "x"), "memory initialization not implemented");
-        // console.assert(item.parameters.RD_CLK_ENABLE   == ((1 << item.parameters.RD_PORTS) - 1)); // read clock is ignored
-        // console.assert(item.parameters.RD_CLK_POLARITY == ((1 << item.parameters.RD_PORTS) - 1));
-        console.assert(item.parameters.RD_TRANSPARENT == ((1 << item.parameters.RD_PORTS) - 1), "read has to be transparent");
-        console.assert(item.parameters.WR_CLK_ENABLE == 1, "wr_clk has to be set");
-        console.assert(item.parameters.WR_CLK_POLARITY == 1, "invert wr_clk polarity");
-        console.assert(item.parameters.WR_PORTS == 1, "only one write allowed");
+        logger.assert(item.parameters.ABITS <= 32, "too many address bits");
+        logger.assert(item.parameters.WIDTH <= 32, "cannot store > 32 bit numbers");
+        logger.assert(arraySame(item.parameters.INIT, "x"), "memory initialization not implemented");
+        // logger.assert(item.parameters.RD_CLK_ENABLE   == ((1 << item.parameters.RD_PORTS) - 1)); // read clock is ignored
+        // logger.assert(item.parameters.RD_CLK_POLARITY == ((1 << item.parameters.RD_PORTS) - 1));
+        logger.assert(item.parameters.RD_TRANSPARENT == ((1 << item.parameters.RD_PORTS) - 1), "read has to be transparent");
+        logger.assert(item.parameters.WR_CLK_ENABLE == 1, "wr_clk has to be set");
+        logger.assert(item.parameters.WR_CLK_POLARITY == 1, "invert wr_clk polarity");
+        logger.assert(item.parameters.WR_PORTS == 1, "only one write allowed");
 
-        console.assert(arraySame(item.connections.RD_CLK, item.connections.WR_CLK[0]));
-        console.assert(arraySame(item.connections.RD_EN, "1"));
-        console.assert(arraySame(item.connections.WR_EN, item.connections.WR_EN[0]));
+        logger.assert(arraySame(item.connections.RD_CLK, item.connections.WR_CLK[0]));
+        logger.assert(arraySame(item.connections.RD_EN, "1"));
+        logger.assert(arraySame(item.connections.WR_EN, item.connections.WR_EN[0]));
     }
 
     _connect(getInputNode: nodeFunc, getMergeEls: mergeFunc): Endpoint {

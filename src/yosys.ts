@@ -1,6 +1,8 @@
 import * as fs from "fs";
 import { exec } from "child_process";
 
+import { logger } from "./logger.js";
+
 interface IDict<T> {
     [index: string]: T;
 }
@@ -257,7 +259,7 @@ export interface Mem extends CellBase {
 export type Cell = UnaryCell | BinaryCell |
     Mux | PMux |
     SR | Dff | ADff | SDff | Dffsr |
-    Dffe | ADffe | SDffe | Dffsre | 
+    Dffe | ADffe | SDffe | Dffsre |
     Mem;
 
 export interface Module {
@@ -278,7 +280,7 @@ export interface YosysData {
 export function genNetlist(files: string[]): Promise<YosysData> {
     for (const file of files) {
         if (!fs.existsSync(file)) {
-            console.log(`error: file ${file} not found`);
+            logger.log(`error: file ${file} not found`);
         }
     }
 
@@ -287,11 +289,11 @@ export function genNetlist(files: string[]): Promise<YosysData> {
 
     return new Promise(res => {
         proc.stderr.on("data", (data) => {
-            console.log(data);
+            logger.log(data);
         });
         proc.on("exit", (code) => {
             if (code != 0) {
-                console.log("An error occurred while yosys tried to compile your code.")
+                logger.log("An error occurred while yosys tried to compile your code.")
                 process.exit(code);
             }
             const data = JSON.parse(fs.readFileSync("./temp.json", 'utf8'));

@@ -1,10 +1,12 @@
+import { logger } from "../logger.js";
+import { PMux } from "../yosys.js";
+
 import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Color, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
-import { PMux } from "../yosys.js";
-import { ConstNode } from "./ConstNode.js";
+
 import { createLimiter, createTransformer, Node, nodeFunc, mergeFunc } from "./Node.js";
 
-// https://github.com/YosysHQ/yosys/blob/master/techlibs/common/pmux2mux.v
+// https://github.com/YosysHQ/yosys/blob/master/techlibs/common/simlib.v
 // s should be one hot encoded. If not errors will occur
 export class PMUX extends Node {
     data: PMux;
@@ -47,8 +49,8 @@ export class PMUX extends Node {
         let bIndex = 0;
         for (let i = 0; i < s.length; i++) {
             const item = s[i];
-            console.assert(item.start == 0);
-            console.assert(item.start + item.count == item.node.outputBits.length);
+            logger.assert(item.start == 0);
+            logger.assert(item.start + item.count == item.node.outputBits.length);
 
             // output might not be connected but idc
             let trans = createTransformer(item.node.output());

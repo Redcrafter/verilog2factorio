@@ -1,6 +1,9 @@
-import { ComparatorString, Decider } from "../entities/Decider.js";
+import { logger } from "../logger.js";
 import { UnaryCell } from "../yosys.js";
-import { Color, Endpoint, Entity, makeConnection, signalV } from "../entities/Entity.js";
+
+import { ComparatorString, Decider } from "../entities/Decider.js";
+import { Color, Entity, makeConnection, signalV } from "../entities/Entity.js";
+
 import { createLimiter, mergeFunc, Node, nodeFunc } from "./Node.js";
 
 export class ReduceOr extends Node {
@@ -12,8 +15,8 @@ export class ReduceOr extends Node {
         super(data.connections.Y);
         this.data = data;
 
-        console.assert(data.parameters.A_SIGNED == 0, "ReduceOr: Only unsigned values allowed");
-        console.assert(data.connections.Y.length == 1);
+        logger.assert(data.parameters.A_SIGNED == 0, "ReduceOr: Only unsigned values allowed");
+        logger.assert(data.connections.Y.length == 1);
     }
 
     _connect(_: nodeFunc, getMergeEls: mergeFunc) {
@@ -29,7 +32,7 @@ export class ReduceOr extends Node {
                 bad.push(el);
             }
         }
-        // console.log(a.length, b.length);
+        // logger.log(a.length, b.length);
 
         let last;
         for (let i = 0; i < good.length;) {
@@ -46,9 +49,9 @@ export class ReduceOr extends Node {
             this.entities.push(comb);
 
             makeConnection(Color.Red, a.node.output(), comb.input);
-            if(b) makeConnection(Color.Green, b.node.output(), comb.input);
-            
-            if(last) makeConnection(Color.Red, last.output, comb.output);
+            if (b) makeConnection(Color.Green, b.node.output(), comb.input);
+
+            if (last) makeConnection(Color.Red, last.output, comb.output);
             last = comb;
         }
 
@@ -59,15 +62,15 @@ export class ReduceOr extends Node {
 
             let comb = createLimiter(mask);
             this.entities.push(comb);
-        
+
             makeConnection(Color.Red, item.node.output(), comb.input);
 
-            if(last) makeConnection(Color.Red, last.output, comb.output);
+            if (last) makeConnection(Color.Red, last.output, comb.output);
             last = comb;
         }
 
         let maxBits = Math.floor(Math.log2(maxVal)) + 1;
-        console.assert(maxBits < 32, "Reduce or overflow");
+        logger.assert(maxBits < 32, "Reduce or overflow");
 
         if (this.entities.length > 1 || bad.length > 0) {
             let out = new Decider({

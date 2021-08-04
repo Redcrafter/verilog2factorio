@@ -1,4 +1,9 @@
+import { logger } from "./logger.js";
 import * as yosys from "./yosys.js";
+
+// entities
+import { ArithmeticOperations } from "./entities/Arithmetic.js";
+import { ComparatorString } from "./entities/Decider.js";
 
 // nodes
 import { Node } from "./nodes/Node.js";
@@ -26,10 +31,6 @@ import { DFF } from "./nodes/DFF.js";
 import { SDFF } from "./nodes/SDFF.js";
 import { SDFFE } from "./nodes/SDFFE.js";
 import { SDFFCE } from "./nodes/SDFFCE.js";
-
-// entities
-import { ArithmeticOperations } from "./entities/Arithmetic.js";
-import { ComparatorString } from "./entities/Decider.js";
 
 function arraysEqual<T>(a: T[], b: T[]) {
     if (a === b) return true;
@@ -79,12 +80,12 @@ function createNode(item: yosys.Cell): Node {
         case "$sshr": return new SSHR(item);
 
         case "$logic_and":
-            console.assert(item.connections.A.length == 1);
-            console.assert(item.connections.B.length == 1);
+            logger.assert(item.connections.A.length == 1);
+            logger.assert(item.connections.B.length == 1);
             return new MathNode(item, ArithmeticOperations.And);
         case "$logic_or":
-            console.assert(item.connections.A.length == 1);
-            console.assert(item.connections.B.length == 1);
+            logger.assert(item.connections.A.length == 1);
+            logger.assert(item.connections.B.length == 1);
             return new MathNode(item, ArithmeticOperations.Or);
 
         case "$lt": return new LogicNode(item, ComparatorString.LT);
@@ -123,7 +124,7 @@ function createNode(item: yosys.Cell): Node {
         case "$mem": return new MemNode(item);
 
         default:
-            console.error(`Unknown node type ${item.type}`);
+            logger.error(`Unknown node type ${item.type}`);
             break;
     }
 
