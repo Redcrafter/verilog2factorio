@@ -4,6 +4,16 @@ import {  logger, setLogger } from "./build/logger.js";
 import { changeTab, consoleTab } from "./tabs.js";
 
 const consoleEl = document.getElementById("console");
+const fbeButton = document.getElementById("openFBE");
+
+document.getElementById("compile").addEventListener("click", () => {
+    changeTab(consoleTab);
+    compile();
+});
+fbeButton.addEventListener("click", () => {
+    window.open(`https://fbe.teoxoy.com?source=${output.textContent}`);
+})
+const output = document.getElementById("output");
 
 setLogger({
     log(message) {
@@ -52,10 +62,10 @@ let collatz = `
 module collatz(input clk, input start, input [15:0] data, output reg [15:0] val);
     always @(posedge clk) begin
         if(start)
-            val <= data; else if(!(val & 1'b1)) val <=val>> 1;
+            val <= data; else if(!(val & 1'b1)) val <= val >> 1;
         else
-            val <= val * 16'd3 + 16'd1; 
-        end 
+            val <= val * 16'd3 + 16'd1;
+        end
 endmodule
 `;
 
@@ -70,7 +80,6 @@ if (localStorage.getItem("verilog")) {
     editor.setValue(collatz);
 }
 editor.selection.clearSelection();
-
 
 editor.session.on("change", (data) => {
     localStorage.setItem("verilog", editor.getValue());
@@ -109,12 +118,6 @@ function createBlueprintBook(blueprints) {
         version: 281479273447424
     }
 }
-
-document.getElementById("compile").addEventListener("click", () => {
-    changeTab(consoleTab);
-    compile();
-});
-const output = document.getElementById("output");
 
 YosysJS.load_viz();
 
@@ -172,5 +175,6 @@ async function compile() {
         };
     }
 
+    fbeButton.disabled = false;
     output.textContent = "0" + btoa(String.fromCharCode.apply(null, pako.deflate(JSON.stringify(el))));
 }
