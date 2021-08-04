@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        <script src="./yosys/yosysjs.js"></script>
+        <script src="./pako.js"></script>
+        <script src="./ace/ace.js"></script>
+        <script src="index.js" type="module"></script>
+        <style>
+            body {
+                margin: 0;
+                height: 100vh;
+                overflow: hidden;
+
+                display: flex;
+                flex-direction: column;
+            }
+
+            header {
+                display: flex;
+                user-select: none;
+                background-color: #333;
+            }
+
+            header>div {
+                padding: 10px;
+                cursor: pointer;
+            }
+
+            header>div:hover {
+                background-color: gray;
+            }
+
+            header>div:hover {
+                background-color: gray;
+            }
+
+            main {
+                height: 1px;
+                /* weird but works */
+                flex-grow: 1;
+                flex-shrink: 1;
+            }
+
+            main>div {
+                display: none;
+            }
+
+            main>div[selected] {
+                display: initial;
+            }
+
+            textarea {
+                width: 100%;
+                height: 200px;
+            }
+
+            #input {
+                height: 200px;
+            }
+
+            #input {
+                flex-grow: 1;
+            }
+
+            #codeTab[selected] {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+            }
+
+            #output {
+                overflow-wrap: anywhere;
+            }
+
+            #console {
+                font-family: monospace;
+                overflow-y: scroll;
+                height: 100%;
+                margin-left: 10px;
+            }
+            #console .error {
+                background-color: #D00;
+            }
+
+            #console>div {
+                white-space: pre;
+            }
+
+            svg {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+
+    <body class="ace-monokai">
+        <header>
+            <div id="codeButton" class="ace-monokai">Code</div>
+            <div id="consoleButton">Console</div>
+            <div id="graphButton">Graph</div>
+            <div id="blueprintButton">Blueprint</div>
+            <section style="flex-grow: 1;"></section>
+            <div id="compile">Compile</div>
+        </header>
+        <main>
+            <div id="codeTab" selected>
+                <div id="input"></div>
+            </div>
+            <div id="consoleTab">
+                <div id="console"></div>
+            </div>
+            <div id="graphTab">
+                <svg id="svg"></svg>
+            </div>
+            <div id="blueprintTab">
+                <div id="output"></div>
+            </div>
+        </main>
+    </body>
+
+</html>

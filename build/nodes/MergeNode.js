@@ -1,0 +1,119 @@
+import { logger } from "../logger.js";
+import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
+import { Constant } from "../entities/Constant.js";
+import { makeConnection, signalV } from "../entities/Entity.js";
+import { ConstNode } from "./ConstNode.js";
+import { createLimiter, Node } from "./Node.js";
+export class MergeNode extends Node {
+    inputs;
+    constructor(inputs, outBits) {
+        super(outBits);
+        this.inputs = inputs;
+    }
+    entities = [];
+    _connect() {
+        let offset = 0;
+        let constVal = 0;
+        let last;
+        for (let i = 0; i < this.inputs.length; i++) {
+            const n = this.inputs[i];
+            if (n.node instanceof ConstNode) {
+                // count absolute constant value to merge it into one
+                logger.assert(n.start == 0);
+                logger.assert(n.count == 1);
+                constVal |= n.node.value << offset;
+                offset += n.count;
+                continue;
+            }
+            if (n.count == 1) {
+                let j = i + 1;
+                for (; j < this.inputs.length; j++) {
+                    let next = this.inputs[j];
+                    if (!(next.node == n.node && next.count == 1 && next.start == n.start)) {
+                        break;
+                    }
+                }
+                let count = j - i;
+                if (count > 1) {
+                    let prev = n.node.output();
+                    if (n.start != 0) { // need a shift
+                        let shift = new Arithmetic({
+                            first_signal: signalV,
+                            second_constant: n.start,
+                            operation: ArithmeticOperations.RShift,
+                            output_signal: signalV
+                        });
+                        this.entities.push(shift);
+                        makeConnection(1 /* Red */, prev, shift.input);
+                        prev = shift.output;
+                    }
+                    if (n.start + n.count != n.node.outputBits.length || n.node.outputBits.length == 32) {
+                        let mask = createLimiter(1);
+                        this.entities.push(mask);
+                        makeConnection(1 /* Red */, prev, mask.input);
+                        prev = mask.output;
+                    }
+                    let mul = new Arithmetic({
+                        first_signal: signalV,
+                        second_constant: (((2 ** count) - 1) | 0) << offset,
+                        operation: ArithmeticOperations.Mul,
+                        output_signal: signalV
+                    });
+                    makeConnection(1 /* Red */, prev, mul.input);
+                    this.entities.push(mul);
+                    if (last)
+                        makeConnection(3 /* Both */, mul.output, last);
+                    last = mul.output;
+                    i += count - 1;
+                    offset += count;
+                    continue;
+                }
+            }
+            let shiftVal = offset - n.start;
+            let op = shiftVal > 0 ? ArithmeticOperations.LShift : ArithmeticOperations.RShift;
+            let shift = new Arithmetic({
+                first_signal: signalV,
+                second_constant: Math.abs(shiftVal),
+                operation: op,
+                output_signal: signalV
+            });
+            let mask = createLimiter(((2 ** n.count) - 1) << offset);
+            let inp;
+            let out;
+            const noLowMask = n.start == 0 || n.start + shiftVal <= 0;
+            const noHeighMask = n.start + n.count == n.node.outputBits.length || n.start + n.count + shiftVal >= 32;
+            const arithShift = n.node.outputBits.length == 32 && shiftVal < 0;
+            if (noLowMask && noHeighMask && !arithShift) { // don't need a limiter
+                // if(shiftVal == 0) don't need either but need a separator so signals don't get mixed
+                inp = out = shift;
+                this.entities.push(shift);
+            }
+            else if (shiftVal == 0) { // don't need shifter
+                inp = out = mask;
+                this.entities.push(mask);
+            }
+            else {
+                inp = shift;
+                out = mask;
+                makeConnection(1 /* Red */, shift.output, mask.input);
+                this.entities.push(shift, mask);
+            }
+            makeConnection(1 /* Red */, n.node.output(), inp.input);
+            if (last)
+                makeConnection(3 /* Both */, out.output, last);
+            last = out.output;
+            offset += n.count;
+        }
+        // if merged constant != 0 add one with all values combined
+        if (constVal != 0) {
+            let c = Constant.simple(constVal);
+            this.entities.push(c);
+            makeConnection(3 /* Both */, c.output, last);
+            last = c.output;
+        }
+        return last;
+    }
+    combs() {
+        return this.entities;
+    }
+}

@@ -1,0 +1,2 @@
+let options = {};
+export { options };
