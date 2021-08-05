@@ -14,7 +14,6 @@ fbeButton.addEventListener("click", () => {
     window.open(`https://fbe.teoxoy.com?source=${output.textContent}`);
 })
 const output = document.getElementById("output");
-formatting
 
 setLogger({
     log(message) {
