@@ -28,6 +28,11 @@ function _changeSignal(endpoint, from, to) {
     else
         throw new Error(`node is not of type Arithmetic, Decider, or Constant.`);
 }
+function addToSet(a, b) {
+    for (const el of b) {
+        a.add(el);
+    }
+}
 export class Group {
     points = new Set();
     nets = new Set();
@@ -42,8 +47,11 @@ export class Group {
         if (!this._signals) {
             this._signals = new Set();
             for (const n of this.nets) {
-                for (const signal of n.signals) {
-                    this._signals.add(signal);
+                for (const p of n.points) {
+                    addToSet(this._signals, p.outSignals);
+                    if (p.entity instanceof Decider && p.entity.params.copy_count_from_input) {
+                        this._signals.add(p.entity.params.output_signal);
+                    }
                 }
             }
         }
