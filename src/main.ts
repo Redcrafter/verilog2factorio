@@ -16,7 +16,7 @@ program
     .arguments("<files..>")
     .helpOption("-h, --help", "Display this information.")
     .option("-v, --verbose")
-    .option("-s, --seed <seed>", "Specify a seed for the layout generation.")
+    // .option("-s, --seed <seed>", "Specify a seed for the layout generation.")
     .option("-o, --output <file>", "File to output the compiled blueprint to.")
     .option("-m, --modules <names...>", "Verilog modules to output blueprint for. (defaults to all).")
     .option("-f, --files <files...>", "List of Verilog files to compile. (only has to be explicitly specified after -m).")

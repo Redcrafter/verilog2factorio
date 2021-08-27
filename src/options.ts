@@ -1,7 +1,7 @@
 
 let options: {
     verbose?: Boolean;
-    seed?: string;
+    // seed?: string;
     output?: string;
     modules?: string[];
     files?: string[];

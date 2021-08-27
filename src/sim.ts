@@ -1,4 +1,3 @@
-import seedrandom from "seedrandom";
 import { options } from "./options.js";
 import { logger } from "./logger.js";
 
@@ -60,14 +59,10 @@ export class Simulator {
     private gridSize: number;
     private grid: Point[];
 
-    private rng: ReturnType<seedrandom>;
-
-    constructor() {
-        this.rng = seedrandom(options.seed);
-    }
+    constructor() { }
 
     rand(min: number, max: number) {
-        return (this.rng() * (max - min)) + min;
+        return (Math.random() * (max - min)) + min;
     }
 
     addNode(fixed: boolean) {
@@ -278,7 +273,7 @@ export class Simulator {
     }
 
     private randomOffset() {
-        switch (Math.abs(this.rng.int32()) % 4) {
+        switch (Math.floor(Math.random() * 4)) {
             case 0: return { x: 1, y: 0 };
             case 1: return { x: -1, y: 0 };
             case 2: return { x: 0, y: -1 };
