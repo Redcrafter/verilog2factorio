@@ -1,7 +1,7 @@
 import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
 import { logger } from "../logger.js";
 
-import { Entity, createEndpoint, convertEndpoint, dir } from "./Entity.js";
+import { Entity, createEndpoint, convertEndpoint } from "./Entity.js";
 
 export enum ArithmeticOperations {
     Mul = "*",
@@ -61,7 +61,7 @@ export class Arithmetic extends Entity {
             entity_number: this.id,
             name: "arithmetic-combinator",
             position: { x: this.x, y: this.y },
-            direction: dir,
+            direction: this.dir,
             control_behavior: {
                 arithmetic_conditions: this.params
             },

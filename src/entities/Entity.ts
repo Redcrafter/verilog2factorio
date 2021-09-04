@@ -1,10 +1,10 @@
 import { RawEntity, ConnectionPoint, SignalID } from "../blueprint.js";
 
-export const dir = 4;
-
-export const signalV: SignalID = { type: "virtual", name: "signal-V" };
 export const signalC: SignalID = { type: "virtual", name: "signal-C" };
 export const signalR: SignalID = { type: "virtual", name: "signal-R" };
+export const signalV: SignalID = { type: "virtual", name: "signal-V" };
+export const signalW: SignalID = { type: "virtual", name: "signal-W" };
+
 export const signalGreen: SignalID = { type: "virtual", name: "signal-green" };
 export const signalGrey: SignalID = { type: "virtual", name: "signal-grey" };
 
@@ -297,6 +297,7 @@ export abstract class Entity {
 
     width: number;
     height: number;
+    dir = 4;
 
     input: Endpoint;
     output: Endpoint;

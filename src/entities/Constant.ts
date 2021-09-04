@@ -1,6 +1,6 @@
 import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
 
-import { Entity, convertEndpoint, dir, createEndpoint, signalV } from "./Entity.js";
+import { Entity, convertEndpoint, createEndpoint, signalV } from "./Entity.js";
 
 export interface ConstantControlBehavior {
     signal: SignalID;
@@ -37,7 +37,7 @@ export class Constant extends Entity {
             entity_number: this.id,
             name: "constant-combinator",
             position: { x: this.x, y: this.y },
-            direction: dir,
+            direction: this.dir,
             control_behavior: {
                 filters: this.params
             },
