@@ -96,7 +96,7 @@ export class MathNode extends Node {
             }
         }
 
-        let transformer = createTransformer(a.output());
+        let transformer = createTransformer(b.output());
         let calculator = new Arithmetic({
             first_signal: signalV,
             second_signal: signalC,
@@ -106,7 +106,7 @@ export class MathNode extends Node {
         this.entities = [transformer, calculator];
 
         makeConnection(Color.Green, transformer.output, calculator.input);
-        makeConnection(Color.Red, b.output(), calculator.input);
+        makeConnection(Color.Red, a.output(), calculator.input);
 
         if (needsLimiter.has(this.method) && this.outMask != -1) {
             let limiter = createLimiter(this.outMask);

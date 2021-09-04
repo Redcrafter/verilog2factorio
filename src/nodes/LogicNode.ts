@@ -68,7 +68,7 @@ export class LogicNode extends Node {
             }
         }
 
-        let t = createTransformer(a.output());
+        let t = createTransformer(b.output());
         let out = new Decider({
             first_signal: signalV,
             second_signal: signalC,
@@ -78,7 +78,7 @@ export class LogicNode extends Node {
         });
         this.entities = [t, out];
 
-        makeConnection(Color.Red, b.output(), out.input);
+        makeConnection(Color.Red, a.output(), out.input);
         makeConnection(Color.Green, t.output, out.input);
 
         return out.output;
