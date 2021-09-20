@@ -12,7 +12,7 @@ export function opt_clean(entities: Entity[]) {
         const e = entities[i];
         if (e.keep) continue;
 
-        if (e.output.red.size + e.output.green.size == 0) { // output is not connected
+        if (!e.output.red && !e.output.green) { // output is not connected
             e.delete();
             entities.splice(entities.indexOf(e), 1);
             i--;

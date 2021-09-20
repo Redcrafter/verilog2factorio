@@ -5,8 +5,6 @@ import { Decider } from "../entities/Decider.js";
 import { Color, Entity, makeConnection } from "../entities/Entity.js";
 import { Pole } from "../entities/Pole.js";
 
-import { extractNets } from "./nets.js";
-
 function eq(a: Entity, b: Entity) {
     if (a instanceof Arithmetic && b instanceof Arithmetic) {
         return a.params.first_signal == b.params.first_signal &&
@@ -30,24 +28,13 @@ function eq(a: Entity, b: Entity) {
 export function opt_merge(entities: Entity[]) {
     logger.log("Running opt_merge");
 
-    let nets = extractNets(entities);
     // let asd = extractSignalGroups(entities, nets);
 
     let groups = new Map<string, Entity[]>();
     for (const e of entities) {
         if (e instanceof Pole) continue;
 
-        let rNet = nets.red.map.get(e.input);
-        let gNet = nets.green.map.get(e.input);
-
-        /*if (rNet?.hasOtherInputs(e.output) || gNet?.hasOtherInputs(e.output)) {
-            if (e instanceof Arithmetic && e.params.operation == ArithmeticOperations.Or && e.params.second_constant == 0) {
-                debugger;
-            }
-            continue;
-        }*/
-
-        let key = `${rNet?.id ?? 0}_${gNet?.id ?? 0}`;
+        let key = `${e.input.red?.id ?? 0}_${e.input.green?.id ?? 0}`;
 
         if (groups.has(key)) {
             groups.get(key).push(e);
@@ -63,16 +50,16 @@ export function opt_merge(entities: Entity[]) {
         for (let i = 0; i < group.length; i++) {
             let entity = group[i];
 
-            let arNet = nets.red.map.get(entity.output);
-            let agNet = nets.green.map.get(entity.output);
+            let arNet = entity.output.red;
+            let agNet = entity.output.green;
 
             for (let j = i + 1; j < group.length; j++) {
                 let other = group[j];
 
                 if (!eq(entity, other)) continue;
 
-                let orNet = nets.red.map.get(other.output);
-                let ogNet = nets.green.map.get(other.output);
+                let orNet = other.output.red;
+                let ogNet = other.output.green;
 
                 let doMerge = false;
                 if (!arNet && !orNet) { // only green output
@@ -86,12 +73,8 @@ export function opt_merge(entities: Entity[]) {
                     entities.splice(entities.indexOf(other), 1);
                     j--;
 
-                    // input networks are the same but we have to connect the individual enpoints to preven networks being split in half
-                    makeConnection(Color.Red, ...other.input.red, entity.input);
-                    makeConnection(Color.Green, ...other.input.green, entity.input);
+                    makeConnection(Color.Both, entity.output, other.output);
 
-                    makeConnection(Color.Red, entity.output, ...other.output.red);
-                    makeConnection(Color.Green, entity.output, ...other.output.green);
                     other.delete();
 
                     total++;

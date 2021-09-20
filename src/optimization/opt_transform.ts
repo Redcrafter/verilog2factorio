@@ -1,6 +1,5 @@
 import { extractSignalGroups, GroupCollection } from "./groups.js";
 import { logger } from "../logger.js";
-import { extractNets } from "./nets.js";
 
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Decider } from "../entities/Decider.js";
@@ -35,8 +34,7 @@ function isNop(e: Entity) {
 export function opt_transform(entities: Entity[]) {
     logger.log("Running opt_transform");
 
-    let nets = extractNets(entities);
-    let groups = extractSignalGroups(entities, nets);
+    let groups = extractSignalGroups(entities);
 
     let count = 0;
     let filter1 = 0;
@@ -48,16 +46,13 @@ export function opt_transform(entities: Entity[]) {
         if (!isNop(e)) continue;
 
         // TODO: allow for multiple differnt colored outputs when inNet.points.size == 2
-        if ((e.input.red.size != 0) == (e.input.green.size != 0) || (e.output.red.size != 0) == (e.output.green.size != 0)) {
+        if ((!!e.input.red == !!e.input.green) || (!!e.output.red == !!e.output.green)) {
             filter1++;
             continue;
         }
 
-        let inColor = e.input.red.size != 0 ? Color.Red : Color.Green;
-        let outColor = e.output.red.size != 0 ? Color.Red : Color.Green;
-
-        let inNet = nets[inColor == Color.Red ? "red" : "green"].map.get(e.input);
-        let outNet = nets[outColor == Color.Red ? "red" : "green"].map.get(e.output);
+        let inNet = e.input.red ?? e.input.green;
+        let outNet = e.output.red ?? e.output.green;
 
         if (outNet.hasOtherInputs(e.output) && !inNet.hasOtherOutputs(e.input)) {
             filter2++;
@@ -67,13 +62,13 @@ export function opt_transform(entities: Entity[]) {
         let oldSignal = getSignals(e);
 
         let newColor;
-        if (inColor === outColor) {
-            newColor = inColor
+        if (inNet.color === outNet.color) {
+            newColor = inNet.color
         } else {
-            if (!inNet.hasColor(inColor == Color.Red ? "green" : "red")) {
-                newColor = outColor;
-            } else if (!outNet.hasColor(outColor == Color.Red ? "green" : "red")) {
-                newColor = inColor;
+            if (!inNet.hasColor(inNet.color)) {
+                newColor = outNet.color;
+            } else if (!outNet.hasColor(outNet.color)) {
+                newColor = inNet.color;
             } else {
                 filter3++;
                 continue;
@@ -111,7 +106,7 @@ export function opt_transform(entities: Entity[]) {
             newGroup.merge(inGroup, outGroup);
         }
 
-        makeConnection(newColor, ...e.input.red, ...e.input.green, ...e.output.red, ...e.output.green);
+        makeConnection(newColor, e.input, e.output);
         e.delete();
 
         count++;

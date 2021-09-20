@@ -1,4 +1,5 @@
 import { RawEntity, ConnectionPoint, SignalID } from "../blueprint.js";
+import { Network } from "../optimization/nets.js";
 
 export const signalC: SignalID = { type: "virtual", name: "signal-C" };
 export const signalR: SignalID = { type: "virtual", name: "signal-R" };
@@ -280,13 +281,30 @@ export const enum Color {
     Both = Red | Green
 }
 
-export interface Endpoint {
-    entity: Entity;
-    type: number;
-    outSignals: Set<SignalID>,
+export class Endpoint {
+    public entity: Entity;
+    public type: number;
+    public outSignals: Set<SignalID>;
 
-    red: Set<Endpoint>;
-    green: Set<Endpoint>;
+    public red: Network;
+    public green: Network;
+
+    // only used for final entity creation
+    public redP = new Set<Endpoint>();
+    public greenP = new Set<Endpoint>();
+
+    constructor(ent: Entity, type: number, ...outSignals: SignalID[]) {
+        this.entity = ent;
+        this.type = type;
+        this.outSignals = new Set(outSignals);
+    }
+
+    convert(): ConnectionPoint {
+        return {
+            red: [...this.redP].map(x => ({ entity_id: x.entity.id, circuit_id: x.type })),
+            green: [...this.greenP].map(x => ({ entity_id: x.entity.id, circuit_id: x.type }))
+        }
+    }
 }
 
 export abstract class Entity {
@@ -319,55 +337,33 @@ export abstract class Entity {
     }
 
     delCon(e: Endpoint, c: Color) {
-        const color = c == Color.Red ? "red" : "green";
-
-        // connect endpoints together to keep network connected
-        makeConnection(c, ...e[color]);
-
-        for (const c of e[color]) {
-            let n = c.entity;
-
-            n.input[color].delete(e);
-            n.output[color].delete(e);
-        }
-        e[color].clear();
+        e[c == Color.Red ? "red" : "green"]?.remove(e);
     }
 }
 
-export function createEndpoint(ent: Entity, type: number, ...outSignals: SignalID[]): Endpoint {
-    return {
-        entity: ent,
-        type,
-        outSignals: new Set(outSignals),
-        red: new Set(),
-        green: new Set()
-    };
-}
+export function makeConnection(c: Color | "red" | "green", ...points: Endpoint[]) {
+    function connect(color: "red" | "green", a: Endpoint, b: Endpoint) {
+        let an = a[color];
+        let bn = b[color];
 
-export function convertEndpoint(p: Endpoint): ConnectionPoint {
-    function map(el: Endpoint[]) {
-        return el.map(x => ({ entity_id: x.entity.id, circuit_id: x.type }))
+        let net: Network;
+        if (an && bn) net = Network.merge(an, bn);
+        else if (an) net = an;
+        else if (bn) net = bn;
+        else net = new Network(color);
+
+        net.add(a);
+        net.add(b);
     }
 
-    return {
-        red: map([...p.red]),
-        green: map([...p.green])
-    }
-}
+    if (c == "red") c = Color.Red;
+    else if (c == "green") c = Color.Green;
 
-export function makeConnection(c: Color, ...points: Endpoint[]) {
     for (let i = 1; i < points.length; i++) {
         const a = points[i - 1];
         const b = points[i];
 
-        if (c & Color.Red) {
-            a.red.add(b);
-            b.red.add(a);
-        }
-
-        if (c & Color.Green) {
-            a.green.add(b);
-            b.green.add(a);
-        }
+        if (c & Color.Red) connect("red", a, b);
+        if (c & Color.Green) connect("green", a, b);
     }
 }

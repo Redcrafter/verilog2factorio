@@ -29,12 +29,12 @@ function createLayout(combs: Entity[], ports: Set<Entity>) {
                 simulator.addEdge(n.id - 1, c.entity.id - 1);
             }
         }
-        if (n.input) {
-            add(n.input.red);
-            add(n.input.green);
+        if (n.input !== n.output) {
+            add(n.input.redP);
+            add(n.input.greenP);
         }
-        add(n.output.red);
-        add(n.output.green);
+        add(n.output.redP);
+        add(n.output.greenP);
     }
 
     let errors = 0;
@@ -90,7 +90,7 @@ function logNodes(nodes: Node[]) {
 }
 
 export function transform(nodes: Node[]) {
-    if(options.verbose) logNodes(nodes);
+    if (options.verbose) logNodes(nodes);
 
     let combs = nodes.flatMap(x => x.combs());
     let ports = new Set(nodes.filter(x => x instanceof Input || x instanceof Output).flatMap(x => x.combs()));

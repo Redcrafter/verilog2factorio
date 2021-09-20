@@ -1,7 +1,7 @@
 import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
 import { logger } from "../logger.js";
 
-import { Entity, createEndpoint, convertEndpoint } from "./Entity.js";
+import { Entity, Endpoint } from "./Entity.js";
 
 export enum ArithmeticOperations {
     Mul = "*",
@@ -45,15 +45,15 @@ export class Arithmetic extends Entity {
         super(1, 2);
         this.params = params;
 
-        this.input = createEndpoint(this, 1);
-        this.output = createEndpoint(this, 2, params.output_signal);
+        this.input = new Endpoint(this, 1);
+        this.output = new Endpoint(this, 2, params.output_signal);
 
         logger.assert(params.first_signal ? params.first_constant === undefined : params.first_constant !== undefined);
         logger.assert(params.second_signal ? params.second_constant === undefined : params.second_constant !== undefined);
     }
 
     toObj(): ArithmeticCombinator {
-        if (this.input.red.size == 0 && this.input.green.size == 0 || this.output.red.size == 0 && this.output.green.size == 0) {
+        if (!this.input.red && !this.input.green || !this.output.red && !this.output.green) {
             throw new Error("Unconnected Arithmetic");
         }
 
@@ -66,8 +66,8 @@ export class Arithmetic extends Entity {
                 arithmetic_conditions: this.params
             },
             connections: {
-                "1": convertEndpoint(this.input),
-                "2": convertEndpoint(this.output)
+                "1": this.input.convert(),
+                "2": this.output.convert()
             }
         };
     }

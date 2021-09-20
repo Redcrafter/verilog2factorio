@@ -6,7 +6,7 @@ import { Constant } from "../entities/Constant.js";
 import { Decider } from "../entities/Decider.js";
 import { each, Endpoint, Entity } from "../entities/Entity.js";
 
-import { Network, Networks } from "./nets.js";
+import { Network } from "./nets.js";
 
 function _changeSignal(endpoint: Endpoint, from: SignalID, to: SignalID) {
     let entity = endpoint.entity;
@@ -103,7 +103,7 @@ export class GroupCollection {
     }
 }
 
-export function extractSignalGroups(entities: Entity[], nets: Networks) {
+export function extractSignalGroups(entities: Entity[]) {
     let groups = new Map<SignalID, GroupCollection>();
 
     function getGroup(signalId: SignalID) {
@@ -118,24 +118,13 @@ export function extractSignalGroups(entities: Entity[], nets: Networks) {
 
     // create all groups
     for (const entity of entities) {
-        let rNet = nets.red.map.get(entity.output);
-        let gNet = nets.green.map.get(entity.output);
-
         function processSignal(signal: SignalID) {
             let signalGroups = getGroup(signal);
 
-            let rGroup = signalGroups.nets.get(rNet);
-            let gGroup = signalGroups.nets.get(gNet);
+            let rGroup = signalGroups.nets.get(entity.output.red);
+            let gGroup = signalGroups.nets.get(entity.output.green);
 
-            let g;
-            if (rGroup && gGroup) {
-                // merge
-                g = signalGroups.merge(rGroup, gGroup);
-
-                // somehow rGroup === gGroup is always true
-            } else {
-                g = rGroup ?? gGroup
-            }
+            let g = rGroup && gGroup ? signalGroups.merge(rGroup, gGroup) : rGroup ?? gGroup;
 
             if (!g) {
                 g = new Group();
@@ -143,13 +132,13 @@ export function extractSignalGroups(entities: Entity[], nets: Networks) {
             }
 
             g.points.add(entity.output);
-            if (rNet) {
-                signalGroups.nets.set(rNet, g);
-                g.nets.add(rNet);
+            if (entity.output.red) {
+                signalGroups.nets.set(entity.output.red, g);
+                g.nets.add(entity.output.red);
             }
-            if (gNet) {
-                signalGroups.nets.set(gNet, g);
-                g.nets.add(gNet);
+            if (entity.output.green) {
+                signalGroups.nets.set(entity.output.green, g);
+                g.nets.add(entity.output.green);
             }
         }
 
@@ -166,14 +155,11 @@ export function extractSignalGroups(entities: Entity[], nets: Networks) {
     for (const entity of entities) {
         if (!(entity instanceof Arithmetic || entity instanceof Decider)) continue;
 
-        let rNet = nets.red.map.get(entity.input);
-        let gNet = nets.green.map.get(entity.input);
-
         function mergeInput(signalId: SignalID) {
             let signalGroups = groups.get(signalId);
 
-            let rGroup = signalGroups.nets.get(rNet);
-            let gGroup = signalGroups.nets.get(gNet);
+            let rGroup = signalGroups.nets.get(entity.input.red);
+            let gGroup = signalGroups.nets.get(entity.input.green);
 
             let g;
             if (rGroup && gGroup) {
@@ -200,7 +186,7 @@ export function extractSignalGroups(entities: Entity[], nets: Networks) {
                 let signalGroups = groups.get(entity.params.output_signal);
                 let g = mergeInput(entity.params.output_signal);
 
-                let why = signalGroups.nets.get(nets.red.map.get(entity.output) ?? nets.green.map.get(entity.output));
+                let why = signalGroups.nets.get(entity.output.red ?? entity.output.green);
 
                 if (g) signalGroups.merge(why, g);
             }

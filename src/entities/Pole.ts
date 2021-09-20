@@ -1,6 +1,6 @@
 import { ConnectionPoint, EntityBase } from "../blueprint.js";
 
-import { convertEndpoint, createEndpoint, Entity } from "./Entity.js";
+import { Endpoint, Entity } from "./Entity.js";
 
 export interface MediumElectricPole extends EntityBase {
     name: "medium-electric-pole";
@@ -12,11 +12,11 @@ export interface MediumElectricPole extends EntityBase {
 export class Pole extends Entity {
     constructor() {
         super(1, 1);
-        this.input = this.output = createEndpoint(this, 1);
+        this.input = this.output = new Endpoint(this, 1);
     }
 
     toObj(): MediumElectricPole {
-        if (this.input.red.size == 0 && this.input.green.size == 0 && this.output.red.size == 0 && this.output.green.size == 0) {
+        if (!this.input.red && !this.input.green && !this.output.red && !this.output.green) {
             throw new Error("Unconnected Pole");
         }
 
@@ -25,7 +25,7 @@ export class Pole extends Entity {
             name: "medium-electric-pole",
             position: { x: this.x, y: this.y },
             connections: {
-                "1": convertEndpoint(this.input)
+                "1": this.input.convert()
             }
         };
     }

@@ -1,7 +1,7 @@
 import { logger } from "../logger.js";
 
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
-import { Color, createEndpoint, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
+import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
 
 import { MergeEl } from "./MergeNode.js";
 
@@ -50,13 +50,13 @@ export abstract class Node {
         this.outputBits = bits;
         this.outMask = bits.length == 32 ? -1 : (((1 << bits.length) - 1) | 0);
 
-        this.outputPlaceholder = createEndpoint(null, -1);
+        this.outputPlaceholder = new Endpoint(null, -1);
     }
 
     public connect(getInputNode: nodeFunc, getMergeEls: mergeFunc) {
         let e = this._connect(getInputNode, getMergeEls);
         if (!e) {
-            if (this.outputPlaceholder.red.size != 0 || this.outputPlaceholder.green.size != 0)
+            if (this.outputPlaceholder.red || this.outputPlaceholder.green)
                 throw new Error("missing output endpoint");
             this.outputPlaceholder = null;
         } else {
@@ -68,15 +68,14 @@ export abstract class Node {
     abstract _connect(getInputNode: nodeFunc, getMergeEls: mergeFunc): Endpoint;
 
     protected _setOutput(e: Endpoint) {
-        for (const n of this.outputPlaceholder.red) {
-            n.red.delete(this.outputPlaceholder);
-            n.red.add(e);
-            e.red.add(n);
+        if (this.outputPlaceholder.red) {
+            makeConnection(Color.Red, e, this.outputPlaceholder);
+            this.outputPlaceholder.red.remove(this.outputPlaceholder);
         }
-        for (const n of this.outputPlaceholder.green) {
-            n.green.delete(this.outputPlaceholder);
-            n.green.add(e);
-            e.green.add(n);
+
+        if (this.outputPlaceholder.green) {
+            makeConnection(Color.Green, e, this.outputPlaceholder);
+            this.outputPlaceholder.green.remove(this.outputPlaceholder);
         }
 
         this.outputPlaceholder = e;

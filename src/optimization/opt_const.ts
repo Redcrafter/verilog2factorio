@@ -6,7 +6,7 @@ import { Constant } from "../entities/Constant.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Color, each, Entity } from "../entities/Entity.js";
 
-import { extractNets, Network } from "./nets.js";
+import { Network } from "./nets.js";
 
 function constNetwork(net: Network, s: SignalID) {
     if (!net || !net.signals.has(s)) return 0;
@@ -76,8 +76,6 @@ function flipOperator(op: ComparatorString) {
 export function opt_const(entities: Entity[]) {
     logger.log("Running opt_const");
 
-    let nets = extractNets(entities);
-
     let deleted = 0;
     let changed = 0;
 
@@ -85,28 +83,20 @@ export function opt_const(entities: Entity[]) {
         const e = entities[i];
         if (e.keep) continue;
 
+        const rNet = e.input.red;
+        const gNet = e.input.green;
+
         function del() {
             e.delete();
             entities.splice(entities.indexOf(e), 1);
             i--;
             deleted++;
-
-            rNet?.points.delete(e.input);
-            gNet?.points.delete(e.input);
         }
         function delN(s: SignalID) {
-            if (rNet && !rNet.signals.has(s)) {
-                rNet.points.delete(e.input);
-                e.delCon(e.input, Color.Red);
-            }
-            if (gNet && !gNet.signals.has(s)) {
-                gNet.points.delete(e.input);
-                e.delCon(e.input, Color.Green);
-            }
+            if (rNet && !rNet.signals.has(s)) e.delCon(e.input, Color.Red);
+            if (gNet && !gNet.signals.has(s)) e.delCon(e.input, Color.Green);
         }
 
-        let rNet = nets.red.map.get(e.input);
-        let gNet = nets.green.map.get(e.input);
         // let signals = new Set([...rNet.signals, ...gNet.signals]);
 
         if (e instanceof Constant) {
@@ -144,15 +134,23 @@ export function opt_const(entities: Entity[]) {
             }
 
             if (e.params.first_constant !== undefined && e.params.second_constant !== undefined) {
-                debugger;
-
                 let val = calcConstArith(e);
 
                 if (val == 0) {
                     del();
                 } else {
                     // replace with constant
-                    debugger;
+                    let c = new Constant({
+                        index: 1,
+                        count: val,
+                        signal: e.params.output_signal
+                    });
+                    e.output.red?.add(c.output);
+                    e.output.green?.add(c.output);
+
+                    e.delete();
+                    entities[i] = c;
+                    changed++;
                 }
             }
         } else if (e instanceof Decider) {
@@ -210,5 +208,5 @@ export function opt_const(entities: Entity[]) {
     logger.log(`Removed ${deleted} combinators`);
     logger.log(`Changed ${changed} combinators`);
 
-    return deleted != 0 && changed != 0;
+    return deleted != 0 || changed != 0;
 }

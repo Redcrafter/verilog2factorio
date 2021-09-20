@@ -1,13 +1,62 @@
 import { SignalID } from "../blueprint.js";
-import { Entity, Endpoint } from "../entities/Entity.js";
+import { Endpoint } from "../entities/Entity.js";
+
+let idCounter = 1;
+// TODO: remove global?
+export let nets: {
+    red: Set<Network>,
+    green: Set<Network>
+};
+
+export function resetNets() {
+    nets = {
+        red: new Set<Network>(),
+        green: new Set<Network>()
+    }
+    idCounter = 1;
+}
 
 export class Network {
-    points: Set<Endpoint>;
-    id: number = -1;
-    private _signals: Set<SignalID>;
+    public points = new Set<Endpoint>();
+    public id: number;
+    public color: "red" | "green";
 
-    constructor(points: Endpoint[]) {
-        this.points = new Set(points);
+    private _signals = new Set<SignalID>();
+    private dirtySignals = false;
+
+    constructor(color: "red" | "green") {
+        this.color = color;
+
+        this.id = idCounter++;
+        nets[color].add(this);
+    }
+
+    add(e: Endpoint) {
+        if (e[this.color] === this) return;
+        if (e[this.color]) debugger; // should not happen
+
+        this.points.add(e);
+        e[this.color] = this;
+        for (const s of e.outSignals) {
+            this._signals.add(s);
+        }
+    }
+
+    remove(e: Endpoint) {
+        if (!this.points.has(e)) debugger;
+
+        this.points.delete(e);
+
+        e[this.color] = null;
+
+        if (this.points.size == 1) {
+            for (const p of this.points) {
+                p[this.color] = null;
+            }
+            nets[this.color].delete(this);
+        }
+
+        if (e.outSignals.size != 0) this.dirtySignals = true;
     }
 
     hasOtherInputs(e: Endpoint) {
@@ -33,15 +82,15 @@ export class Network {
 
     hasColor(color: "red" | "green") {
         for (const o of this.points) {
-            if (o[color].size != 0) return true;
+            if (o[color]) return true;
         }
 
         return false;
     }
 
     get signals() {
-        if (!this._signals) {
-            this._signals = new Set<SignalID>();
+        if (this.dirtySignals) {
+            this._signals.clear();
             for (const p of this.points) {
                 for (const s of p.outSignals) {
                     this._signals.add(s);
@@ -50,87 +99,25 @@ export class Network {
         }
         return this._signals;
     }
-}
 
-export interface Networks {
-    red: {
-        nets: Set<Network>;
-        map: Map<Endpoint, Network>
-    };
-    green: {
-        nets: Set<Network>;
-        map: Map<Endpoint, Network>
-    };
-}
+    static merge(a: Network, b: Network) {
+        console.assert(a.color == b.color, "Trying to merge different color networks");
+        let n = new Network(a.color);
 
-export function extractNets(entities: Entity[]): Networks {
-    let networks = {
-        red: {
-            nets: new Set<Network>(),
-            map: new Map<Endpoint, Network>()
-        },
-        green: {
-            nets: new Set<Network>(),
-            map: new Map<Endpoint, Network>()
+        for (const p of a.points) {
+            p[a.color] = null;
+            n.add(p);
         }
-    }
-
-    function addColor(endpoint: Endpoint, color: "red" | "green"): void {
-        const other = endpoint[color];
-        if (other.size == 0) return null;
-
-        let colorNet = networks[color];
-        let connected = new Set<Network>([...other].map(x => colorNet.map.get(x)));
-        connected.delete(undefined);
-
-        let net: Network;
-        if (connected.size == 0) {
-            // make new
-            net = new Network([endpoint]);
-            colorNet.map.set(endpoint, net);
-            colorNet.nets.add(net);
-        } else if (connected.size == 1) {
-            // add
-            net = connected.values().next().value;
-
-            net.points.add(endpoint);
-            colorNet.map.set(endpoint, net);
-        } else {
-            let points: Endpoint[] = [endpoint];
-
-            for (const n of connected) {
-                points.push(...n.points);
-                // neighbors.push(...n.neighbors);
-                colorNet.nets.delete(n);
-            }
-
-            net = new Network(points);
-            for (const p of points) {
-                colorNet.map.set(p, net);
-            }
-            colorNet.nets.add(net);
+        for (const p of b.points) {
+            p[a.color] = null;
+            n.add(p);
         }
+
+        a.points.clear();
+        b.points.clear();
+        nets[a.color].delete(a);
+        nets[a.color].delete(b);
+
+        return n;
     }
-
-    // insert entities and assign entity id's
-    for (let i = 0; i < entities.length; i++) {
-        let entity = entities[i];
-
-        addColor(entity.input, "red");
-        addColor(entity.input, "green");
-
-        if (entity.output != entity.input) {
-            addColor(entity.output, "red");
-            addColor(entity.output, "green");
-        };
-
-        entities[i].id = i + 1;
-    }
-
-    let i = 1;
-    for (const n of [...networks.red.nets, ...networks.green.nets]) {
-        n.id = i++;
-    }
-
-    return networks;
 }

@@ -32,6 +32,8 @@ import { SDFF } from "./nodes/SDFF.js";
 import { SDFFE } from "./nodes/SDFFE.js";
 import { SDFFCE } from "./nodes/SDFFCE.js";
 
+import { resetNets } from "./optimization/nets.js";
+
 function arraysEqual<T>(a: T[], b: T[]) {
     if (a === b) return true;
     if (a === null || b === null) return false;
@@ -156,6 +158,8 @@ function arrMatch<T>(a: T[], b: T[]): [number, number] {
 }
 
 export function buildGraph(mod: yosys.Module) {
+    resetNets();
+
     let ports = new Map();
 
     let nodes: Node[] = [];
