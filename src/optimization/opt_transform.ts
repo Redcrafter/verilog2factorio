@@ -3,7 +3,7 @@ import { logger } from "../logger.js";
 
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Decider } from "../entities/Decider.js";
-import { allSignals, Color, Entity, makeConnection } from "../entities/Entity.js";
+import { allSignals, Entity, makeConnection } from "../entities/Entity.js";
 
 import { options } from "../options.js";
 
@@ -32,7 +32,7 @@ function isNop(e: Entity) {
 }
 
 export function opt_transform(entities: Entity[]) {
-    logger.log("Running opt_transform");
+    if (options.verbose) logger.log("Running opt_transform");
 
     let groups = extractSignalGroups(entities);
 
@@ -76,20 +76,12 @@ export function opt_transform(entities: Entity[]) {
         }
 
         entities.splice(i--, 1);
-        inNet.points.delete(e.input);
-        outNet.points.delete(e.output);
 
         if (oldSignal.in !== oldSignal.out) {
             let inGroup = groups.get(oldSignal.in).nets.get(inNet);
             let outGroup = groups.get(oldSignal.out).nets.get(outNet);
 
-            let newSignal;
-            for (const s of allSignals) {
-                if (!inGroup.networkSignals.has(s) && !outGroup.networkSignals.has(s)) {
-                    newSignal = s;
-                    break;
-                }
-            }
+            let newSignal = allSignals.find(s => !inGroup.networkSignals.has(s) && !outGroup.networkSignals.has(s));
             if (!newSignal) throw new Error("graph coloring failed");
 
             inGroup.points.delete(e.input);
@@ -112,7 +104,9 @@ export function opt_transform(entities: Entity[]) {
         count++;
     }
 
-    if (options.verbose) logger.log(`Filter: ${filter1}, ${filter2}, ${filter3}`);
-    logger.log(`Removed ${count} combinators`);
+    if (options.verbose) {
+        logger.log(`Filter: ${filter1}, ${filter2}, ${filter3}`);
+        logger.log(`Removed ${count} combinators`);
+    }
     return count != 0;
 }

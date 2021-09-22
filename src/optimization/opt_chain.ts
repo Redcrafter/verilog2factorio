@@ -1,13 +1,14 @@
 import { logger } from "../logger.js";
+import { options } from "../options.js";
+import { nets, Network } from "./nets.js";
 
 import { Color, Entity } from "../entities/Entity.js";
-import { nets, Network } from "./nets.js";
 
 /** 
  * replaces all wires with wire chains 
 */
 export function opt_chain(entities: Entity[]) {
-    logger.log("Running opt_chain");
+    if (options.verbose) logger.log("Running opt_chain");
 
     // assign entity id's
     for (let i = 0; i < entities.length; i++) {

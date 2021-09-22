@@ -7,6 +7,7 @@ import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Color, each, Entity } from "../entities/Entity.js";
 
 import { Network } from "./nets.js";
+import { options } from "../options.js";
 
 function constNetwork(net: Network, s: SignalID) {
     if (!net || !net.signals.has(s)) return 0;
@@ -74,7 +75,7 @@ function flipOperator(op: ComparatorString) {
 }
 
 export function opt_const(entities: Entity[]) {
-    logger.log("Running opt_const");
+    if (options.verbose) logger.log("Running opt_const");
 
     let deleted = 0;
     let changed = 0;
@@ -205,8 +206,10 @@ export function opt_const(entities: Entity[]) {
         }
     }
 
-    logger.log(`Removed ${deleted} combinators`);
-    logger.log(`Changed ${changed} combinators`);
+    if (options.verbose) {
+        logger.log(`Removed ${deleted} combinators`);
+        logger.log(`Changed ${changed} combinators`);
+    }
 
     return deleted != 0 || changed != 0;
 }

@@ -1,4 +1,5 @@
 import { logger } from "../logger.js";
+import { options } from "../options.js";
 
 import { Entity } from "../entities/Entity.js";
 
@@ -19,7 +20,7 @@ export function optimize(entities: Entity[]) {
         if (opt_merge(entities)) changed = true;
         if (opt_transform(entities)) changed = true;
 
-        logger.log("");
+        if(options.verbose) logger.log("");
     }
 
     opt_chain(entities);

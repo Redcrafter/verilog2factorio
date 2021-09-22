@@ -1,4 +1,5 @@
 import { logger } from "../logger.js";
+import { options } from "../options.js";
 
 import { Arithmetic } from "../entities/Arithmetic.js";
 import { Decider } from "../entities/Decider.js";
@@ -26,7 +27,7 @@ function eq(a: Entity, b: Entity) {
 }
 
 export function opt_merge(entities: Entity[]) {
-    logger.log("Running opt_merge");
+    if (options.verbose) logger.log("Running opt_merge");
 
     // let asd = extractSignalGroups(entities, nets);
 
@@ -83,6 +84,6 @@ export function opt_merge(entities: Entity[]) {
         }
     }
 
-    logger.log(`Removed ${total} combinators`);
+    if (options.verbose) logger.log(`Removed ${total} combinators`);
     return total != 0;
 }

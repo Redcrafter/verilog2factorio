@@ -1,4 +1,5 @@
 import { logger } from "../logger.js";
+import { options } from "../options.js";
 
 import { Entity } from "../entities/Entity.js";
 
@@ -6,7 +7,7 @@ import { Entity } from "../entities/Entity.js";
 export function opt_clean(entities: Entity[]) {
     let count = 0;
 
-    logger.log("Running opt_clean");
+    if (options.verbose) logger.log("Running opt_clean");
 
     for (let i = 0; i < entities.length; i++) {
         const e = entities[i];
@@ -22,7 +23,7 @@ export function opt_clean(entities: Entity[]) {
         }
     }
 
-    logger.log(`Removed ${count} combinators`);
+    if (options.verbose) logger.log(`Removed ${count} combinators`);
 
     return count != 0;
 }
