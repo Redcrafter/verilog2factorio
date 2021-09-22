@@ -7,12 +7,19 @@
         {
             "type": "pwa-node",
             "request": "launch",
-            "name": "Launch Program",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
+            "name": "Debug",
+            "skipFiles": ["<node_internals>/**"],
             "runtimeArgs": ["--loader", "ts-node/esm"],
+            "args": ["./samples/gates.v"],
             "program": "${workspaceFolder}/src/main.ts",
+        },
+        {
+            "type": "pwa-node",
+            "request": "launch",
+            "name": "Test",
+            "skipFiles": ["<node_internals>/**"],
+            "runtimeArgs": ["--loader", "ts-node/esm"],
+            "program": "${workspaceFolder}/src/testing/main.ts",
         }
     ]
 }
