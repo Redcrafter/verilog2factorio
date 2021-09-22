@@ -16,7 +16,6 @@ export class SSHR extends Node {
 
         logger.assert(item.parameters.A_SIGNED == 1);
         logger.assert(item.parameters.B_SIGNED == 0);
-        logger.assert(item.type == "$sshr", "Only add allowed");
     }
 
     _connect(getInputNode: nodeFunc) {

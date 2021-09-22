@@ -19,6 +19,7 @@ import { ADD } from "./nodes/ADD.js";
 import { NOT } from "./nodes/NOT.js";
 import { XNOR } from "./nodes/XNOR.js";
 import { ReduceOr } from "./nodes/ReduceOr.js";
+import { SHR } from "./nodes/SHR.js";
 import { SSHR } from "./nodes/SSHR.js";
 
 import { MergeNode, MergeEl } from "./nodes/MergeNode.js";
@@ -63,6 +64,16 @@ function createNode(item: yosys.Cell): Node {
         // TODO: case "$reduce_xnor":
 
         case "$reduce_bool": return new ReduceOr(item);
+
+        case "$and": return new MathNode(item, ArithmeticOperations.And);
+        case "$or": return new MathNode(item, ArithmeticOperations.Or);
+        case "$xor": return new MathNode(item, ArithmeticOperations.Xor);
+        case "$xnor": return new XNOR(item);
+        case "$shl": 
+        case "$sshl": return new MathNode(item, ArithmeticOperations.LShift);
+        case "$shr": return new SHR(item);
+        case "$sshr": return new SSHR(item);
+
         case "$logic_not": // same as == 0
             // @ts-ignore
             item.connections.B = ["0"];
@@ -70,17 +81,6 @@ function createNode(item: yosys.Cell): Node {
             item.parameters.B_SIGNED = 0;
             // @ts-ignore
             return new LogicNode(item, ComparatorString.EQ);
-
-
-        case "$and": return new MathNode(item, ArithmeticOperations.And);
-        case "$or": return new MathNode(item, ArithmeticOperations.Or);
-        case "$xor": return new MathNode(item, ArithmeticOperations.Xor);
-        case "$xnor": return new XNOR(item);
-        case "$shl": return new MathNode(item, ArithmeticOperations.LShift);
-        case "$shr": return new MathNode(item, ArithmeticOperations.RShift);
-        // TODO: case "$sshl":
-        case "$sshr": return new SSHR(item);
-
         case "$logic_and":
             logger.assert(item.connections.A.length == 1);
             logger.assert(item.connections.B.length == 1);
