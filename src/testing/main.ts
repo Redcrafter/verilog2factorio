@@ -1,9 +1,11 @@
 import { testCollatz } from "./tests/collatz.js";
+import { testRv32i } from "./tests/rv32i_cpu.js";
 import { testSpiral } from "./tests/spiral.js";
 
 let tests = [
-    testSpiral,
-    testCollatz
+    testCollatz,
+    testRv32i,
+    testSpiral
 ];
 
 for (const t of tests) {

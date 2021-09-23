@@ -30,7 +30,7 @@ abstract class SimEnt {
     out: SimEnd;
 
     getValue(s: SignalID) {
-        return (this.in.red?.getValue(s) ?? 0) + (this.in.green?.getValue(s) ?? 0);
+        return ((this.in.red?.getValue(s) ?? 0) + (this.in.green?.getValue(s) ?? 0)) | 0;
     }
 
     abstract connect(getEnd: (d: ConnectionData) => SimEnd, makeCon: conFun): void;
@@ -54,7 +54,7 @@ class Arith extends SimEnt {
         let a = this.data.control_behavior.arithmetic_conditions.first_signal;
         let b = this.data.control_behavior.arithmetic_conditions.second_signal;
 
-        console.assert(a !== each && a !== anything && a !== everything);
+        console.assert(a !== anything && a !== everything);
         console.assert(b !== each && b !== anything && b !== everything);
 
         this.outSig = {
@@ -84,12 +84,7 @@ class Arith extends SimEnt {
     update() {
         const cond = this.data.control_behavior.arithmetic_conditions;
 
-        let a: number;
-        if (cond.first_signal) {
-            a = this.getValue(cond.first_signal);
-        } else {
-            a = cond.first_constant;
-        }
+        let res = 0;
 
         let b: number;
         if (cond.second_signal) {
@@ -98,22 +93,42 @@ class Arith extends SimEnt {
             b = cond.second_constant;
         }
 
-        let res;
-        switch (cond.operation) {
-            case ArithmeticOperations.Mul: res = (a * b) | 0; break;
-            case ArithmeticOperations.Div: res = (a / b) | 0; break;
-            case ArithmeticOperations.Add: res = (a + b) | 0; break;
-            case ArithmeticOperations.Sub: res = (a - b) | 0; break;
-            case ArithmeticOperations.Mod: res = (a % b) | 0; break;
-            case ArithmeticOperations.Pow: res = (a ** b) | 0; break;
-            case ArithmeticOperations.LShift: res = (a << b) | 0; break;
-            case ArithmeticOperations.RShift: res = (a >> b) | 0; break;
-            case ArithmeticOperations.And: res = (a & b) | 0; break;
-            case ArithmeticOperations.Or: res = (a | b) | 0; break;
-            case ArithmeticOperations.Xor: res = (a ^ b) | 0; break;
+        if (cond.first_signal == each) {
+            let signals = new Map<SignalID, number>();
+            this.in.red?.getAll(signals);
+            this.in.green?.getAll(signals);
+
+            for (const [k, v] of signals) {
+                res = (res + this.doOp(v, b)) | 0;
+            }
+        } else {
+            let a: number;
+            if (cond.first_signal) {
+                a = this.getValue(cond.first_signal);
+            } else {
+                a = cond.first_constant;
+            }
+
+            res = this.doOp(a, b);
         }
 
         this.outSig.value = res;
+    }
+
+    doOp(a: number, b: number) {
+        switch (this.data.control_behavior.arithmetic_conditions.operation) {
+            case ArithmeticOperations.Mul: return (a * b) | 0;
+            case ArithmeticOperations.Div: return (a / b) | 0;
+            case ArithmeticOperations.Add: return (a + b) | 0;
+            case ArithmeticOperations.Sub: return (a - b) | 0;
+            case ArithmeticOperations.Mod: return (a % b) | 0;
+            case ArithmeticOperations.Pow: return (a ** b) | 0;
+            case ArithmeticOperations.LShift: return (a << b) | 0;
+            case ArithmeticOperations.RShift: return (a >> b) | 0;
+            case ArithmeticOperations.And: return (a & b) | 0;
+            case ArithmeticOperations.Or: return (a | b) | 0;
+            case ArithmeticOperations.Xor: return (a ^ b) | 0;
+        }
     }
 
     getOut() { return [this.outSig]; }
@@ -285,6 +300,12 @@ class SimNet {
             for (const s of out) {
                 this.map.set(s.type, (this.map.get(s.type) ?? 0) + s.value);
             }
+        }
+    }
+
+    getAll(signals: Map<SignalID, number>) {
+        for (const [key, val] of this.map) {
+            signals.set(key, (signals.get(key) ?? 0) + val);
         }
     }
 
