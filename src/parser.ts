@@ -69,7 +69,7 @@ function createNode(item: yosys.Cell): Node {
         case "$or": return new MathNode(item, ArithmeticOperations.Or);
         case "$xor": return new MathNode(item, ArithmeticOperations.Xor);
         case "$xnor": return new XNOR(item);
-        case "$shl": 
+        case "$shl":
         case "$sshl": return new MathNode(item, ArithmeticOperations.LShift);
         case "$shr": return new SHR(item);
         case "$sshr": return new SSHR(item);
@@ -123,7 +123,7 @@ function createNode(item: yosys.Cell): Node {
         case "$sdffce": return new SDFFCE(item);
         // TODO: case "$dffsre":
 
-        case "$mem": return new MemNode(item);
+        case "$mem_v2": return new MemNode(item);
 
         default:
             logger.error(`Unknown node type ${item.type}`);
@@ -278,9 +278,8 @@ export function buildGraph(mod: yosys.Module) {
         const item = mod.cells[key];
 
         for (const key in item.parameters) {
-            if (item.type == "$mem" && (key == "INIT" || key == "MEMID")) {
-                continue;
-            }
+            //@ts-ignore
+            if (!item.parameters[key].match(/^[01]+$/)) continue;
 
             //@ts-ignore
             item.parameters[key] = parseInt(item.parameters[key], 2);
@@ -292,7 +291,7 @@ export function buildGraph(mod: yosys.Module) {
             continue;
         }
         addNode(node);
-        if(node instanceof MemNode) {
+        if (node instanceof MemNode) {
             for (const rdPort of node.outputSegments) {
                 addNode(rdPort);
             }

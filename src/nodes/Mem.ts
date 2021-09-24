@@ -25,6 +25,36 @@ export class MemNode extends Node {
         super([]);
         this.data = item;
 
+        const params = item.parameters;
+        debugger;
+
+        logger.assert(params.ABITS <= 32, "too many address bits");
+        logger.assert(params.WIDTH <= 32, "cannot store > 32 bit numbers");
+        logger.assert(arraySame(params.INIT, "x"), "memory initialization not implemented");
+
+        logger.assert(params.RD_WIDE_CONTINUATION == 0);
+        logger.assert(params.RD_CLK_ENABLE == 0);
+        logger.assert(params.RD_CLK_POLARITY == 0);
+        logger.assert(params.RD_TRANSPARENCY_MASK == 0);
+        logger.assert(params.RD_COLLISION_X_MASK == 0);
+        logger.assert(params.RD_CE_OVER_SRST == 0);
+        logger.assert(arraySame(params.RD_INIT_VALUE, "x"));
+        logger.assert(arraySame(params.RD_ARST_VALUE, "x"));
+        logger.assert(arraySame(params.RD_SRST_VALUE, "x"));
+
+        logger.assert(params.WR_PORTS == 1, "only one write allowed");
+        logger.assert(params.WR_WIDE_CONTINUATION == 0);
+        logger.assert(params.WR_CLK_ENABLE == 1, "wr_clk has to be set");
+        logger.assert(params.WR_CLK_POLARITY == 1, "invert wr_clk polarity");
+        logger.assert(params.WR_PRIORITY_MASK == 0);
+
+        logger.assert(arraySame(item.connections.RD_CLK, "x"));
+        logger.assert(arraySame(item.connections.RD_EN, "1"));
+        logger.assert(arraySame(item.connections.RD_ARST, "0"));
+        logger.assert(arraySame(item.connections.RD_SRST, "0"));
+
+        logger.assert(arraySame(item.connections.WR_EN, item.connections.WR_EN[0]));
+
         let width = this.data.parameters.WIDTH;
 
         for (let i = 0; i < this.data.parameters.RD_PORTS; i++) {
@@ -32,20 +62,6 @@ export class MemNode extends Node {
 
             this.outputSegments.push(new MemRead(bits));
         }
-
-        logger.assert(item.parameters.ABITS <= 32, "too many address bits");
-        logger.assert(item.parameters.WIDTH <= 32, "cannot store > 32 bit numbers");
-        logger.assert(arraySame(item.parameters.INIT, "x"), "memory initialization not implemented");
-        // logger.assert(item.parameters.RD_CLK_ENABLE   == ((1 << item.parameters.RD_PORTS) - 1)); // read clock is ignored
-        // logger.assert(item.parameters.RD_CLK_POLARITY == ((1 << item.parameters.RD_PORTS) - 1));
-        logger.assert(item.parameters.RD_TRANSPARENT == ((1 << item.parameters.RD_PORTS) - 1), "read has to be transparent");
-        logger.assert(item.parameters.WR_CLK_ENABLE == 1, "wr_clk has to be set");
-        logger.assert(item.parameters.WR_CLK_POLARITY == 1, "invert wr_clk polarity");
-        logger.assert(item.parameters.WR_PORTS == 1, "only one write allowed");
-
-        logger.assert(arraySame(item.connections.RD_CLK, item.connections.WR_CLK[0]));
-        logger.assert(arraySame(item.connections.RD_EN, "1"));
-        logger.assert(arraySame(item.connections.WR_EN, item.connections.WR_EN[0]));
     }
 
     _connect(getInputNode: nodeFunc, getMergeEls: mergeFunc): Endpoint {

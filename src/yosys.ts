@@ -228,31 +228,45 @@ export interface Dffsre extends CellBase {
 }
 
 export interface Mem extends CellBase {
-    type: "$mem";
+    type: "$mem_v2";
     parameters: {
-        ABITS: number;
-        INIT: string;
         MEMID: string;
+        SIZE: number;
+        ABITS: number;
+        WIDTH: number;
+        INIT: string;
         OFFSET: number;
+
+        RD_PORTS: number;
+        RD_WIDE_CONTINUATION: number;
         RD_CLK_ENABLE: number;
         RD_CLK_POLARITY: number;
-        RD_PORTS: number;
-        RD_TRANSPARENT: number;
-        SIZE: number;
-        WIDTH: number;
+        RD_TRANSPARENCY_MASK: number;
+        RD_COLLISION_X_MASK: number;
+        RD_CE_OVER_SRST: number;
+
+        RD_INIT_VALUE: string;
+        RD_ARST_VALUE: string;
+        RD_SRST_VALUE: string;
+
+        WR_PORTS: number;
+        WR_WIDE_CONTINUATION: number;
         WR_CLK_ENABLE: number;
         WR_CLK_POLARITY: number;
-        WR_PORTS: number;
+        WR_PRIORITY_MASK: number;
     };
     connections: {
-        RD_ADDR: Conn;
         RD_CLK: Conn;
-        RD_DATA: number[];
         RD_EN: Conn;
-        WR_ADDR: Conn;
+        RD_ADDR: Conn;
+        RD_DATA: number[];
+        RD_ARST: Conn;
+        RD_SRST: Conn;
+
         WR_CLK: Conn;
-        WR_DATA: Conn;
         WR_EN: Conn;
+        WR_ADDR: Conn;
+        WR_DATA: Conn;
     }
 }
 
