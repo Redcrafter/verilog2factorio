@@ -1,6 +1,6 @@
 import { ConnectionData, SignalID } from "../blueprint.js";
 import { buildGraph } from "../parser.js";
-import { genNetlist } from "../yosys.js";
+import { genNetlist, YosysData } from "../yosys.js";
 
 import { ArithmeticCombinator, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { ConstantCombinator } from "../entities/Constant.js";
@@ -23,7 +23,7 @@ interface SimEnd {
     green: SimNet;
 }
 
-type conFun = (col: "red" | "green", a: SimEnd, b: SimEnd) => void;
+type conFun = (col: "red" | "green", a: SimEnd, b: ConnectionData) => void;
 
 abstract class SimEnt {
     in: SimEnd;
@@ -33,10 +33,11 @@ abstract class SimEnt {
         return ((this.in.red?.getValue(s) ?? 0) + (this.in.green?.getValue(s) ?? 0)) | 0;
     }
 
-    abstract connect(getEnd: (d: ConnectionData) => SimEnd, makeCon: conFun): void;
+    abstract connect(makeCon: conFun): void;
 
     abstract update(): void;
     abstract getOut(): Signal[];
+    abstract reset(): void;
 }
 
 class Arith extends SimEnt {
@@ -63,22 +64,14 @@ class Arith extends SimEnt {
         }
     }
 
-    connect(getEnd: (d: ConnectionData) => SimEnd, makeCon: conFun) {
+    connect(makeCon: conFun) {
         const con = this.data.connections;
 
-        for (const el of con[1].red) {
-            makeCon("red", this.in, getEnd(el));
-        }
-        for (const el of con[1].green) {
-            makeCon("green", this.in, getEnd(el));
-        }
+        for (const el of con[1].red) makeCon("red", this.in, el);
+        for (const el of con[1].green) makeCon("green", this.in, el);
 
-        for (const el of con[2].red) {
-            makeCon("red", this.out, getEnd(el));
-        }
-        for (const el of con[2].green) {
-            makeCon("green", this.out, getEnd(el));
-        }
+        for (const el of con[2].red) makeCon("red", this.out, el);
+        for (const el of con[2].green) makeCon("green", this.out, el);
     }
 
     update() {
@@ -131,6 +124,7 @@ class Arith extends SimEnt {
         }
     }
 
+    reset() { this.outSig.value = 0; }
     getOut() { return [this.outSig]; }
 }
 
@@ -158,22 +152,14 @@ class Decider extends SimEnt {
         }
     }
 
-    connect(getEnd: (d: ConnectionData) => SimEnd, makeCon: conFun) {
+    connect(makeCon: conFun) {
         const con = this.data.connections;
 
-        for (const el of con[1].red) {
-            makeCon("red", this.in, getEnd(el));
-        }
-        for (const el of con[1].green) {
-            makeCon("green", this.in, getEnd(el));
-        }
+        for (const el of con[1].red) makeCon("red", this.in, el);
+        for (const el of con[1].green) makeCon("green", this.in, el);
 
-        for (const el of con[2].red) {
-            makeCon("red", this.out, getEnd(el));
-        }
-        for (const el of con[2].green) {
-            makeCon("green", this.out, getEnd(el));
-        }
+        for (const el of con[2].red) makeCon("red", this.out, el);
+        for (const el of con[2].green) makeCon("green", this.out, el);
     }
 
     update() {
@@ -209,6 +195,7 @@ class Decider extends SimEnt {
         }
     }
 
+    reset() { this.outSig.value = 0; }
     getOut() { return [this.outSig]; }
 }
 
@@ -228,19 +215,16 @@ export class Const extends SimEnt {
         }));
     }
 
-    connect(getEnd: (d: ConnectionData) => SimEnd, makeCon: conFun) {
+    connect(makeCon: conFun) {
         const con = this.data.connections;
 
-        for (const el of con[1].red) {
-            makeCon("red", this.out, getEnd(el));
-        }
-        for (const el of con[1].green) {
-            makeCon("green", this.out, getEnd(el));
-        }
+        for (const el of con[1].red) makeCon("red", this.out, el);
+        for (const el of con[1].green) makeCon("green", this.out, el);
     }
 
     update() { }
 
+    reset() { this.outSig.forEach(x => x.value = 0); }
     getOut() { return this.outSig; }
 }
 
@@ -254,18 +238,15 @@ class Pole extends SimEnt {
         this.data = data;
     }
 
-    connect(getEnd: (d: ConnectionData) => SimEnd, makeCon: conFun) {
+    connect(makeCon: conFun) {
         const con = this.data.connections;
 
-        for (const el of con[1].red) {
-            makeCon("red", this.in, getEnd(el));
-        }
-        for (const el of con[1].green) {
-            makeCon("green", this.in, getEnd(el));
-        }
+        for (const el of con[1].red) makeCon("red", this.in, el);
+        for (const el of con[1].green) makeCon("green", this.in, el);
     }
 
     update() { }
+    reset() { }
     getOut(): Signal[] { return []; }
 }
 
@@ -309,6 +290,10 @@ class SimNet {
         }
     }
 
+    getValue(signal: SignalID) { return this.map.get(signal); }
+
+    reset() { this.map.clear(); }
+
     static merge(a: SimNet, b: SimNet) {
         console.assert(a.color == b.color);
         let n = new SimNet(a.color);
@@ -324,8 +309,6 @@ class SimNet {
 
         return n;
     }
-
-    getValue(signal: SignalID) { return this.map.get(signal); }
 }
 
 class Simulator {
@@ -348,10 +331,20 @@ class Simulator {
             }
         }
     }
+
+    reset() {
+        for (const n of this.nets) n.reset();
+        for (const e of this.ents) e.reset();
+    }
 }
 
+let netCache = new Map<string, YosysData>();
 export async function createSimulator(file: string, moduleName: string) {
-    const data = await genNetlist([file]);
+    let data = netCache.get(file);
+    if(!data) {
+        data = await genNetlist([file]);
+        netCache.set(file, data);
+    }
 
     let module = data.modules[moduleName];
     if (!module) {
@@ -397,7 +390,9 @@ export async function createSimulator(file: string, moduleName: string) {
         }
     }
 
-    function makeCon(col: "red" | "green", a: SimEnd, b: SimEnd) {
+    function makeCon(col: "red" | "green", a: SimEnd, d: ConnectionData) {
+        let b = getEnd(d);
+
         let an = a[col];
         let bn = b[col];
 
@@ -419,7 +414,7 @@ export async function createSimulator(file: string, moduleName: string) {
     }
 
     for (const e of simEnts) {
-        e.connect(getEnd, makeCon);
+        e.connect(makeCon);
     }
 
     return new Simulator(nets, simEnts);

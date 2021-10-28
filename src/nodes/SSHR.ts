@@ -14,7 +14,6 @@ export class SSHR extends Node {
         super(item.connections.Y);
         this.data = item;
 
-        logger.assert(item.parameters.A_SIGNED == 1);
         logger.assert(item.parameters.B_SIGNED == 0);
     }
 
