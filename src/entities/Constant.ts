@@ -1,4 +1,5 @@
 import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
+import { logger } from "../logger.js";
 
 import { Entity, signalV, Endpoint } from "./Entity.js";
 
@@ -11,6 +12,7 @@ export interface ConstantControlBehavior {
 export interface ConstantCombinator extends EntityBase {
     name: "constant-combinator",
     control_behavior: {
+        is_on?: boolean;
         filters: ConstantControlBehavior[];
     }
     connections: {
@@ -20,6 +22,7 @@ export interface ConstantCombinator extends EntityBase {
 
 export class Constant extends Entity {
     params: ConstantControlBehavior[];
+    isOn = true;
 
     constructor(...param: ConstantControlBehavior[]) {
         super(1, 1);
@@ -29,9 +32,7 @@ export class Constant extends Entity {
     }
 
     toObj(): ConstantCombinator {
-        if (!this.output.red && !this.output.green) {
-            throw new Error("Unconnected Constant");
-        }
+        logger.assert(this.input.redP.size != 0 || this.input.greenP.size != 0, "Unconnected Constant")
 
         return {
             entity_number: this.id,
@@ -39,6 +40,7 @@ export class Constant extends Entity {
             position: { x: this.x, y: this.y },
             direction: this.dir,
             control_behavior: {
+                is_on: this.isOn,
                 filters: this.params
             },
             connections: {

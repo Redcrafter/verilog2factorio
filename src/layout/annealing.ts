@@ -1,5 +1,8 @@
-import { options } from "./options.js";
-import { logger } from "./logger.js";
+import { options } from "../options.js";
+import { logger } from "../logger.js";
+
+import { Color, Endpoint, Entity } from "../entities/Entity.js";
+import { opt_chain } from "../optimization/opt_chain.js";
 
 function dist(a: Point, b: Point) {
     const dx = a.x - b.x;
@@ -9,7 +12,6 @@ function dist(a: Point, b: Point) {
 }
 
 class Point {
-    // Position
     x = 0;
     y = 0;
 
@@ -47,7 +49,7 @@ interface Edge {
     b: Point;
 }
 
-export class Simulator {
+class Simulator {
     public nodes: Point[] = [];
     private edges: Edge[] = [];
 
@@ -161,6 +163,10 @@ export class Simulator {
                 }
 
                 x++;
+                if (x >= this.gridSize) {
+                    x = 0;
+                    y++;
+                }
             }
             next = temp;
             y++;
@@ -288,5 +294,72 @@ export class Simulator {
     private setNode(x: number, y: number, v: Point) {
         if (x < 0 || x >= this.gridSize || y < 0 || y >= this.gridSize) throw new Error("element out of range");
         this.grid[x + y * this.gridSize] = v;
+    }
+}
+
+export function runAnnealing(combs: Entity[], ports: Set<Entity>) {
+    // set op connections
+    opt_chain(combs);
+
+    logger.log(`Running layout simulation`);
+    let simulator = new Simulator();
+
+    // add combinators to simulator
+    for (const n of combs) {
+        let f = ports.has(n);
+        simulator.addNode(f);
+    }
+
+    // add connectiosn to simulator
+    for (const n of combs) {
+        function add(dat: Set<Endpoint>) {
+            for (const c of dat) {
+                simulator.addEdge(n.id - 1, c.entity.id - 1);
+            }
+        }
+        if (n.input !== n.output) {
+            add(n.input.redP);
+            add(n.input.greenP);
+        }
+        add(n.output.redP);
+        add(n.output.greenP);
+    }
+
+    let errors = 0;
+    // run simulator
+    simulator.sim((aId, bId) => {
+        let a = combs[aId];
+        let b = combs[bId];
+
+        // TODO: identify which connection should be changed and add pole
+
+        let cons = [];
+
+        if (a.input.redP.has(b.input)) cons.push([Color.Red, a.input, b.input]);
+        if (a.input.greenP.has(b.input)) cons.push([Color.Green, a.input, b.input]);
+        if (a.input.redP.has(b.output)) cons.push([Color.Red, a.input, b.output]);
+        if (a.input.greenP.has(b.output)) cons.push([Color.Green, a.input, b.output]);
+
+        if (a.output.redP.has(b.input)) cons.push([Color.Red, a.output, b.input]);
+        if (a.output.greenP.has(b.input)) cons.push([Color.Green, a.output, b.input]);
+        if (a.output.redP.has(b.output)) cons.push([Color.Red, a.output, b.output]);
+        if (a.output.greenP.has(b.output)) cons.push([Color.Green, a.output, b.output]);
+        // problematic: need two poles in some cases
+
+        // debugger;
+        errors++;
+    });
+    if (errors != 0) {
+        logger.error(`${errors} overlong wire(s) have been found after trying to layout the circuit`);
+        // process.exit(0);
+    }
+
+    // transfer simulation to combinators
+    for (let i = 0; i < combs.length; i++) {
+        const n = combs[i];
+        const p = simulator.nodes[i];
+
+        n.x = Math.floor(p.x) + 0.5;
+        n.y = Math.floor(p.y * 2) + n.height / 2;
     }
 }

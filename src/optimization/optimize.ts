@@ -3,7 +3,6 @@ import { options } from "../options.js";
 
 import { Entity } from "../entities/Entity.js";
 
-import { opt_chain } from "./opt_chain.js";
 import { opt_clean } from "./opt_clean.js";
 import { opt_const } from "./opt_const.js";
 import { opt_merge } from "./opt_merge.js";
@@ -22,6 +21,4 @@ export function optimize(entities: Entity[]) {
 
         if(options.verbose) logger.log("");
     }
-
-    opt_chain(entities);
 }

@@ -1,4 +1,5 @@
 import { ConnectionPoint, EntityBase } from "../blueprint.js";
+import { logger } from "../logger.js";
 
 import { Endpoint, Entity } from "./Entity.js";
 
@@ -16,9 +17,7 @@ export class Pole extends Entity {
     }
 
     toObj(): MediumElectricPole {
-        if (!this.input.red && !this.input.green && !this.output.red && !this.output.green) {
-            throw new Error("Unconnected Pole");
-        }
+        logger.assert(this.input.redP.size != 0 || this.input.greenP.size != 0, "Unconnected Pole")
 
         return {
             entity_number: this.id,

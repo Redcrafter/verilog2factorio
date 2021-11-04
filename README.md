@@ -16,11 +16,12 @@ Run ``` npm install ``` to install all dependencies.
 Usage: v2f [options] <files..>
 
 Options:
-  -s, --seed <seed>         Specify a seed for the layout generation.
+  -v, --verbose
   -o, --output <file>       File to output the compiled blueprint to.
   -m, --modules <names...>  Verilog modules to output blueprint for. (defaults to all).
   -f, --files <files...>    List of Verilog files to compile. (only has to be explicitly specified after -m).
   -r, --retry               Retry until there are no longer layout errors.
+  -g, --generator [type]    Layout generator to use. annealing(default),matrix
   -h, --help                Display this information.
 ```
 ## Quick Start

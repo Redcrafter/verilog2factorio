@@ -7,7 +7,7 @@ export async function testCollatz() {
 
     let clock = sim.ents[0] as Const;
     let start = sim.ents[1] as Const;
-    let data = sim.ents[2] as Const;;
+    let data = sim.ents[2] as Const;
 
     let val = sim.ents[3];
 
