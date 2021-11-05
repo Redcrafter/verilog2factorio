@@ -1,7 +1,23 @@
 
 import { Constant } from "../entities/Constant.js";
 import { Color, Endpoint, Entity } from "../entities/Entity.js";
-import { nets } from "../optimization/nets.js";
+import { nets, Network } from "../optimization/nets.js";
+
+interface El {
+    min: number;
+    max: number;
+    score: number;
+    points: number[];
+    net: Network;
+}
+
+function overlaps(list: El[], inter: El) {
+    for (let i = 0; i < list.length; i++) {
+        const el = list[i];
+        if (inter.min <= el.max && el.min <= inter.max) return true;
+    }
+    return false;
+}
 
 export function createMatrixLayout(combs: Entity[], ports: Set<Entity>) {
     function connect(c: Color, a: Endpoint, b: Endpoint) {
@@ -15,51 +31,38 @@ export function createMatrixLayout(combs: Entity[], ports: Set<Entity>) {
         }
     }
 
-    // reassign network id's
-    let i = 0;
-    for (const el of nets.red) {
-        el.id = i++;
-    }
-    i = 0;
-    for (const el of nets.green) {
-        el.id = i++;
-    }
-
-    let grid = [];
+    let grid: Constant[][] = [];
     let newCombs = [];
 
-    let count = Math.max(nets.red.size, nets.green.size);
-
-    let rNets = [...nets.red];
-    let gNets = [...nets.green];
-    let x = 3.5;
-    for (let i = 0; i < count; i++) {
-        let sub = [];
-
-        let r = rNets[i];
-        let g = gNets[i];
-
-        let min = Infinity;
-        let max = 0;
-        let points = [];
-
-        if (r) {
-            for (const p of r.points) {
-                min = Math.min(min, p.entity.id - 1);
-                max = Math.max(max, p.entity.id - 1);
-                points.push(p.entity.id - 1);
-            }
-        }
-        if (g) {
-            for (const p of g.points) {
-                min = Math.min(min, p.entity.id - 1);
-                max = Math.max(max, p.entity.id - 1);
-                points.push(p.entity.id - 1);
-            }
-        }
+    let intervals: El[] = [];
+    for (const n of [...nets.red, ...nets.green]) {
+        let points = [...n.points].map(x => x.entity.id - 1);
         points.sort((a, b) => a - b);
 
-        // debugger;
+        let min = points[0];
+        let max = points[points.length - 1];
+        let len = points[points.length - 1] - points[0];
+
+        intervals.push({
+            min, max,
+            score: len / points.length,
+            points,
+            net: n
+        });
+    }
+    intervals.sort((a, b) => a.score - b.score);
+
+    let lines = [];
+
+    function stringPoles(el: El, x: number) {
+        // using the network id to determine connection point x
+        el.net.id = x;
+
+        let points = el.points;
+
+        // align to grid
+        let gridX = x + Math.floor(x / 8) * 2 + 1.5;
+
         let last = null;
         let lastY = points[0] - 1;
         let j = 0;
@@ -75,22 +78,35 @@ export function createMatrixLayout(combs: Entity[], ports: Set<Entity>) {
 
             let p = new Constant();
             p.isOn = false;
-            p.x = x;
+            p.x = gridX;
             p.y = nextY;
 
             newCombs.push(p);
-            sub[nextY] = p;
-            if (last) connect(Color.Both, last.output, p.output);
+            grid[x][nextY] = p;
+            if (last) connect(el.net.color == "red" ? Color.Red : Color.Green, last.output, p.output);
             last = p;
             lastY = nextY;
         }
+    }
 
-        x++
-        if (i % 7 == 6) {
-            x += 2;
+    for (let i = 0; i < intervals.length; i++) {
+        const el = intervals[i];
+
+        // try to insert
+        let j = 0;
+        for (; j < lines.length; j++) {
+            if (!overlaps(lines[j], el)) {
+                stringPoles(el, j);
+                lines[j].push(el);
+                break;
+            }
         }
-
-        grid.push(sub);
+        if (j == lines.length) {
+            // failed to insert, create new line
+            grid.push([]);
+            stringPoles(el, lines.length);
+            lines.push([el]);
+        }
     }
 
     for (let i = 0; i < combs.length; i++) {
@@ -99,53 +115,54 @@ export function createMatrixLayout(combs: Entity[], ports: Set<Entity>) {
         item.y = i;
         item.dir = 2;
 
-        let inPoles = [];
-        let outPoles = [];
+        let inPoles = [item];
+        let outPoles = [item];
 
         let lastIn = item.input;
         let lastOut = item.output;
 
-        let needed = Math.max(item.input?.red?.id ?? -1, item.input?.green?.id ?? -1) / 7;
-        for (let j = 0; j <= needed; j++) {
+        let needed = Math.max(item.input.red?.id ?? -1, item.input.green?.id ?? -1) / 8;
+        let inCol = (item.input.red ? Color.Red : 0) | (item.input.green ? Color.Green : 0);
+        for (let j = 1; j <= needed; j++) {
             let a = new Constant();
             a.isOn = false;
             newCombs.push(a);
             inPoles.push(a);
-            a.x = j * 9 + 1.5;
+            a.x = j * 10 - 0.5;
             a.y = i;
-            connect(Color.Both, lastIn, a.output);
-            lastIn = a.output;
-
+            connect(inCol, lastIn, a.input);
+            lastIn = a.input;
         }
 
-        needed = Math.max(item.output?.red?.id ?? -1, item.output?.green?.id ?? -1) / 7;
-        for (let j = 0; j <= needed; j++) {
+        needed = Math.max(item.output?.red?.id ?? -1, item.output?.green?.id ?? -1) / 8;
+        let outCol = (item.output.red ? Color.Red : 0) | (item.output.green ? Color.Green : 0);
+        for (let j = 1; j <= needed; j++) {
             let b = new Constant();
             b.isOn = false;
             newCombs.push(b);
             outPoles.push(b);
-            b.x = j * 9 + 2.5;
+            b.x = j * 10 + 0.5;
             b.y = i;
-            connect(Color.Both, lastOut, b.output);
+            connect(outCol, lastOut, b.output);
             lastOut = b.output;
         }
 
         if (item.input.red) {
             let p = grid[item.input.red.id][i];
-            connect(Color.Red, p.output, inPoles[Math.floor(item.input.red.id / 7)].output);
+            connect(Color.Red, p.output, inPoles[Math.floor(item.input.red.id / 8)].input);
         }
         if (item.input.green) {
             let p = grid[item.input.green.id][i];
-            connect(Color.Green, p.output, inPoles[Math.floor(item.input.green.id / 7)].output);
+            connect(Color.Green, p.output, inPoles[Math.floor(item.input.green.id / 8)].input);
         }
 
         if (item.output.red) {
             let p = grid[item.output.red.id][i];
-            connect(Color.Red, p.output, outPoles[Math.floor(item.output.red.id / 7)].output);
+            connect(Color.Red, p.output, outPoles[Math.floor(item.output.red.id / 8)].output);
         }
         if (item.output.green) {
             let p = grid[item.output.green.id][i];
-            connect(Color.Green, p.output, outPoles[Math.floor(item.output.green.id / 7)].output);
+            connect(Color.Green, p.output, outPoles[Math.floor(item.output.green.id / 8)].output);
         }
     }
 
