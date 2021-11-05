@@ -54,7 +54,7 @@ export function opt_transform(entities: Entity[]) {
         let inNet = e.input.red ?? e.input.green;
         let outNet = e.output.red ?? e.output.green;
 
-        if (outNet.hasOtherInputs(e.output) && !inNet.hasOtherOutputs(e.input)) {
+        if (outNet.hasOtherWriters(e.output) && inNet.hasOtherReaders(e.input)) {
             filter2++;
             continue;
         }

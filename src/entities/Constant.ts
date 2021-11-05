@@ -34,19 +34,21 @@ export class Constant extends Entity {
     toObj(): ConstantCombinator {
         logger.assert(this.input.redP.size != 0 || this.input.greenP.size != 0, "Unconnected Constant")
 
-        return {
+        let el: ConstantCombinator = {
             entity_number: this.id,
             name: "constant-combinator",
             position: { x: this.x, y: this.y },
             direction: this.dir,
             control_behavior: {
-                is_on: this.isOn,
                 filters: this.params
             },
             connections: {
                 "1": this.input.convert()
             }
         };
+        if (!this.isOn) el.control_behavior.is_on = false;
+
+        return el;
     }
 
     getValue(s: SignalID) {

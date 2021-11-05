@@ -2,10 +2,12 @@ import fs from "fs";
 
 import { Blueprint, createBlueprint, createBpString } from "./blueprint.js";
 import { logger } from "./logger.js";
-import { options } from './options.js';
+import { options, parseOptions } from './options.js';
 import { buildGraph } from "./parser.js";
 import { transform } from "./transformer.js";
-import { genNetlist, Module } from "./yosys.js";
+import { genNetlist } from "./yosys.js";
+
+await parseOptions();
 
 const data = await genNetlist(options.files);
 const modules: Blueprint[] = [];

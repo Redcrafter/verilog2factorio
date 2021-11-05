@@ -57,16 +57,13 @@ export class Network {
         e[this.color] = null;
 
         if (this.points.size == 1) {
-            for (const p of this.points) {
-                p[this.color] = null;
-            }
-            nets[this.color].delete(this);
+            this.delete();
         }
 
         if (e.outSignals.size != 0) this.dirtySignals = true;
     }
 
-    hasOtherInputs(e: Endpoint) {
+    hasOtherWriters(e: Endpoint) {
         for (const o of this.points) {
             if (e == o || o.outSignals.size == 0) continue;
 
@@ -79,7 +76,7 @@ export class Network {
         return false;
     }
 
-    hasOtherOutputs(e: Endpoint) {
+    hasOtherReaders(e: Endpoint) {
         for (const o of this.points) {
             if (o !== e && o.outSignals.size == 0) return true;
         }
@@ -93,6 +90,13 @@ export class Network {
         }
 
         return false;
+    }
+
+    delete() {
+        for (const p of this.points) {
+            p[this.color] = null;
+        }
+        nets[this.color].delete(this);
     }
 
     get signals() {

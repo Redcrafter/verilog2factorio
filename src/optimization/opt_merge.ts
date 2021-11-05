@@ -64,9 +64,9 @@ export function opt_merge(entities: Entity[]) {
 
                 let doMerge = false;
                 if (!arNet && !orNet) { // only green output
-                    doMerge = !agNet.hasOtherInputs(entity.output) && !ogNet.hasOtherInputs(other.output);
+                    doMerge = !agNet.hasOtherWriters(entity.output) && !ogNet.hasOtherWriters(other.output);
                 } else if (!agNet && !ogNet) { // only red output
-                    doMerge = !arNet.hasOtherInputs(entity.output) && !orNet.hasOtherInputs(other.output);
+                    doMerge = !arNet.hasOtherWriters(entity.output) && !orNet.hasOtherWriters(other.output);
                 }
 
                 if (doMerge) {

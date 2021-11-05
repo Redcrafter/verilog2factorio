@@ -9,6 +9,7 @@ import { anything, each, everything } from "../entities/Entity.js";
 import { MediumElectricPole } from "../entities/Pole.js";
 
 import { optimize } from "../optimization/optimize.js";
+import { opt_chain } from "../optimization/opt_chain.js";
 
 interface Signal {
     value: number;
@@ -356,6 +357,7 @@ export async function createSimulator(file: string, moduleName: string) {
     let combs = graph.nodes.flatMap(x => x.combs());
 
     optimize(combs);
+    opt_chain(combs);
 
     // assign entity id's
     for (let i = 0; i < combs.length; i++) {
