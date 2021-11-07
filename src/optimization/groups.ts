@@ -8,7 +8,8 @@ import { each, Endpoint, Entity } from "../entities/Entity.js";
 
 import { Network } from "./nets.js";
 
-function _changeSignal(endpoint: Endpoint, from: SignalID, to: SignalID) {
+// todo: make this a virtual function?
+function changeCombSignal(endpoint: Endpoint, from: SignalID, to: SignalID) {
     let entity = endpoint.entity;
 
     if (entity instanceof Arithmetic || entity instanceof Decider) {
@@ -19,11 +20,16 @@ function _changeSignal(endpoint: Endpoint, from: SignalID, to: SignalID) {
         } else {
             logger.assert(entity.params.output_signal == from);
             entity.params.output_signal = to;
+
+            endpoint.outSignals.delete(from);
+            endpoint.outSignals.add(to);
         }
     } else if (entity instanceof Constant) {
         for (const el of entity.params) {
             if (el.signal == from) el.signal = to;
         }
+        endpoint.outSignals.delete(from);
+        endpoint.outSignals.add(to);
     } else throw new Error(`node is not of type Arithmetic, Decider, or Constant.`);
 }
 
@@ -34,40 +40,87 @@ function addToSet<T>(a: Set<T>, b: Set<T>) {
 }
 
 export class Group {
-    points = new Set<Endpoint>();
-    nets = new Set<Network>();
+    private root: GroupManager;
+    public _parent: GroupCollection;
 
-    _signals: Set<SignalID>;
+    public points = new Set<Endpoint>();
+    public nets = new Set<Network>();
+    public signals = new Set<SignalID>();
 
-    static merge(a: Group, b: Group) {
-        let g = new Group();
-        g.points = new Set([...a.points, ...b.points]);
-        g.nets = new Set([...a.nets, ...b.nets]);
-        return g;
+    constructor(root: GroupManager, parent: GroupCollection) {
+        this.root = root;
+        this._parent = parent;
     }
 
-    get networkSignals() {
-        if (!this._signals) {
-            this._signals = new Set();
-            for (const n of this.nets) {
-                for (const p of n.points) {
-                    addToSet(this._signals, p.outSignals);
-                    if (p.entity instanceof Decider && p.entity.params.copy_count_from_input) {
-                        this._signals.add(p.entity.params.output_signal);
-                    }
-                }
+    hasSignal(s: SignalID) { return this.signals.has(s); }
+    changeSignal(from: SignalID, to: SignalID) {
+        this.root.changeSignal(this, from, to);
+    }
+
+    add(p: Endpoint) {
+        if (p.entity instanceof Arithmetic || p.entity instanceof Decider) {
+            if (p == p.entity.output) {
+                logger.assert(p.outSignals.has(this._parent.type));
+            } else {
+                logger.assert(p.entity.params.first_signal == this._parent.type || p.entity.params.second_signal == this._parent.type);
             }
+        } else if (p.entity instanceof Constant) {
+            logger.assert(p.outSignals.has(this._parent.type));
+        } else {
+            debugger;
         }
 
-        return this._signals;
+        if (p.red) {
+            this.nets.add(p.red);
+            this._parent.nets.set(p.red, this);
+        }
+        if (p.green) {
+            this.nets.add(p.green);
+            this._parent.nets.set(p.green, this);
+        }
+        addToSet(this.signals, p.outSignals);
+        this.points.add(p);
+    }
+    remove(p: Endpoint) {
+        // don't want to remove nets?
+        this.points.delete(p);
+
+        // recalc signals
+        this.signals.clear();
+        for (const p of this.points) {
+            addToSet(this.signals, p.outSignals);
+        }
+    }
+
+    get parent() { return this._parent; }
+
+    static merge(a: Group, b: Group) {
+        logger.assert(a.root == b.root);
+        logger.assert(a._parent == b._parent);
+
+        let g = new Group(a.root, a._parent);
+        g.points = new Set([...a.points, ...b.points]);
+        g.nets = new Set([...a.nets, ...b.nets]);
+        g.signals = new Set([...a.signals, ...b.signals]);
+        return g;
     }
 }
 
 export class GroupCollection {
     groups = new Set<Group>();
     nets = new Map<Network, Group>();
+    type: SignalID;
 
-    constructor() { }
+    constructor(type: SignalID) {
+        this.type = type;
+    }
+
+    addGroup(g: Group) {
+        for (const n of g.nets) {
+            this.nets.set(n, g);
+        }
+        this.groups.add(g);
+    }
 
     merge(a: Group, b: Group) {
         if (a === b) return a;
@@ -76,122 +129,134 @@ export class GroupCollection {
         this.groups.delete(b);
 
         let g = Group.merge(a, b);
-
-        for (const n of g.nets) {
-            this.nets.set(n, g);
-        }
-
-        this.groups.add(g);
-
+        this.addGroup(g);
         return g;
     }
+}
 
+export class GroupManager {
+    private groups = new Map<SignalID, GroupCollection>();
+
+    constructor(entities: Entity[]) {
+        // create all groups
+        for (const entity of entities) {
+            if (entity instanceof Constant) {
+                for (const s of entity.params) {
+                    this.processOutput(s.signal, entity);
+                }
+            } else if (entity instanceof Arithmetic || entity instanceof Decider) {
+                this.processOutput(entity.params.output_signal, entity);
+            }
+        }
+
+        // merge input groups with same signal type
+        for (const entity of entities) {
+            if (!(entity instanceof Arithmetic || entity instanceof Decider)) continue;
+
+            if (entity.params.first_signal == each || entity.params.second_signal == each) {
+                // merge all inputs if each
+                for (const [s, g] of this.groups) {
+                    this.mergeInput(s, entity);
+                }
+            } else {
+                // merge if both inputs share a signal
+                if (entity.params.first_signal) this.mergeInput(entity.params.first_signal, entity)?.add(entity.input);
+                if (entity.params.second_signal) this.mergeInput(entity.params.second_signal, entity)?.add(entity.input);
+
+                // merge input and output if passthrough
+                if (entity instanceof Decider && entity.params.copy_count_from_input) {
+                    // memrge inputs by output signal
+                    let g = this.mergeInput(entity.params.output_signal, entity);
+                    logger.assert(!!g);
+
+                    // outputs are already merged
+                    let outGroup = this.get(entity.params.output_signal, entity.output.red ?? entity.output.green);
+                    this.merge(outGroup, g);
+                }
+            }
+        }
+    }
+
+    get(signal: SignalID, net: Network) {
+        return this.groups.get(signal).nets.get(net);
+    }
+
+    merge(a: Group, b: Group) {
+        logger.assert(a.parent == b.parent);
+        return a.parent.merge(a, b);
+    }
     changeSignal(group: Group, from: SignalID, to: SignalID) {
-        this.groups.delete(group);
+        logger.assert(group._parent.type == from);
+        let a = group.parent;
+        let b = this.getSub(to);
+
+        // move group to new set
+        a.groups.delete(group);
+        b.groups.add(group);
+
         for (const net of group.nets) {
-            this.nets.delete(net);
+            // change net association
+            a.nets.delete(net);
+            b.nets.set(net, group);
+
+            // change signals for nets
             net.signals.delete(from);
             net.signals.add(to);
         }
 
+        // change signal in combinators
         for (const end of group.points) {
-            end.outSignals.delete(from);
-            end.outSignals.add(to);
-
-            _changeSignal(end, from, to);
+            changeCombSignal(end, from, to);
         }
+        group._parent = b;
     }
-}
 
-export function extractSignalGroups(entities: Entity[]) {
-    let groups = new Map<SignalID, GroupCollection>();
-
-    function getGroup(signalId: SignalID) {
-        let signal = groups.get(signalId);
+    private getSub(signalId: SignalID) {
+        let signal = this.groups.get(signalId);
         if (!signal) {
-            signal = new GroupCollection();
-            groups.set(signalId, signal);
+            signal = new GroupCollection(signalId);
+            this.groups.set(signalId, signal);
         }
 
         return signal;
     }
+    private processOutput(signal: SignalID, entity: Entity) {
+        let signalGroups = this.getSub(signal);
 
-    // create all groups
-    for (const entity of entities) {
-        function processSignal(signal: SignalID) {
-            let signalGroups = getGroup(signal);
+        let rGroup = signalGroups.nets.get(entity.output.red);
+        let gGroup = signalGroups.nets.get(entity.output.green);
 
-            let rGroup = signalGroups.nets.get(entity.output.red);
-            let gGroup = signalGroups.nets.get(entity.output.green);
-
-            let g = rGroup && gGroup ? signalGroups.merge(rGroup, gGroup) : rGroup ?? gGroup;
-
-            if (!g) {
-                g = new Group();
-                signalGroups.groups.add(g);
-            }
-
-            g.points.add(entity.output);
-            if (entity.output.red) {
-                signalGroups.nets.set(entity.output.red, g);
-                g.nets.add(entity.output.red);
-            }
-            if (entity.output.green) {
-                signalGroups.nets.set(entity.output.green, g);
-                g.nets.add(entity.output.green);
-            }
-        }
-
-        if (entity instanceof Constant) {
-            for (const s of entity.params) {
-                processSignal(s.signal);
-            }
-        } else if (entity instanceof Arithmetic || entity instanceof Decider) {
-            processSignal(entity.params.output_signal);
-        }
-    }
-
-    // merge input groups with same signal type
-    for (const entity of entities) {
-        if (!(entity instanceof Arithmetic || entity instanceof Decider)) continue;
-
-        function mergeInput(signalId: SignalID) {
-            let signalGroups = groups.get(signalId);
-
-            let rGroup = signalGroups.nets.get(entity.input.red);
-            let gGroup = signalGroups.nets.get(entity.input.green);
-
-            let g;
-            if (rGroup && gGroup) {
-                g = signalGroups.merge(rGroup, gGroup);
-            } else {
-                g = rGroup ?? gGroup;
-            }
-
-            return g;
-        }
-
-        // merge all inputs if each
-        if (entity.params.first_signal == each || entity.params.second_signal == each) {
-            for (const [s, g] of groups) {
-                mergeInput(s);
-            }
+        let g;
+        if (rGroup && gGroup) {
+            g = signalGroups.merge(rGroup, gGroup);
         } else {
-            // merge if both inputs share a signal
-            if (entity.params.first_signal) mergeInput(entity.params.first_signal)?.points.add(entity.input);
-            if (entity.params.second_signal) mergeInput(entity.params.second_signal)?.points.add(entity.input);
-
-            // merge input and output if passthrough
-            if (entity instanceof Decider && entity.params.copy_count_from_input) {
-                let signalGroups = groups.get(entity.params.output_signal);
-                let g = mergeInput(entity.params.output_signal);
-
-                let why = signalGroups.nets.get(entity.output.red ?? entity.output.green);
-
-                if (g) signalGroups.merge(why, g);
-            }
+            g = rGroup ?? gGroup;
         }
-    }
 
-    return groups;
+        if (!g) {
+            g = new Group(this, signalGroups);
+            signalGroups.addGroup(g);
+        }
+
+        g.add(entity.output);
+    }
+    private mergeInput(signalId: SignalID, entity: Entity) {
+        let signalGroups = this.groups.get(signalId);
+
+        let rGroup = signalGroups.nets.get(entity.input.red);
+        let gGroup = signalGroups.nets.get(entity.input.green);
+
+        let g;
+        if (rGroup && gGroup) {
+            g = signalGroups.merge(rGroup, gGroup);
+        } else {
+            g = rGroup ?? gGroup;
+        }
+
+        return g;
+    }
+}
+
+export function extractSignalGroups(entities: Entity[]) {
+    return new GroupManager(entities);
 }

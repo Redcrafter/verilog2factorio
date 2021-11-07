@@ -1,8 +1,8 @@
-import { nets, Network } from "./nets.js";
-import { Arithmetic } from "../entities/Arithmetic.js";
-import { Decider } from "../entities/Decider.js";
+import { nets } from "./nets.js";
 import { options } from "../options.js";
 import { logger } from "../logger.js";
+
+// todo: check for each signal?
 
 // removes networks which are never used as inputs
 export function opt_user() {
@@ -10,7 +10,7 @@ export function opt_user() {
 
     let count = 0;
     for (const n of [...nets.red, ...nets.green]) {
-        if(!n.hasOtherReaders(null)) {
+        if (!n.hasOtherReaders(null) || !n.hasWriter()) {
             n.delete();
             count++;
         }

@@ -30,7 +30,7 @@ export class Network {
     constructor(color: "red" | "green") {
         this.color = color;
 
-        if(color == "red") {
+        if (color == "red") {
             this.id = redCounter++;
         } else {
             this.id = greenCounter++;
@@ -63,9 +63,16 @@ export class Network {
         if (e.outSignals.size != 0) this.dirtySignals = true;
     }
 
+    hasWriter() {
+        for (const e of this.points) {
+            if (e == e.entity.output && e.outSignals.size != 0) return true;
+        }
+        return false;
+    }
+
     hasOtherWriters(e: Endpoint) {
         for (const o of this.points) {
-            if (e == o || o.outSignals.size == 0) continue;
+            if (e == o || o.outSignals.size == 0 || o == o.entity.input) continue;
 
             for (const s of e.outSignals) {
                 if (o.outSignals.has(s))
@@ -77,8 +84,9 @@ export class Network {
     }
 
     hasOtherReaders(e: Endpoint) {
+        // TODO: check for signals?
         for (const o of this.points) {
-            if (o !== e && o.outSignals.size == 0) return true;
+            if (o !== e && o == o.entity.input) return true;
         }
 
         return false;

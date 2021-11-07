@@ -225,7 +225,12 @@ export class Const extends SimEnt {
 
     update() { }
 
-    reset() { this.outSig.forEach(x => x.value = 0); }
+    reset() {
+        this.outSig = this.data.control_behavior.filters.map(x => ({
+            value: x.count,
+            type: x.signal
+        }));
+    }
     getOut() { return this.outSig; }
 }
 
@@ -342,7 +347,7 @@ class Simulator {
 let netCache = new Map<string, YosysData>();
 export async function createSimulator(file: string, moduleName: string) {
     let data = netCache.get(file);
-    if(!data) {
+    if (!data) {
         data = await genNetlist([file]);
         netCache.set(file, data);
     }

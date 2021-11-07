@@ -6,6 +6,7 @@ import { Decider } from "../entities/Decider.js";
 import { allSignals, Entity, makeConnection } from "../entities/Entity.js";
 
 import { options } from "../options.js";
+import { Network } from "./nets.js";
 
 function getSignals(e: Entity) {
     if (e instanceof Arithmetic || e instanceof Decider) {
@@ -77,28 +78,35 @@ export function opt_transform(entities: Entity[]) {
 
         entities.splice(i--, 1);
 
-        if (oldSignal.in !== oldSignal.out) {
-            let inGroup = groups.get(oldSignal.in).nets.get(inNet);
-            let outGroup = groups.get(oldSignal.out).nets.get(outNet);
+        let inGroup = groups.get(oldSignal.in, inNet);
+        let outGroup = groups.get(oldSignal.out, outNet);
 
-            let newSignal = allSignals.find(s => !inGroup.networkSignals.has(s) && !outGroup.networkSignals.has(s));
+        // delete combinator
+        inGroup.remove(e.input);
+        outGroup.remove(e.output);
+
+        if (oldSignal.in !== oldSignal.out) {
+            let newSignal = allSignals.find(s => !inGroup.hasSignal(s) && !outGroup.hasSignal(s));
             if (!newSignal) throw new Error("graph coloring failed");
 
-            inGroup.points.delete(e.input);
-            outGroup.points.delete(e.output);
-
-            groups.get(oldSignal.in).changeSignal(inGroup, oldSignal.in, newSignal);
-            groups.get(oldSignal.out).changeSignal(outGroup, oldSignal.out, newSignal);
-
-            let newGroup = groups.get(newSignal)
-            if (!newGroup) {
-                newGroup = new GroupCollection();
-                groups.set(newSignal, newGroup);
-            }
-            newGroup.merge(inGroup, outGroup);
+            // change signals
+            inGroup.changeSignal(oldSignal.in, newSignal);
+            outGroup.changeSignal(oldSignal.out, newSignal);
         }
 
-        makeConnection(newColor, e.input, e.output);
+        // merge groups and nets
+        let g = groups.merge(inGroup, outGroup);
+        g.nets.delete(e.input[newColor]);
+        g.nets.delete(e.output[newColor]);
+
+        g.parent.nets.delete(e.input[newColor]);
+        g.parent.nets.delete(e.output[newColor]);
+
+        let net = Network.merge(e.input[newColor], e.output[newColor]);
+
+        g.nets.add(net);
+        g.parent.nets.set(net, g);
+
         e.delete();
 
         count++;
