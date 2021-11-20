@@ -1,7 +1,8 @@
 import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
 import { logger } from "../logger.js";
+import { Network } from "../optimization/nets.js";
 
-import { Entity, Endpoint } from "./Entity.js";
+import { Entity, Endpoint, everything, anything, each } from "./Entity.js";
 
 export enum ArithmeticOperations {
     Mul = "*",
@@ -46,10 +47,30 @@ export class Arithmetic extends Entity {
         this.params = params;
 
         this.input = new Endpoint(this, 1);
-        this.output = new Endpoint(this, 2, params.output_signal);
+        if (params.output_signal == each) {
+            logger.assert(params.first_signal == each);
+            this.output = new Endpoint(this, 2);
+        } else {
+            this.output = new Endpoint(this, 2, params.output_signal);
+        }
 
-        logger.assert(params.first_signal ? params.first_constant === undefined : params.first_constant !== undefined);
-        logger.assert(params.second_signal ? params.second_constant === undefined : params.second_constant !== undefined);
+        // can only use each signal
+        logger.assert(params.first_signal  !== everything && params.first_signal  !== anything, "invalid use of special signal");
+        logger.assert(params.second_signal !== everything && params.second_signal !== anything && params.second_signal !== each, "invalid use of special signal");
+        logger.assert(params.output_signal !== everything && params.output_signal !== anything, "invalid use of special signal");
+
+        logger.assert(params.first_signal ? params.first_constant === undefined : params.first_constant !== undefined, "no first input given");
+        logger.assert(params.second_signal ? params.second_constant === undefined : params.second_constant !== undefined, "no second input given");
+    }
+
+    override netSignalAdd(e: Endpoint, s: SignalID) {
+        if (e == this.input && this.params.output_signal == each) {
+            this.output.outSignals.add(s);
+
+            // ripple update
+            this.output.red?.addSignal(s);
+            this.output.green?.addSignal(s);
+        }
     }
 
     toObj(): ArithmeticCombinator {

@@ -130,7 +130,7 @@ class Arith extends SimEnt {
 }
 
 class Decider extends SimEnt {
-    outSig: Signal;
+    outSig: Signal[];
     data: DeciderCombinator;
 
     constructor(data: DeciderCombinator) {
@@ -147,10 +147,7 @@ class Decider extends SimEnt {
         console.assert(a !== each && a !== anything && a !== everything);
         console.assert(b !== each && b !== anything && b !== everything);
 
-        this.outSig = {
-            type: this.data.control_behavior.decider_conditions.output_signal,
-            value: 0
-        }
+        this.reset();
     }
 
     connect(makeCon: conFun) {
@@ -185,19 +182,52 @@ class Decider extends SimEnt {
             case ComparatorString.NE: res = a != b; break;
         }
 
-        if (res) {
+        if (cond.output_signal == everything) {
+            this.outSig = [];
+            if (!res) {
+                return;
+            }
+
+            let signals = new Map<SignalID, number>();
+            this.in.red?.getAll(signals);
+            this.in.green?.getAll(signals);
+
             if (cond.copy_count_from_input) {
-                this.outSig.value = this.getValue(cond.output_signal);
+                for (const [key, val] of signals) {
+                    this.outSig.push({
+                        type: key,
+                        value: val
+                    });
+                }
             } else {
-                this.outSig.value = 1;
+                for (const [key, _] of signals) {
+                    this.outSig.push({
+                        type: key,
+                        value: 1
+                    });
+                }
             }
         } else {
-            this.outSig.value = 0;
+            if (!res) {
+                this.outSig[0].value = 0;
+            } else if (cond.copy_count_from_input) {
+                this.outSig[0].value = this.getValue(cond.output_signal);
+            } else {
+                this.outSig[0].value = 1;
+            }
         }
+
     }
 
-    reset() { this.outSig.value = 0; }
-    getOut() { return [this.outSig]; }
+    reset() {
+        if (this.data.control_behavior.decider_conditions.output_signal != everything) {
+            this.outSig = [{
+                type: this.data.control_behavior.decider_conditions.output_signal,
+                value: 0
+            }];
+        }
+    }
+    getOut() { return this.outSig; }
 }
 
 export class Const extends SimEnt {
@@ -328,12 +358,12 @@ class Simulator {
 
     update(cycles = 1) {
         for (let i = 0; i < cycles; i++) {
-            for (const n of this.nets) {
-                n.update();
-            }
-
             for (const e of this.ents) {
                 e.update();
+            }
+
+            for (const n of this.nets) {
+                n.update();
             }
         }
     }

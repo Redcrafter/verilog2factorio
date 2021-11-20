@@ -81,10 +81,6 @@ export function opt_transform(entities: Entity[]) {
         let inGroup = groups.get(oldSignal.in, inNet);
         let outGroup = groups.get(oldSignal.out, outNet);
 
-        // delete combinator
-        inGroup.remove(e.input);
-        outGroup.remove(e.output);
-
         if (oldSignal.in !== oldSignal.out) {
             let newSignal = allSignals.find(s => !inGroup.hasSignal(s) && !outGroup.hasSignal(s));
             if (!newSignal) throw new Error("graph coloring failed");
@@ -93,6 +89,10 @@ export function opt_transform(entities: Entity[]) {
             inGroup.changeSignal(oldSignal.in, newSignal);
             outGroup.changeSignal(oldSignal.out, newSignal);
         }
+
+        // delete combinator
+        inGroup.remove(e.input);
+        outGroup.remove(e.output);
 
         // merge groups and nets
         let g = groups.merge(inGroup, outGroup);

@@ -4,7 +4,7 @@ import { logger } from "../logger.js";
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Constant } from "../entities/Constant.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
-import { Color, each, Entity } from "../entities/Entity.js";
+import { anything, Color, each, Entity, everything } from "../entities/Entity.js";
 
 import { Network } from "./nets.js";
 import { options } from "../options.js";
@@ -105,10 +105,8 @@ export function opt_const(entities: Entity[]) {
                 del();
             }
         } else if (e instanceof Arithmetic) {
-            if (e.params.first_signal) {
-                // TODO: don't skip each
-                if (e.params.first_signal == each) continue;
-
+            // TODO: don't skip each
+            if (e.params.first_signal && e.params.first_signal !== each) {
                 let rVal = constNetwork(rNet, e.params.first_signal);
                 let gVal = constNetwork(gNet, e.params.first_signal);
 
@@ -121,7 +119,7 @@ export function opt_const(entities: Entity[]) {
                 }
             }
 
-            if (e.params.second_signal) {
+            if (e.params.second_signal && e.params.second_signal !== each) {
                 let rVal = constNetwork(rNet, e.params.second_signal);
                 let gVal = constNetwork(gNet, e.params.second_signal);
 
@@ -135,6 +133,10 @@ export function opt_const(entities: Entity[]) {
             }
 
             if (e.params.first_constant !== undefined && e.params.second_constant !== undefined) {
+                if(e.params.output_signal == each || e.params.output_signal == everything || e.params.output_signal == anything) {
+                    debugger;
+                    continue;
+                }
                 let val = calcConstArith(e);
 
                 if (val == 0) {
@@ -156,11 +158,15 @@ export function opt_const(entities: Entity[]) {
             }
         } else if (e instanceof Decider) {
             if (e.params.copy_count_from_input) {
-                let rVal = constNetwork(rNet, e.params.output_signal);
-                let gVal = constNetwork(gNet, e.params.output_signal);
-
-                if (rVal !== null && gVal !== null && rVal + gVal == 0) {
-                    del();
+                if(e.params.output_signal == each || e.params.output_signal == everything || e.params.output_signal == anything) {
+                    // debugger;
+                } else {
+                    let rVal = constNetwork(rNet, e.params.output_signal);
+                    let gVal = constNetwork(gNet, e.params.output_signal);
+    
+                    if (rVal !== null && gVal !== null && rVal + gVal == 0) {
+                        del();
+                    }
                 }
 
                 // TODO: don't skip copy

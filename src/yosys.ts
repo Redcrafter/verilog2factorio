@@ -298,7 +298,7 @@ export function genNetlist(files: string[]): Promise<YosysData> {
         }
     }
 
-    const commands = "proc; flatten; wreduce; opt; fsm; opt; memory -nomap; opt; muxpack; peepopt; async2sync; wreduce; opt -mux_bool";
+    const commands = "proc; flatten; wreduce; opt; fsm; opt; memory -nomap -nordff; opt; muxpack; peepopt; async2sync; wreduce; opt -mux_bool";
     const proc = exec(`yosys -p "${commands}" -o temp.json "${files.join('" "')}"`);
 
     return new Promise(res => {

@@ -8,12 +8,12 @@ import { MergeEl } from "./MergeNode.js";
 export type nodeFunc = (n: (number | string)[]) => Node;
 export type mergeFunc = (n: (number | string)[]) => MergeEl[];
 
-export function createTransformer(input?: Endpoint) {
+export function createTransformer(input?: Endpoint, sig = signalC) {
     let trans = new Arithmetic({
         first_signal: signalV,
         second_constant: 0,
         operation: ArithmeticOperations.Or,
-        output_signal: signalC
+        output_signal: sig
     });
 
     if (input) makeConnection(Color.Red, input, trans.input);

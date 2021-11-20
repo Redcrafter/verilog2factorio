@@ -2,7 +2,7 @@ import { logger } from "../logger.js";
 import { Mem } from "../yosys.js";
 
 import { ComparatorString, Decider } from "../entities/Decider.js";
-import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
+import { Color, Endpoint, Entity, everything, makeConnection, signalA, signalC, signalV } from "../entities/Entity.js";
 
 import { Input } from "./Input.js";
 import { createTransformer, mergeFunc, Node, nodeFunc } from "./Node.js";
@@ -26,7 +26,6 @@ export class MemNode extends Node {
         this.data = item;
 
         const params = item.parameters;
-        debugger;
 
         logger.assert(params.ABITS <= 32, "too many address bits");
         logger.assert(params.WIDTH <= 32, "cannot store > 32 bit numbers");
@@ -42,7 +41,7 @@ export class MemNode extends Node {
         logger.assert(arraySame(params.RD_ARST_VALUE, "x"));
         logger.assert(arraySame(params.RD_SRST_VALUE, "x"));
 
-        logger.assert(params.WR_PORTS == 1, "only one write allowed");
+        logger.assert(params.WR_PORTS == 1, "only one memory write port allowed");
         logger.assert(params.WR_WIDE_CONTINUATION == 0);
         logger.assert(params.WR_CLK_ENABLE == 1, "wr_clk has to be set");
         logger.assert(params.WR_CLK_POLARITY == 1, "invert wr_clk polarity");
@@ -80,55 +79,55 @@ export class MemNode extends Node {
         const OFFSET = this.data.parameters.OFFSET;
         const ABITS = this.data.parameters.ABITS;
 
-        let trans = new Decider({
+        let enable = new Decider({
             first_signal: signalV,
             constant: 2,
             comparator: ComparatorString.EQ,
             copy_count_from_input: false,
             output_signal: signalC
-        });
-        this.entities.push(trans);
+        }); // v == 2 -> 1:c
+        makeConnection(Color.Red, WR_CLK.output(), enable.input);
+        makeConnection(Color.Green, WR_EN.output(), enable.input);
 
-        makeConnection(Color.Red, WR_CLK.output(), trans.input);
-        makeConnection(Color.Green, WR_EN.output(), trans.input);
+        let dataBlock = new Decider({
+            first_signal: signalC,
+            constant: 1,
+            comparator: ComparatorString.EQ,
+            copy_count_from_input: true,
+            output_signal: signalV
+        }); // c == 1 -> v
+        makeConnection(Color.Red, WR_DATA.output(), dataBlock.input);
+        makeConnection(Color.Green, enable.output, dataBlock.input);
+
+        let WR_trans = createTransformer(WR_ADDR.output(), signalA); // v | 0 -> a
+        this.entities.push(WR_trans, enable, dataBlock);
+
+        makeConnection(Color.Red, enable.output, WR_trans.output, dataBlock.output);
 
         let dffOuts = [];
         // create all dffs and write inputs
         for (let i = 0; i < SIZE; i++) {
             let writeEq = new Decider({
-                first_signal: signalV,
+                first_signal: signalA,
                 constant: i + OFFSET,
                 comparator: ComparatorString.EQ,
                 copy_count_from_input: true,
-                output_signal: signalC,
-            });
-            makeConnection(Color.Red, WR_ADDR.output(), writeEq.input);
-            makeConnection(Color.Green, trans.output, writeEq.input);
+                output_signal: everything
+            }); // a == n -> everything
+            makeConnection(Color.Red, dataBlock.output, writeEq.input);
 
-            let decider1 = new Decider({
-                first_signal: signalC,
-                constant: 1,
-                comparator: ComparatorString.EQ,
-                copy_count_from_input: true,
-                output_signal: signalV
-            }); // if c == 1 output a
             let decider2 = new Decider({
                 first_signal: signalC,
                 constant: 0,
                 comparator: ComparatorString.EQ,
                 copy_count_from_input: true,
                 output_signal: signalV
-            }); // if c == 0 output b
+            }); // c == 0 -> v
+            makeConnection(Color.Green, writeEq.output, decider2.input);
+            makeConnection(Color.Red, decider2.output, decider2.input);
 
-            this.entities.push(writeEq, decider1, decider2);
-
-            makeConnection(Color.Red, WR_DATA.output(), decider1.input);
-
-            makeConnection(Color.Green, writeEq.output, decider1.input, decider2.input);
-            makeConnection(Color.Green, decider1.output, decider2.output);
-            makeConnection(Color.Red, decider2.output, decider2.input, decider1.output);
-
-            dffOuts.push(decider1);
+            this.entities.push(writeEq, decider2);
+            dffOuts.push(decider2);
         }
 
         // create read outputs

@@ -1,5 +1,6 @@
 import { SignalID } from "../blueprint.js";
-import { Endpoint } from "../entities/Entity.js";
+import { anything, each, Endpoint, everything } from "../entities/Entity.js";
+import { logger } from "../logger.js";
 
 let redCounter = 1;
 let greenCounter = 1;
@@ -24,8 +25,7 @@ export class Network {
     public id: number;
     public color: "red" | "green";
 
-    private _signals = new Set<SignalID>();
-    private dirtySignals = false;
+    public signals = new Set<SignalID>(); // TODO: make signals track producer count
 
     constructor(color: "red" | "green") {
         this.color = color;
@@ -44,11 +44,16 @@ export class Network {
 
         this.points.add(e);
         e[this.color] = this;
+        if (e.outSignals.has(anything) || e.outSignals.has(everything) || e.outSignals.has(each)) {
+            throw new Error("special signal not allowed");
+        }
+        for (const s of this.signals) {
+            e.entity?.netSignalAdd(e, s);
+        }
         for (const s of e.outSignals) {
-            this._signals.add(s);
+            this.addSignal(s);
         }
     }
-
     remove(e: Endpoint) {
         if (!this.points.has(e)) debugger;
 
@@ -58,9 +63,36 @@ export class Network {
 
         if (this.points.size == 1) {
             this.delete();
+            return;
         }
+        for (const s of e.outSignals) {
+            this.removeSignal(s);
+        }
+    }
+    addSignal(s: SignalID) {
+        if (this.signals.has(s)) return;
 
-        if (e.outSignals.size != 0) this.dirtySignals = true;
+        this.signals.add(s);
+        for (const p of this.points) {
+            p.entity?.netSignalAdd(p, s);
+        }
+    }
+    removeSignal(s: SignalID) {
+        let has = false;
+        for (const p of this.points) {
+            if (p.outSignals.has(s)) {
+                has = true;
+                break;
+            }
+        }
+        if (!has) {
+            this.signals.delete(s);
+            logger.assert(false, "removeSignal propagation not implemented");
+            /* TODO:
+            for (const p of this.points) {
+                p.entity?.netSignalRemove(p, s);
+            }*/
+        }
     }
 
     hasWriter() {
@@ -105,18 +137,6 @@ export class Network {
             p[this.color] = null;
         }
         nets[this.color].delete(this);
-    }
-
-    get signals() {
-        if (this.dirtySignals) {
-            this._signals.clear();
-            for (const p of this.points) {
-                for (const s of p.outSignals) {
-                    this._signals.add(s);
-                }
-            }
-        }
-        return this._signals;
     }
 
     static merge(a: Network, b: Network) {

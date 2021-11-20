@@ -1,6 +1,7 @@
 import { RawEntity, ConnectionPoint, SignalID } from "../blueprint.js";
 import { Network } from "../optimization/nets.js";
 
+export const signalA: SignalID = { type: "virtual", name: "signal-A" };
 export const signalC: SignalID = { type: "virtual", name: "signal-C" };
 export const signalR: SignalID = { type: "virtual", name: "signal-R" };
 export const signalV: SignalID = { type: "virtual", name: "signal-V" };
@@ -9,8 +10,27 @@ export const signalW: SignalID = { type: "virtual", name: "signal-W" };
 export const signalGreen: SignalID = { type: "virtual", name: "signal-green" };
 export const signalGrey: SignalID = { type: "virtual", name: "signal-grey" };
 
-export const anything: SignalID = { type: "virtual", name: "signal-anything" };
+/**
+ * Everything can be used on the left side in conditionals.
+ * The condition will be true when the condition is true for each input signal. 
+ * The condition is also true if there are no signals. 
+ * This means that the everything signal behaves as universal quantification.
+ * 
+ * The output of a decider combinator may also use everything, unless the input is set to each. 
+ * When used, the combinator will output signal on every channel with non-zero input as long as the condition is true; the value will either be the input value or 1, depending on the corresponding setting.
+ */
 export const everything: SignalID = { type: "virtual", name: "signal-everything" };
+/**
+ * Anything can be used on the left side of conditions. It will be false when there are no inputs. The condition will be true when the condition is true for at least one signal. This means the anything signal behaves as existential quantification. 
+ * 
+ * When used in both the input and output of a decider combinator, anything will return one of the signals that matched.
+ */
+export const anything: SignalID = { type: "virtual", name: "signal-anything" };
+/** Each can only be used in left input side and output of decider and arithmetic combinators. 
+ * The signal can only be used as an output when also used as an input. 
+ * When used in both the input and output, it makes a combinator perform its action on each input signal individually. 
+ * The combinator will output the sum of each of the actions if only used in the input. 
+ */
 export const each: SignalID = { type: "virtual", name: "signal-each" };
 
 export let allSignals: SignalID[] = [
@@ -235,7 +255,7 @@ export let allSignals: SignalID[] = [
     { type: "virtual", name: "signal-7" },
     { type: "virtual", name: "signal-8" },
     { type: "virtual", name: "signal-9" },
-    { type: "virtual", name: "signal-A" },
+    signalA,
     { type: "virtual", name: "signal-B" },
     signalC,
     { type: "virtual", name: "signal-D" },
@@ -327,6 +347,9 @@ export abstract class Entity {
     }
 
     abstract toObj(): RawEntity;
+
+    /** Used to update {@link Endpoint.outSignals} when using special output signal */
+    netSignalAdd(e: Endpoint, s: SignalID): void { }
 
     delete() {
         this.delCon(this.input, Color.Red);

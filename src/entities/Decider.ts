@@ -1,7 +1,8 @@
 import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
 import { logger } from "../logger.js";
+import { Network } from "../optimization/nets.js";
 
-import { Entity, Endpoint } from "./Entity.js";
+import { Entity, Endpoint, each, everything, anything } from "./Entity.js";
 
 export enum ComparatorString {
     LT = "<",
@@ -42,9 +43,23 @@ export class Decider extends Entity {
         this.params = params;
 
         this.input = new Endpoint(this, 1);
-        this.output = new Endpoint(this, 2, this.params.output_signal);
+        if(this.params.output_signal == each || this.params.output_signal == everything || this.params.output_signal == anything) {
+            this.output = new Endpoint(this, 2);
+        } else {
+            this.output = new Endpoint(this, 2, this.params.output_signal);
+        }
 
         logger.assert((params.second_signal === undefined) !== (params.constant === undefined));
+    }
+
+    override netSignalAdd(e: Endpoint, s: SignalID) {
+        if(e == this.input && (this.params.output_signal == each || this.params.output_signal == everything || this.params.output_signal == anything)) {
+            this.output.outSignals.add(s);
+
+            // ripple update
+            this.output.red?.addSignal(s);
+            this.output.green?.addSignal(s);
+        }
     }
 
     toObj(): DeciderCombinator {

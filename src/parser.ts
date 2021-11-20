@@ -82,8 +82,8 @@ function createNode(item: yosys.Cell): Node {
             // @ts-ignore
             return new LogicNode(item, ComparatorString.EQ);
         case "$logic_and":
-            logger.assert(item.connections.A.length == 1);
-            logger.assert(item.connections.B.length == 1);
+            logger.assert(item.connections.A.length == 1, "logic_and a width");
+            logger.assert(item.connections.B.length == 1, "logic_and b width");
             return new MathNode(item, ArithmeticOperations.And);
         case "$logic_or":
             logger.assert(item.connections.A.length == 1);
@@ -279,10 +279,15 @@ export function buildGraph(mod: yosys.Module) {
 
         for (const key in item.parameters) {
             //@ts-ignore
-            if (!item.parameters[key].match(/^[01]+$/)) continue;
+            let val = item.parameters[key];
 
-            //@ts-ignore
-            item.parameters[key] = parseInt(item.parameters[key], 2);
+            if (typeof val === "string" && val.match(/^[01]+$/)) {
+                let num =  parseInt(val, 2);
+                logger.assert(Number.isSafeInteger(num), "exceeded safe integer range");
+
+                //@ts-ignore
+                item.parameters[key] = val;
+            }
         }
 
         let node = createNode(item);
