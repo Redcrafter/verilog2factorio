@@ -286,7 +286,7 @@ export function buildGraph(mod: yosys.Module) {
                 logger.assert(Number.isSafeInteger(num), "exceeded safe integer range");
 
                 //@ts-ignore
-                item.parameters[key] = val;
+                item.parameters[key] = num;
             }
         }
 

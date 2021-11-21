@@ -1,6 +1,5 @@
 import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
 import { logger } from "../logger.js";
-import { Network } from "../optimization/nets.js";
 
 import { Entity, Endpoint, everything, anything, each } from "./Entity.js";
 

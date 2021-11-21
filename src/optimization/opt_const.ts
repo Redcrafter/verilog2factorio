@@ -4,7 +4,7 @@ import { logger } from "../logger.js";
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Constant } from "../entities/Constant.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
-import { anything, Color, each, Entity, everything } from "../entities/Entity.js";
+import { Color, each, Entity, isSpecial } from "../entities/Entity.js";
 
 import { Network } from "./nets.js";
 import { options } from "../options.js";
@@ -133,7 +133,7 @@ export function opt_const(entities: Entity[]) {
             }
 
             if (e.params.first_constant !== undefined && e.params.second_constant !== undefined) {
-                if(e.params.output_signal == each || e.params.output_signal == everything || e.params.output_signal == anything) {
+                if(isSpecial(e.params.output_signal)) {
                     debugger;
                     continue;
                 }
@@ -158,7 +158,7 @@ export function opt_const(entities: Entity[]) {
             }
         } else if (e instanceof Decider) {
             if (e.params.copy_count_from_input) {
-                if(e.params.output_signal == each || e.params.output_signal == everything || e.params.output_signal == anything) {
+                if(isSpecial(e.params.output_signal)) {
                     // debugger;
                 } else {
                     let rVal = constNetwork(rNet, e.params.output_signal);

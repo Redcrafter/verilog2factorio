@@ -6,7 +6,7 @@ import { Decider } from "../entities/Decider.js";
 import { allSignals, Entity, makeConnection } from "../entities/Entity.js";
 
 import { options } from "../options.js";
-import { Network } from "./nets.js";
+import { nets, Network } from "./nets.js";
 
 function getSignals(e: Entity) {
     if (e instanceof Arithmetic || e instanceof Decider) {
@@ -64,12 +64,12 @@ export function opt_transform(entities: Entity[]) {
 
         let newColor;
         if (inNet.color === outNet.color) {
-            newColor = inNet.color
+            newColor = inNet.color;
         } else {
-            if (!inNet.hasColor(inNet.color)) {
-                newColor = outNet.color;
-            } else if (!outNet.hasColor(outNet.color)) {
-                newColor = inNet.color;
+            if (!inNet.hasOtherColor()) {
+                newColor = outNet.color; // inNet can be changed to other color
+            } else if (!outNet.hasOtherColor()) {
+                newColor = inNet.color;  // outNet can be changed to other color
             } else {
                 filter3++;
                 continue;
@@ -96,13 +96,28 @@ export function opt_transform(entities: Entity[]) {
 
         // merge groups and nets
         let g = groups.merge(inGroup, outGroup);
-        g.nets.delete(e.input[newColor]);
-        g.nets.delete(e.output[newColor]);
+        g.nets.delete(inNet);
+        g.nets.delete(outNet);
 
-        g.parent.nets.delete(e.input[newColor]);
-        g.parent.nets.delete(e.output[newColor]);
+        g.parent.nets.delete(inNet);
+        g.parent.nets.delete(outNet);
 
-        let net = Network.merge(e.input[newColor], e.output[newColor]);
+        let net = new Network(newColor);
+        { // merge disregarding color
+            for (const p of inNet.points) {
+                p[inNet.color] = null;
+                net.add(p);
+            }
+            for (const p of outNet.points) {
+                p[outNet.color] = null;
+                net.add(p);
+            }
+
+            inNet.points.clear();
+            outNet.points.clear();
+            nets[inNet.color].delete(inNet);
+            nets[outNet.color].delete(outNet);
+        }
 
         g.nets.add(net);
         g.parent.nets.set(net, g);

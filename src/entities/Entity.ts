@@ -33,6 +33,10 @@ export const anything: SignalID = { type: "virtual", name: "signal-anything" };
  */
 export const each: SignalID = { type: "virtual", name: "signal-each" };
 
+export function isSpecial(s: SignalID) {
+    return s == anything || s == everything || s == each;
+}
+
 export let allSignals: SignalID[] = [
     { type: "item", name: "wooden-chest" },
     { type: "item", name: "iron-chest" },

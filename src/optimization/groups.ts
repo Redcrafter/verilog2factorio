@@ -18,7 +18,7 @@ function changeCombSignal(endpoint: Endpoint, from: SignalID, to: SignalID) {
             else if (entity.params.second_signal == from) entity.params.second_signal = to;
             else logger.assert(false);
         } else {
-            if (entity.params.output_signal !== each && entity.params.output_signal !== everything && entity.params.output_signal !== anything) {
+            if (!isSpecial(entity.params.output_signal)) {
                 logger.assert(entity.params.output_signal == from);
                 entity.params.output_signal = to;
             }
@@ -136,6 +136,10 @@ export class GroupCollection {
     }
 }
 
+function isSpecial(s: SignalID) {
+    return s == anything || s == everything || s == each;
+}
+
 export class GroupManager {
     private groups = new Map<SignalID, GroupCollection>();
 
@@ -166,37 +170,39 @@ export class GroupManager {
         for (const entity of entities) {
             if (!(entity instanceof Arithmetic || entity instanceof Decider)) continue;
 
-            if (entity.params.output_signal == each || entity.params.output_signal == anything || entity.params.output_signal == everything) {
-                for (const s of entity.output.outSignals) {
-                    let inGroup = this.mergeInput(s, entity);
-                    if (s == entity.params.first_signal || s == entity.params.second_signal) inGroup.add(entity.input);
+            let inSigs: SignalID[] = [];
+            let outSigs: SignalID[] = [];
 
+            function add(s: SignalID) {
+                if (!s) return;
+                if (isSpecial(s)) {
+                    if(entity.input.red) inSigs.push(...entity.input.red.signals);
+                    if(entity.input.green) inSigs.push(...entity.input.green.signals);
+                } else {
+                    inSigs.push(s);
+                }
+            }
+
+            add(entity.params.first_signal);
+            add(entity.params.second_signal);
+            if (isSpecial(entity.params.output_signal)) {
+                outSigs.push(...entity.output.outSignals);
+            } else if (entity instanceof Decider && entity.params.copy_count_from_input) {
+                outSigs.push(entity.params.output_signal)
+            }
+
+            inSigs.push(...outSigs);
+            let inSet = new Set(inSigs);
+            let outSet = new Set(outSigs);
+
+            for (const s of inSet) {
+                let inGroup = this.mergeInput(s, entity);
+                if (s == entity.params.first_signal ||
+                    s == entity.params.second_signal) inGroup?.add(entity.input);
+
+                if (outSet.has(s)) {
                     let outGroup = this.get(s, entity.output.red ?? entity.output.green);
                     this.merge(inGroup, outGroup);
-                }
-            } else if (entity.params.first_signal == anything || entity.params.second_signal == anything ||
-                entity.params.first_signal == everything || entity.params.second_signal == everything) {
-                debugger;
-                logger.assert(false);
-            } else if (entity.params.first_signal == each || entity.params.second_signal == each) {
-                // merge all inputs if each
-                for (const [s, g] of this.groups) {
-                    this.mergeInput(s, entity);
-                }
-            } else {
-                // merge if both inputs share a signal
-                if (entity.params.first_signal) this.mergeInput(entity.params.first_signal, entity)?.add(entity.input);
-                if (entity.params.second_signal) this.mergeInput(entity.params.second_signal, entity)?.add(entity.input);
-
-                // merge input and output if passthrough
-                if (entity instanceof Decider && entity.params.copy_count_from_input) {
-                    // memrge inputs by output signal
-                    let g = this.mergeInput(entity.params.output_signal, entity);
-                    logger.assert(!!g);
-
-                    // outputs are already merged
-                    let outGroup = this.get(entity.params.output_signal, entity.output.red ?? entity.output.green);
-                    this.merge(outGroup, g);
                 }
             }
         }

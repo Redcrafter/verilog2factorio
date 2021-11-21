@@ -5,7 +5,7 @@ import { genNetlist, YosysData } from "../yosys.js";
 import { ArithmeticCombinator, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { ConstantCombinator } from "../entities/Constant.js";
 import { ComparatorString, DeciderCombinator } from "../entities/Decider.js";
-import { anything, each, everything } from "../entities/Entity.js";
+import { anything, each, everything, isSpecial } from "../entities/Entity.js";
 import { MediumElectricPole } from "../entities/Pole.js";
 
 import { optimize } from "../optimization/optimize.js";
@@ -54,10 +54,9 @@ class Arith extends SimEnt {
         this.data = data;
 
         let a = this.data.control_behavior.arithmetic_conditions.first_signal;
-        let b = this.data.control_behavior.arithmetic_conditions.second_signal;
 
         console.assert(a !== anything && a !== everything);
-        console.assert(b !== each && b !== anything && b !== everything);
+        console.assert(!isSpecial(this.data.control_behavior.arithmetic_conditions.second_signal));
 
         this.outSig = {
             type: this.data.control_behavior.arithmetic_conditions.output_signal,
@@ -141,11 +140,8 @@ class Decider extends SimEnt {
 
         this.data = data;
 
-        let a = this.data.control_behavior.decider_conditions.first_signal;
-        let b = this.data.control_behavior.decider_conditions.second_signal;
-
-        console.assert(a !== each && a !== anything && a !== everything);
-        console.assert(b !== each && b !== anything && b !== everything);
+        console.assert(!isSpecial(this.data.control_behavior.decider_conditions.first_signal));
+        console.assert(!isSpecial(this.data.control_behavior.decider_conditions.second_signal));
 
         this.reset();
     }

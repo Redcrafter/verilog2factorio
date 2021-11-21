@@ -1,8 +1,7 @@
 import { ConnectionPoint, EntityBase, SignalID } from "../blueprint.js";
 import { logger } from "../logger.js";
-import { Network } from "../optimization/nets.js";
 
-import { Entity, Endpoint, each, everything, anything } from "./Entity.js";
+import { Entity, Endpoint, isSpecial } from "./Entity.js";
 
 export enum ComparatorString {
     LT = "<",
@@ -43,7 +42,7 @@ export class Decider extends Entity {
         this.params = params;
 
         this.input = new Endpoint(this, 1);
-        if(this.params.output_signal == each || this.params.output_signal == everything || this.params.output_signal == anything) {
+        if(isSpecial(this.params.output_signal)) {
             this.output = new Endpoint(this, 2);
         } else {
             this.output = new Endpoint(this, 2, this.params.output_signal);
@@ -53,7 +52,7 @@ export class Decider extends Entity {
     }
 
     override netSignalAdd(e: Endpoint, s: SignalID) {
-        if(e == this.input && (this.params.output_signal == each || this.params.output_signal == everything || this.params.output_signal == anything)) {
+        if(e == this.input && isSpecial(this.params.output_signal)) {
             this.output.outSignals.add(s);
 
             // ripple update

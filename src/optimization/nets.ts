@@ -40,7 +40,7 @@ export class Network {
 
     add(e: Endpoint) {
         if (e[this.color] === this) return;
-        if (e[this.color]) debugger; // should not happen
+        if (e[this.color]) logger.assert(false, "cannot add endpoint which is part of a different network");
 
         this.points.add(e);
         e[this.color] = this;
@@ -124,7 +124,8 @@ export class Network {
         return false;
     }
 
-    hasColor(color: "red" | "green") {
+    hasOtherColor() {
+        let color: "red" | "green" = this.color == "red" ? "green" : "red";
         for (const o of this.points) {
             if (o[color]) return true;
         }
@@ -136,6 +137,7 @@ export class Network {
         for (const p of this.points) {
             p[this.color] = null;
         }
+        this.points.clear();
         nets[this.color].delete(this);
     }
 
