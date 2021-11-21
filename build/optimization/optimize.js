@@ -1,11 +1,12 @@
 import { logger } from "../logger.js";
-import { opt_chain } from "./opt_chain.js";
+import { options } from "../options.js";
 import { opt_clean } from "./opt_clean.js";
 import { opt_const } from "./opt_const.js";
 import { opt_merge } from "./opt_merge.js";
 import { opt_transform } from "./opt_transform.js";
-// TODO: idea replace if(c == 1) return const; with c * const
+import { opt_user } from "./opt_user.js";
 export function optimize(entities) {
+    opt_user();
     let changed = true;
     while (changed) {
         changed = false;
@@ -18,7 +19,7 @@ export function optimize(entities) {
             changed = true;
         if (opt_transform(entities))
             changed = true;
-        logger.log("");
+        if (options.verbose)
+            logger.log("");
     }
-    opt_chain(entities);
 }

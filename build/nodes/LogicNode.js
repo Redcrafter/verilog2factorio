@@ -52,7 +52,7 @@ export class LogicNode extends Node {
                 throw new Error("not implemented");
             }
         }
-        let t = createTransformer(a.output());
+        let t = createTransformer(b.output());
         let out = new Decider({
             first_signal: signalV,
             second_signal: signalC,
@@ -61,7 +61,7 @@ export class LogicNode extends Node {
             output_signal: signalV
         });
         this.entities = [t, out];
-        makeConnection(1 /* Red */, b.output(), out.input);
+        makeConnection(1 /* Red */, a.output(), out.input);
         makeConnection(2 /* Green */, t.output, out.input);
         return out.output;
     }

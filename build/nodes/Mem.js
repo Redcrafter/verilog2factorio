@@ -1,6 +1,6 @@
 import { logger } from "../logger.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
-import { makeConnection, signalC, signalV } from "../entities/Entity.js";
+import { everything, makeConnection, signalA, signalC, signalV } from "../entities/Entity.js";
 import { Input } from "./Input.js";
 import { createTransformer, Node } from "./Node.js";
 function arraySame(str, expected) {
@@ -17,23 +17,34 @@ export class MemNode extends Node {
     constructor(item) {
         super([]);
         this.data = item;
+        const params = item.parameters;
+        logger.assert(params.ABITS <= 32, "too many address bits");
+        logger.assert(params.WIDTH <= 32, "cannot store > 32 bit numbers");
+        logger.assert(arraySame(params.INIT, "x"), "memory initialization not implemented");
+        logger.assert(params.RD_WIDE_CONTINUATION == 0);
+        logger.assert(params.RD_CLK_ENABLE == 0);
+        logger.assert(params.RD_CLK_POLARITY == 0);
+        logger.assert(params.RD_TRANSPARENCY_MASK == 0);
+        logger.assert(params.RD_COLLISION_X_MASK == 0);
+        logger.assert(params.RD_CE_OVER_SRST == 0);
+        logger.assert(arraySame(params.RD_INIT_VALUE, "x"));
+        logger.assert(arraySame(params.RD_ARST_VALUE, "x"));
+        logger.assert(arraySame(params.RD_SRST_VALUE, "x"));
+        logger.assert(params.WR_PORTS == 1, "only one memory write port allowed");
+        logger.assert(params.WR_WIDE_CONTINUATION == 0);
+        logger.assert(params.WR_CLK_ENABLE == 1, "wr_clk has to be set");
+        logger.assert(params.WR_CLK_POLARITY == 1, "invert wr_clk polarity");
+        logger.assert(params.WR_PRIORITY_MASK == 0);
+        logger.assert(arraySame(item.connections.RD_CLK, "x"));
+        logger.assert(arraySame(item.connections.RD_EN, "1"));
+        logger.assert(arraySame(item.connections.RD_ARST, "0"));
+        logger.assert(arraySame(item.connections.RD_SRST, "0"));
+        logger.assert(arraySame(item.connections.WR_EN, item.connections.WR_EN[0]));
         let width = this.data.parameters.WIDTH;
         for (let i = 0; i < this.data.parameters.RD_PORTS; i++) {
             let bits = item.connections.RD_DATA.slice(i * width, (i + 1) * width);
             this.outputSegments.push(new MemRead(bits));
         }
-        logger.assert(item.parameters.ABITS <= 32, "too many address bits");
-        logger.assert(item.parameters.WIDTH <= 32, "cannot store > 32 bit numbers");
-        logger.assert(arraySame(item.parameters.INIT, "x"), "memory initialization not implemented");
-        // logger.assert(item.parameters.RD_CLK_ENABLE   == ((1 << item.parameters.RD_PORTS) - 1)); // read clock is ignored
-        // logger.assert(item.parameters.RD_CLK_POLARITY == ((1 << item.parameters.RD_PORTS) - 1));
-        logger.assert(item.parameters.RD_TRANSPARENT == ((1 << item.parameters.RD_PORTS) - 1), "read has to be transparent");
-        logger.assert(item.parameters.WR_CLK_ENABLE == 1, "wr_clk has to be set");
-        logger.assert(item.parameters.WR_CLK_POLARITY == 1, "invert wr_clk polarity");
-        logger.assert(item.parameters.WR_PORTS == 1, "only one write allowed");
-        logger.assert(arraySame(item.connections.RD_CLK, item.connections.WR_CLK[0]));
-        logger.assert(arraySame(item.connections.RD_EN, "1"));
-        logger.assert(arraySame(item.connections.WR_EN, item.connections.WR_EN[0]));
     }
     _connect(getInputNode, getMergeEls) {
         const WR_ADDR = getInputNode(this.data.connections.WR_ADDR);
@@ -48,48 +59,49 @@ export class MemNode extends Node {
         const RD_PORTS = this.data.parameters.RD_PORTS;
         const OFFSET = this.data.parameters.OFFSET;
         const ABITS = this.data.parameters.ABITS;
-        let trans = new Decider({
+        let enable = new Decider({
             first_signal: signalV,
             constant: 2,
             comparator: ComparatorString.EQ,
             copy_count_from_input: false,
             output_signal: signalC
-        });
-        this.entities.push(trans);
-        makeConnection(1 /* Red */, WR_CLK.output(), trans.input);
-        makeConnection(2 /* Green */, WR_EN.output(), trans.input);
+        }); // v == 2 -> 1:c
+        makeConnection(1 /* Red */, WR_CLK.output(), enable.input);
+        makeConnection(2 /* Green */, WR_EN.output(), enable.input);
+        let dataBlock = new Decider({
+            first_signal: signalC,
+            constant: 1,
+            comparator: ComparatorString.EQ,
+            copy_count_from_input: true,
+            output_signal: signalV
+        }); // c == 1 -> v
+        makeConnection(1 /* Red */, WR_DATA.output(), dataBlock.input);
+        makeConnection(2 /* Green */, enable.output, dataBlock.input);
+        let WR_trans = createTransformer(WR_ADDR.output(), signalA); // v | 0 -> a
+        this.entities.push(WR_trans, enable, dataBlock);
+        makeConnection(1 /* Red */, enable.output, WR_trans.output, dataBlock.output);
         let dffOuts = [];
         // create all dffs and write inputs
         for (let i = 0; i < SIZE; i++) {
             let writeEq = new Decider({
-                first_signal: signalV,
+                first_signal: signalA,
                 constant: i + OFFSET,
                 comparator: ComparatorString.EQ,
                 copy_count_from_input: true,
-                output_signal: signalC,
-            });
-            makeConnection(1 /* Red */, WR_ADDR.output(), writeEq.input);
-            makeConnection(2 /* Green */, trans.output, writeEq.input);
-            let decider1 = new Decider({
-                first_signal: signalC,
-                constant: 1,
-                comparator: ComparatorString.EQ,
-                copy_count_from_input: true,
-                output_signal: signalV
-            }); // if c == 1 output a
+                output_signal: everything
+            }); // a == n -> everything
+            makeConnection(1 /* Red */, dataBlock.output, writeEq.input);
             let decider2 = new Decider({
                 first_signal: signalC,
                 constant: 0,
                 comparator: ComparatorString.EQ,
                 copy_count_from_input: true,
                 output_signal: signalV
-            }); // if c == 0 output b
-            this.entities.push(writeEq, decider1, decider2);
-            makeConnection(1 /* Red */, WR_DATA.output(), decider1.input);
-            makeConnection(2 /* Green */, writeEq.output, decider1.input, decider2.input);
-            makeConnection(2 /* Green */, decider1.output, decider2.output);
-            makeConnection(1 /* Red */, decider2.output, decider2.input, decider1.output);
-            dffOuts.push(decider1);
+            }); // c == 0 -> v
+            makeConnection(2 /* Green */, writeEq.output, decider2.input);
+            makeConnection(1 /* Red */, decider2.output, decider2.input);
+            this.entities.push(writeEq, decider2);
+            dffOuts.push(decider2);
         }
         // create read outputs
         for (let i = 0; i < RD_PORTS; i++) {

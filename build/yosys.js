@@ -7,7 +7,7 @@ export function genNetlist(files) {
             logger.log(`error: file ${file} not found`);
         }
     }
-    const commands = "proc; flatten; wreduce; opt; fsm; opt; memory -nomap; opt; muxpack; peepopt; async2sync; wreduce; opt -mux_bool";
+    const commands = "proc; flatten; wreduce; opt; fsm; opt; memory -nomap -nordff; opt; muxpack; peepopt; async2sync; wreduce; opt -mux_bool";
     const proc = exec(`yosys -p "${commands}" -o temp.json "${files.join('" "')}"`);
     return new Promise(res => {
         proc.stderr.on("data", (data) => {
@@ -19,7 +19,7 @@ export function genNetlist(files) {
                 process.exit(code);
             }
             const data = JSON.parse(fs.readFileSync("./temp.json", 'utf8'));
-            // fs.unlinkSync("temp.json");
+            fs.unlinkSync("temp.json");
             res(data);
         });
     });

@@ -1,10 +1,10 @@
-import { extractSignalGroups, GroupCollection } from "./groups.js";
+import { extractSignalGroups } from "./groups.js";
 import { logger } from "../logger.js";
-import { extractNets } from "./nets.js";
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Decider } from "../entities/Decider.js";
-import { allSignals, makeConnection } from "../entities/Entity.js";
+import { allSignals } from "../entities/Entity.js";
 import { options } from "../options.js";
+import { nets, Network } from "./nets.js";
 function getSignals(e) {
     if (e instanceof Arithmetic || e instanceof Decider) {
         return {
@@ -27,9 +27,9 @@ function isNop(e) {
     return false;
 }
 export function opt_transform(entities) {
-    logger.log("Running opt_transform");
-    let nets = extractNets(entities);
-    let groups = extractSignalGroups(entities, nets);
+    if (options.verbose)
+        logger.log("Running opt_transform");
+    let groups = extractSignalGroups(entities);
     let count = 0;
     let filter1 = 0;
     let filter2 = 0;
@@ -39,29 +39,27 @@ export function opt_transform(entities) {
         if (!isNop(e))
             continue;
         // TODO: allow for multiple differnt colored outputs when inNet.points.size == 2
-        if ((e.input.red.size != 0) == (e.input.green.size != 0) || (e.output.red.size != 0) == (e.output.green.size != 0)) {
+        if ((!!e.input.red == !!e.input.green) || (!!e.output.red == !!e.output.green)) {
             filter1++;
             continue;
         }
-        let inColor = e.input.red.size != 0 ? 1 /* Red */ : 2 /* Green */;
-        let outColor = e.output.red.size != 0 ? 1 /* Red */ : 2 /* Green */;
-        let inNet = nets[inColor == 1 /* Red */ ? "red" : "green"].map.get(e.input);
-        let outNet = nets[outColor == 1 /* Red */ ? "red" : "green"].map.get(e.output);
-        if (outNet.hasOtherInputs(e.output) && !inNet.hasOtherOutputs(e.input)) {
+        let inNet = e.input.red ?? e.input.green;
+        let outNet = e.output.red ?? e.output.green;
+        if (outNet.hasOtherWriters(e.output) && inNet.hasOtherReaders(e.input)) {
             filter2++;
             continue;
         }
         let oldSignal = getSignals(e);
         let newColor;
-        if (inColor === outColor) {
-            newColor = inColor;
+        if (inNet.color === outNet.color) {
+            newColor = inNet.color;
         }
         else {
-            if (!inNet.hasColor(inColor == 1 /* Red */ ? "green" : "red")) {
-                newColor = outColor;
+            if (!inNet.hasOtherColor()) {
+                newColor = outNet.color; // inNet can be changed to other color
             }
-            else if (!outNet.hasColor(outColor == 1 /* Red */ ? "green" : "red")) {
-                newColor = inColor;
+            else if (!outNet.hasOtherColor()) {
+                newColor = inNet.color; // outNet can be changed to other color
             }
             else {
                 filter3++;
@@ -69,37 +67,48 @@ export function opt_transform(entities) {
             }
         }
         entities.splice(i--, 1);
-        inNet.points.delete(e.input);
-        outNet.points.delete(e.output);
+        let inGroup = groups.get(oldSignal.in, inNet);
+        let outGroup = groups.get(oldSignal.out, outNet);
         if (oldSignal.in !== oldSignal.out) {
-            let inGroup = groups.get(oldSignal.in).nets.get(inNet);
-            let outGroup = groups.get(oldSignal.out).nets.get(outNet);
-            let newSignal;
-            for (const s of allSignals) {
-                if (!inGroup.networkSignals.has(s) && !outGroup.networkSignals.has(s)) {
-                    newSignal = s;
-                    break;
-                }
-            }
+            let newSignal = allSignals.find(s => !inGroup.hasSignal(s) && !outGroup.hasSignal(s));
             if (!newSignal)
                 throw new Error("graph coloring failed");
-            inGroup.points.delete(e.input);
-            outGroup.points.delete(e.output);
-            groups.get(oldSignal.in).changeSignal(inGroup, oldSignal.in, newSignal);
-            groups.get(oldSignal.out).changeSignal(outGroup, oldSignal.out, newSignal);
-            let newGroup = groups.get(newSignal);
-            if (!newGroup) {
-                newGroup = new GroupCollection();
-                groups.set(newSignal, newGroup);
-            }
-            newGroup.merge(inGroup, outGroup);
+            // change signals
+            inGroup.changeSignal(oldSignal.in, newSignal);
+            outGroup.changeSignal(oldSignal.out, newSignal);
         }
-        makeConnection(newColor, ...e.input.red, ...e.input.green, ...e.output.red, ...e.output.green);
+        // delete combinator
+        inGroup.remove(e.input);
+        outGroup.remove(e.output);
+        // merge groups and nets
+        let g = groups.merge(inGroup, outGroup);
+        g.nets.delete(inNet);
+        g.nets.delete(outNet);
+        g.parent.nets.delete(inNet);
+        g.parent.nets.delete(outNet);
+        let net = new Network(newColor);
+        { // merge disregarding color
+            for (const p of inNet.points) {
+                p[inNet.color] = null;
+                net.add(p);
+            }
+            for (const p of outNet.points) {
+                p[outNet.color] = null;
+                net.add(p);
+            }
+            inNet.points.clear();
+            outNet.points.clear();
+            nets[inNet.color].delete(inNet);
+            nets[outNet.color].delete(outNet);
+        }
+        g.nets.add(net);
+        g.parent.nets.set(net, g);
         e.delete();
         count++;
     }
-    if (options.verbose)
+    if (options.verbose) {
         logger.log(`Filter: ${filter1}, ${filter2}, ${filter3}`);
-    logger.log(`Removed ${count} combinators`);
+        logger.log(`Removed ${count} combinators`);
+    }
     return count != 0;
 }

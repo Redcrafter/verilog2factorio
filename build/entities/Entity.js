@@ -1,12 +1,36 @@
-export const dir = 4;
-export const signalV = { type: "virtual", name: "signal-V" };
+import { Network } from "../optimization/nets.js";
+export const signalA = { type: "virtual", name: "signal-A" };
 export const signalC = { type: "virtual", name: "signal-C" };
 export const signalR = { type: "virtual", name: "signal-R" };
+export const signalV = { type: "virtual", name: "signal-V" };
+export const signalW = { type: "virtual", name: "signal-W" };
 export const signalGreen = { type: "virtual", name: "signal-green" };
 export const signalGrey = { type: "virtual", name: "signal-grey" };
-export const anything = { type: "virtual", name: "signal-anything" };
+/**
+ * Everything can be used on the left side in conditionals.
+ * The condition will be true when the condition is true for each input signal.
+ * The condition is also true if there are no signals.
+ * This means that the everything signal behaves as universal quantification.
+ *
+ * The output of a decider combinator may also use everything, unless the input is set to each.
+ * When used, the combinator will output signal on every channel with non-zero input as long as the condition is true; the value will either be the input value or 1, depending on the corresponding setting.
+ */
 export const everything = { type: "virtual", name: "signal-everything" };
+/**
+ * Anything can be used on the left side of conditions. It will be false when there are no inputs. The condition will be true when the condition is true for at least one signal. This means the anything signal behaves as existential quantification.
+ *
+ * When used in both the input and output of a decider combinator, anything will return one of the signals that matched.
+ */
+export const anything = { type: "virtual", name: "signal-anything" };
+/** Each can only be used in left input side and output of decider and arithmetic combinators.
+ * The signal can only be used as an output when also used as an input.
+ * When used in both the input and output, it makes a combinator perform its action on each input signal individually.
+ * The combinator will output the sum of each of the actions if only used in the input.
+ */
 export const each = { type: "virtual", name: "signal-each" };
+export function isSpecial(s) {
+    return s == anything || s == everything || s == each;
+}
 export let allSignals = [
     { type: "item", name: "wooden-chest" },
     { type: "item", name: "iron-chest" },
@@ -229,7 +253,7 @@ export let allSignals = [
     { type: "virtual", name: "signal-7" },
     { type: "virtual", name: "signal-8" },
     { type: "virtual", name: "signal-9" },
-    { type: "virtual", name: "signal-A" },
+    signalA,
     { type: "virtual", name: "signal-B" },
     signalC,
     { type: "virtual", name: "signal-D" },
@@ -268,9 +292,26 @@ export let allSignals = [
     { type: "virtual", name: "signal-info" },
     { type: "virtual", name: "signal-dot" }
 ];
-let globalSource;
-export function setGlobalSource(source) {
-    globalSource = source;
+export class Endpoint {
+    entity;
+    type;
+    outSignals;
+    red;
+    green;
+    // only used for final entity creation
+    redP = new Set();
+    greenP = new Set();
+    constructor(ent, type, ...outSignals) {
+        this.entity = ent;
+        this.type = type;
+        this.outSignals = new Set(outSignals);
+    }
+    convert() {
+        return {
+            red: [...this.redP].map(x => ({ entity_id: x.entity.id, circuit_id: x.type })),
+            green: [...this.greenP].map(x => ({ entity_id: x.entity.id, circuit_id: x.type }))
+        };
+    }
 }
 export class Entity {
     keep = false;
@@ -278,15 +319,16 @@ export class Entity {
     y = -1;
     width;
     height;
+    dir = 4;
     input;
     output;
     id;
-    source;
     constructor(width, height) {
         this.width = width;
         this.height = height;
-        this.source = globalSource;
     }
+    /** Used to update {@link Endpoint.outSignals} when using special output signal */
+    netSignalAdd(e, s) { }
     delete() {
         this.delCon(this.input, 1 /* Red */);
         this.delCon(this.input, 2 /* Green */);
@@ -294,46 +336,35 @@ export class Entity {
         this.delCon(this.output, 2 /* Green */);
     }
     delCon(e, c) {
-        const color = c == 1 /* Red */ ? "red" : "green";
-        // connect endpoints together to keep network connected
-        makeConnection(c, ...e[color]);
-        for (const c of e[color]) {
-            let n = c.entity;
-            n.input[color].delete(e);
-            n.output[color].delete(e);
-        }
-        e[color].clear();
+        e[c == 1 /* Red */ ? "red" : "green"]?.remove(e);
     }
-}
-export function createEndpoint(ent, type, ...outSignals) {
-    return {
-        entity: ent,
-        type,
-        outSignals: new Set(outSignals),
-        red: new Set(),
-        green: new Set()
-    };
-}
-export function convertEndpoint(p) {
-    function map(el) {
-        return el.map(x => ({ entity_id: x.entity.id, circuit_id: x.type }));
-    }
-    return {
-        red: map([...p.red]),
-        green: map([...p.green])
-    };
 }
 export function makeConnection(c, ...points) {
+    function connect(color, a, b) {
+        let an = a[color];
+        let bn = b[color];
+        let net;
+        if (an && bn)
+            net = Network.merge(an, bn);
+        else if (an)
+            net = an;
+        else if (bn)
+            net = bn;
+        else
+            net = new Network(color);
+        net.add(a);
+        net.add(b);
+    }
+    if (c == "red")
+        c = 1 /* Red */;
+    else if (c == "green")
+        c = 2 /* Green */;
     for (let i = 1; i < points.length; i++) {
         const a = points[i - 1];
         const b = points[i];
-        if (c & 1 /* Red */) {
-            a.red.add(b);
-            b.red.add(a);
-        }
-        if (c & 2 /* Green */) {
-            a.green.add(b);
-            b.green.add(a);
-        }
+        if (c & 1 /* Red */)
+            connect("red", a, b);
+        if (c & 2 /* Green */)
+            connect("green", a, b);
     }
 }

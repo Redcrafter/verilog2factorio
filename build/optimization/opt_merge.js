@@ -1,10 +1,9 @@
 import { logger } from "../logger.js";
+import { options } from "../options.js";
 import { Arithmetic } from "../entities/Arithmetic.js";
-import { Constant } from "../entities/Constant.js";
 import { Decider } from "../entities/Decider.js";
 import { makeConnection } from "../entities/Entity.js";
 import { Pole } from "../entities/Pole.js";
-import { extractNets } from "./nets.js";
 function eq(a, b) {
     if (a instanceof Arithmetic && b instanceof Arithmetic) {
         return a.params.first_signal == b.params.first_signal &&
@@ -25,27 +24,14 @@ function eq(a, b) {
     return false;
 }
 export function opt_merge(entities) {
-    logger.log("Running opt_merge");
-    let nets = extractNets(entities);
+    if (options.verbose)
+        logger.log("Running opt_merge");
     // let asd = extractSignalGroups(entities, nets);
-    for (const n of nets.red.nets) {
-        let constants = [...n.points].filter(x => x.entity instanceof Constant);
-        if (constants.length > 1)
-            debugger;
-    }
     let groups = new Map();
     for (const e of entities) {
         if (e instanceof Pole)
             continue;
-        let rNet = nets.red.map.get(e.input);
-        let gNet = nets.green.map.get(e.input);
-        /*if (rNet?.hasOtherInputs(e.output) || gNet?.hasOtherInputs(e.output)) {
-            if (e instanceof Arithmetic && e.params.operation == ArithmeticOperations.Or && e.params.second_constant == 0) {
-                debugger;
-            }
-            continue;
-        }*/
-        let key = `${rNet?.id ?? 0}_${gNet?.id ?? 0}`;
+        let key = `${e.input.red?.id ?? 0}_${e.input.green?.id ?? 0}`;
         if (groups.has(key)) {
             groups.get(key).push(e);
         }
@@ -59,36 +45,33 @@ export function opt_merge(entities) {
             continue;
         for (let i = 0; i < group.length; i++) {
             let entity = group[i];
-            let arNet = nets.red.map.get(entity.output);
-            let agNet = nets.green.map.get(entity.output);
+            let arNet = entity.output.red;
+            let agNet = entity.output.green;
             for (let j = i + 1; j < group.length; j++) {
                 let other = group[j];
                 if (!eq(entity, other))
                     continue;
-                let orNet = nets.red.map.get(other.output);
-                let ogNet = nets.green.map.get(other.output);
+                let orNet = other.output.red;
+                let ogNet = other.output.green;
                 let doMerge = false;
                 if (!arNet && !orNet) { // only green output
-                    doMerge = !agNet.hasOtherInputs(entity.output) && !ogNet.hasOtherInputs(other.output);
+                    doMerge = !agNet.hasOtherWriters(entity.output) && !ogNet.hasOtherWriters(other.output);
                 }
                 else if (!agNet && !ogNet) { // only red output
-                    doMerge = !arNet.hasOtherInputs(entity.output) && !orNet.hasOtherInputs(other.output);
+                    doMerge = !arNet.hasOtherWriters(entity.output) && !orNet.hasOtherWriters(other.output);
                 }
                 if (doMerge) {
                     group.splice(j, 1);
                     entities.splice(entities.indexOf(other), 1);
                     j--;
-                    // input networks are the same but we have to connect the individual enpoints to preven networks being split in half
-                    makeConnection(1 /* Red */, ...other.input.red, entity.input);
-                    makeConnection(2 /* Green */, ...other.input.green, entity.input);
-                    makeConnection(1 /* Red */, entity.output, ...other.output.red);
-                    makeConnection(2 /* Green */, entity.output, ...other.output.green);
+                    makeConnection(3 /* Both */, entity.output, other.output);
                     other.delete();
                     total++;
                 }
             }
         }
     }
-    logger.log(`Removed ${total} combinators`);
+    if (options.verbose)
+        logger.log(`Removed ${total} combinators`);
     return total != 0;
 }

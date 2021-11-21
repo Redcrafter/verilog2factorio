@@ -1,5 +1,5 @@
 import { logger } from "../logger.js";
-import { Entity, createEndpoint, convertEndpoint, dir } from "./Entity.js";
+import { Entity, Endpoint, isSpecial } from "./Entity.js";
 export var ComparatorString;
 (function (ComparatorString) {
     ComparatorString["LT"] = "<";
@@ -14,25 +14,38 @@ export class Decider extends Entity {
     constructor(params) {
         super(1, 2);
         this.params = params;
-        this.input = createEndpoint(this, 1);
-        this.output = createEndpoint(this, 2, this.params.output_signal);
+        this.input = new Endpoint(this, 1);
+        if (isSpecial(this.params.output_signal)) {
+            this.output = new Endpoint(this, 2);
+        }
+        else {
+            this.output = new Endpoint(this, 2, this.params.output_signal);
+        }
         logger.assert((params.second_signal === undefined) !== (params.constant === undefined));
     }
+    netSignalAdd(e, s) {
+        if (e == this.input && isSpecial(this.params.output_signal)) {
+            this.output.outSignals.add(s);
+            // ripple update
+            this.output.red?.addSignal(s);
+            this.output.green?.addSignal(s);
+        }
+    }
     toObj() {
-        if (this.input.red.size == 0 && this.input.green.size == 0 || this.output.red.size == 0 && this.output.green.size == 0) {
+        if (!this.input.red && !this.input.green || !this.output.red && !this.output.green) {
             throw new Error("Unconnected Decider");
         }
         return {
             entity_number: this.id,
             name: "decider-combinator",
             position: { x: this.x, y: this.y },
-            direction: dir,
+            direction: this.dir,
             control_behavior: {
                 decider_conditions: this.params
             },
             connections: {
-                "1": convertEndpoint(this.input),
-                "2": convertEndpoint(this.output)
+                "1": this.input.convert(),
+                "2": this.output.convert()
             }
         };
     }

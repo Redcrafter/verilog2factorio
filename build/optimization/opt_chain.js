@@ -1,24 +1,28 @@
 import { logger } from "../logger.js";
-import { makeConnection } from "../entities/Entity.js";
-import { extractNets } from "./nets.js";
+import { options } from "../options.js";
+import { nets } from "./nets.js";
 /**
  * replaces all wires with wire chains
 */
 export function opt_chain(entities) {
-    logger.log("Running opt_chain");
-    let nets = extractNets(entities);
-    function chain(n, color) {
-        if (n.points.size <= 2) {
-            return;
-        }
-        const prop = color == 1 /* Red */ ? "red" : "green";
-        // sort((a, b) => a.entity.id - b.entity.id);
-        // delete all endpoints
-        for (const p of n.points) {
-            p[prop] = new Set();
-        }
-        makeConnection(color, ...n.points);
+    if (options.verbose)
+        logger.log("Running opt_chain");
+    // assign entity id's
+    for (let i = 0; i < entities.length; i++) {
+        entities[i].id = i + 1;
     }
-    nets.red.nets.forEach(x => chain(x, 1 /* Red */));
-    nets.green.nets.forEach(x => chain(x, 2 /* Green */));
+    function chain(n, color) {
+        const prop = color == 1 /* Red */ ? "redP" : "greenP";
+        let arr = [...n.points];
+        arr.sort((a, b) => a.entity.id - b.entity.id);
+        for (let i = 0; i < arr.length; i++) {
+            let s = arr[i][prop];
+            if (i > 0)
+                s.add(arr[i - 1]);
+            if (i + 1 < arr.length)
+                s.add(arr[i + 1]);
+        }
+    }
+    nets.red.forEach(x => chain(x, 1 /* Red */));
+    nets.green.forEach(x => chain(x, 2 /* Green */));
 }

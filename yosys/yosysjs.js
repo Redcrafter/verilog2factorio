@@ -122,7 +122,7 @@ var YosysJS = new function() {
 				if (ys.logprint)
 					console.log(text);
 				if (ys.got_normal_log_message) {
-					if(text == "warning: unsupported syscall: __sys_getrusage") return;
+					if(text == "warning: unsupported syscall: __syscall_getrusage") return;
 
 					ys.print_buffer += text + "\n";
 					ys.last_line_empty = text == "";

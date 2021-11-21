@@ -2,7 +2,6 @@ import { logger } from "./logger.js";
 // entities
 import { ArithmeticOperations } from "./entities/Arithmetic.js";
 import { ComparatorString } from "./entities/Decider.js";
-import { setGlobalSource } from "./entities/Entity.js";
 import { Input } from "./nodes/Input.js";
 import { Output } from "./nodes/Output.js";
 import { ConstNode } from "./nodes/ConstNode.js";
@@ -12,6 +11,7 @@ import { ADD } from "./nodes/ADD.js";
 import { NOT } from "./nodes/NOT.js";
 import { XNOR } from "./nodes/XNOR.js";
 import { ReduceOr } from "./nodes/ReduceOr.js";
+import { SHR } from "./nodes/SHR.js";
 import { SSHR } from "./nodes/SSHR.js";
 import { MergeNode } from "./nodes/MergeNode.js";
 import { MUX } from "./nodes/MUX.js";
@@ -21,6 +21,7 @@ import { DFF } from "./nodes/DFF.js";
 import { SDFF } from "./nodes/SDFF.js";
 import { SDFFE } from "./nodes/SDFFE.js";
 import { SDFFCE } from "./nodes/SDFFCE.js";
+import { resetNets } from "./optimization/nets.js";
 function arraysEqual(a, b) {
     if (a === b)
         return true;
@@ -50,6 +51,14 @@ function createNode(item) {
         // TODO: case "$reduce_xor":
         // TODO: case "$reduce_xnor":
         case "$reduce_bool": return new ReduceOr(item);
+        case "$and": return new MathNode(item, ArithmeticOperations.And);
+        case "$or": return new MathNode(item, ArithmeticOperations.Or);
+        case "$xor": return new MathNode(item, ArithmeticOperations.Xor);
+        case "$xnor": return new XNOR(item);
+        case "$shl":
+        case "$sshl": return new MathNode(item, ArithmeticOperations.LShift);
+        case "$shr": return new SHR(item);
+        case "$sshr": return new SSHR(item);
         case "$logic_not": // same as == 0
             // @ts-ignore
             item.connections.B = ["0"];
@@ -57,17 +66,9 @@ function createNode(item) {
             item.parameters.B_SIGNED = 0;
             // @ts-ignore
             return new LogicNode(item, ComparatorString.EQ);
-        case "$and": return new MathNode(item, ArithmeticOperations.And);
-        case "$or": return new MathNode(item, ArithmeticOperations.Or);
-        case "$xor": return new MathNode(item, ArithmeticOperations.Xor);
-        case "$xnor": return new XNOR(item);
-        case "$shl": return new MathNode(item, ArithmeticOperations.LShift);
-        case "$shr": return new MathNode(item, ArithmeticOperations.RShift);
-        // TODO: case "$sshl":
-        case "$sshr": return new SSHR(item);
         case "$logic_and":
-            logger.assert(item.connections.A.length == 1);
-            logger.assert(item.connections.B.length == 1);
+            logger.assert(item.connections.A.length == 1, "logic_and a width");
+            logger.assert(item.connections.B.length == 1, "logic_and b width");
             return new MathNode(item, ArithmeticOperations.And);
         case "$logic_or":
             logger.assert(item.connections.A.length == 1);
@@ -101,7 +102,7 @@ function createNode(item) {
         case "$sdffe": return new SDFFE(item);
         case "$sdffce": return new SDFFCE(item);
         // TODO: case "$dffsre":
-        case "$mem": return new MemNode(item);
+        case "$mem_v2": return new MemNode(item);
         default:
             logger.error(`Unknown node type ${item.type}`);
             break;
@@ -129,6 +130,7 @@ function arrMatch(a, b) {
     return [start, i];
 }
 export function buildGraph(mod) {
+    resetNets();
     let ports = new Map();
     let nodes = [];
     let knownWires = new Set();
@@ -229,11 +231,14 @@ export function buildGraph(mod) {
     for (const key in mod.cells) {
         const item = mod.cells[key];
         for (const key in item.parameters) {
-            if (item.type == "$mem" && (key == "INIT" || key == "MEMID")) {
-                continue;
-            }
             //@ts-ignore
-            item.parameters[key] = parseInt(item.parameters[key], 2);
+            let val = item.parameters[key];
+            if (typeof val === "string" && val.match(/^[01]+$/)) {
+                let num = parseInt(val, 2);
+                logger.assert(Number.isSafeInteger(num), "exceeded safe integer range");
+                //@ts-ignore
+                item.parameters[key] = num;
+            }
         }
         let node = createNode(item);
         if (!node) {
@@ -251,10 +256,8 @@ export function buildGraph(mod) {
         throw new Error("Unknown nodes encountered");
     }
     for (const item of nodes) {
-        setGlobalSource(item);
         item.connect(getInputNode, findMergeList);
     }
-    setGlobalSource(null);
     return {
         ports,
         nodes

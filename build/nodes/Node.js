@@ -1,12 +1,12 @@
 import { logger } from "../logger.js";
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
-import { createEndpoint, makeConnection, signalC, signalV } from "../entities/Entity.js";
-export function createTransformer(input) {
+import { Endpoint, makeConnection, signalC, signalV } from "../entities/Entity.js";
+export function createTransformer(input, sig = signalC) {
     let trans = new Arithmetic({
         first_signal: signalV,
         second_constant: 0,
         operation: ArithmeticOperations.Or,
-        output_signal: signalC
+        output_signal: sig
     });
     if (input)
         makeConnection(1 /* Red */, input, trans.input);
@@ -38,12 +38,12 @@ export class Node {
         logger.assert(bits.length <= 32, `Wire width too big: ${bits.length}`);
         this.outputBits = bits;
         this.outMask = bits.length == 32 ? -1 : (((1 << bits.length) - 1) | 0);
-        this.outputPlaceholder = createEndpoint(null, -1);
+        this.outputPlaceholder = new Endpoint(null, -1);
     }
     connect(getInputNode, getMergeEls) {
         let e = this._connect(getInputNode, getMergeEls);
         if (!e) {
-            if (this.outputPlaceholder.red.size != 0 || this.outputPlaceholder.green.size != 0)
+            if (this.outputPlaceholder.red || this.outputPlaceholder.green)
                 throw new Error("missing output endpoint");
             this.outputPlaceholder = null;
         }
@@ -52,15 +52,13 @@ export class Node {
         }
     }
     _setOutput(e) {
-        for (const n of this.outputPlaceholder.red) {
-            n.red.delete(this.outputPlaceholder);
-            n.red.add(e);
-            e.red.add(n);
+        if (this.outputPlaceholder.red) {
+            makeConnection(1 /* Red */, e, this.outputPlaceholder);
+            this.outputPlaceholder.red.remove(this.outputPlaceholder);
         }
-        for (const n of this.outputPlaceholder.green) {
-            n.green.delete(this.outputPlaceholder);
-            n.green.add(e);
-            e.green.add(n);
+        if (this.outputPlaceholder.green) {
+            makeConnection(2 /* Green */, e, this.outputPlaceholder);
+            this.outputPlaceholder.green.remove(this.outputPlaceholder);
         }
         this.outputPlaceholder = e;
     }

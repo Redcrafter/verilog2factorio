@@ -1,5 +1,4 @@
 import * as zlib from "zlib";
-import * as fs from "fs";
 export function createBlueprint(entityList, name) {
     return {
         item: "blueprint",
@@ -33,9 +32,7 @@ function createBlueprintBook(blueprints) {
     };
 }
 function compress(data) {
-    let str = JSON.stringify(data);
-    fs.writeFileSync("./test/test.json", str);
-    return "0" + zlib.deflateSync(str, { level: 9 }).toString("base64");
+    return "0" + zlib.deflateSync(JSON.stringify(data), { level: 9 }).toString("base64");
 }
 export function createBpString(blueprints) {
     let el;

@@ -2,8 +2,8 @@ import { logger } from "../logger.js";
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Constant } from "../entities/Constant.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
-import { each } from "../entities/Entity.js";
-import { extractNets } from "./nets.js";
+import { each, isSpecial } from "../entities/Entity.js";
+import { options } from "../options.js";
 function constNetwork(net, s) {
     if (!net || !net.signals.has(s))
         return 0;
@@ -60,34 +60,28 @@ function flipOperator(op) {
     return op;
 }
 export function opt_const(entities) {
-    logger.log("Running opt_const");
-    let nets = extractNets(entities);
+    if (options.verbose)
+        logger.log("Running opt_const");
     let deleted = 0;
     let changed = 0;
     for (let i = 0; i < entities.length; i++) {
         const e = entities[i];
         if (e.keep)
             continue;
+        const rNet = e.input.red;
+        const gNet = e.input.green;
         function del() {
             e.delete();
             entities.splice(entities.indexOf(e), 1);
             i--;
             deleted++;
-            rNet?.points.delete(e.input);
-            gNet?.points.delete(e.input);
         }
         function delN(s) {
-            if (rNet && !rNet.signals.has(s)) {
-                rNet.points.delete(e.input);
+            if (rNet && !rNet.signals.has(s))
                 e.delCon(e.input, 1 /* Red */);
-            }
-            if (gNet && !gNet.signals.has(s)) {
-                gNet.points.delete(e.input);
+            if (gNet && !gNet.signals.has(s))
                 e.delCon(e.input, 2 /* Green */);
-            }
         }
-        let rNet = nets.red.map.get(e.input);
-        let gNet = nets.green.map.get(e.input);
         // let signals = new Set([...rNet.signals, ...gNet.signals]);
         if (e instanceof Constant) {
             if (e.params.every(x => x.count == 0)) {
@@ -95,10 +89,8 @@ export function opt_const(entities) {
             }
         }
         else if (e instanceof Arithmetic) {
-            if (e.params.first_signal) {
-                // TODO: don't skip each
-                if (e.params.first_signal == each)
-                    continue;
+            // TODO: don't skip each
+            if (e.params.first_signal && e.params.first_signal !== each) {
                 let rVal = constNetwork(rNet, e.params.first_signal);
                 let gVal = constNetwork(gNet, e.params.first_signal);
                 if (rVal !== null && gVal !== null) {
@@ -108,7 +100,7 @@ export function opt_const(entities) {
                     delN(e.params.second_signal);
                 }
             }
-            if (e.params.second_signal) {
+            if (e.params.second_signal && e.params.second_signal !== each) {
                 let rVal = constNetwork(rNet, e.params.second_signal);
                 let gVal = constNetwork(gNet, e.params.second_signal);
                 if (rVal !== null && gVal !== null) {
@@ -119,23 +111,40 @@ export function opt_const(entities) {
                 }
             }
             if (e.params.first_constant !== undefined && e.params.second_constant !== undefined) {
-                debugger;
+                if (isSpecial(e.params.output_signal)) {
+                    debugger;
+                    continue;
+                }
                 let val = calcConstArith(e);
                 if (val == 0) {
                     del();
                 }
                 else {
                     // replace with constant
-                    debugger;
+                    let c = new Constant({
+                        index: 1,
+                        count: val,
+                        signal: e.params.output_signal
+                    });
+                    e.output.red?.add(c.output);
+                    e.output.green?.add(c.output);
+                    e.delete();
+                    entities[i] = c;
+                    changed++;
                 }
             }
         }
         else if (e instanceof Decider) {
             if (e.params.copy_count_from_input) {
-                let rVal = constNetwork(rNet, e.params.output_signal);
-                let gVal = constNetwork(gNet, e.params.output_signal);
-                if (rVal !== null && gVal !== null && rVal + gVal == 0) {
-                    del();
+                if (isSpecial(e.params.output_signal)) {
+                    // debugger;
+                }
+                else {
+                    let rVal = constNetwork(rNet, e.params.output_signal);
+                    let gVal = constNetwork(gNet, e.params.output_signal);
+                    if (rVal !== null && gVal !== null && rVal + gVal == 0) {
+                        del();
+                    }
                 }
                 // TODO: don't skip copy
                 continue;
@@ -174,7 +183,9 @@ export function opt_const(entities) {
             }
         }
     }
-    logger.log(`Removed ${deleted} combinators`);
-    logger.log(`Changed ${changed} combinators`);
-    return deleted != 0 && changed != 0;
+    if (options.verbose) {
+        logger.log(`Removed ${deleted} combinators`);
+        logger.log(`Changed ${changed} combinators`);
+    }
+    return deleted != 0 || changed != 0;
 }

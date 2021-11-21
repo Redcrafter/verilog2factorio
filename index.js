@@ -1,7 +1,10 @@
 import { buildGraph } from "./build/parser.js";
 import { transform } from "./build/transformer.js";
-import {  logger, setLogger } from "./build/logger.js";
+import { logger, setLogger } from "./build/logger.js";
 import { changeTab, consoleTab } from "./tabs.js";
+import { options } from "./build/options.js";
+
+options.verbose = true;
 
 const consoleEl = document.getElementById("console");
 const fbeButton = document.getElementById("openFBE");
@@ -143,7 +146,7 @@ async function compile() {
     ys.run("read_verilog -sv test.sv");
     printYosys();
 
-    ys.run("proc; flatten; wreduce; opt; fsm; opt; memory -nomap; opt; muxpack; peepopt; async2sync; wreduce; opt -mux_bool");
+    ys.run("proc; flatten; wreduce; opt; fsm; opt; memory -nomap -nordff; opt; muxpack; peepopt; async2sync; wreduce; opt -mux_bool");
     printYosys();
 
     ys.run("write_json temp.json");
