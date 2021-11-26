@@ -1,9 +1,11 @@
 import * as assert from "assert";
 import { signalV } from "../../entities/Entity.js";
+import { RNG } from "../../random.js";
 import { createSimulator, Const } from "../simulator.js";
 
 export async function testCollatz() {
     let sim = await createSimulator("./samples/collatz.v", "collatz");
+    let rng = new RNG();
 
     let clock = sim.ents[0] as Const;
     let start = sim.ents[1] as Const;
@@ -12,18 +14,17 @@ export async function testCollatz() {
     let val = sim.ents[3];
 
     function pulse() {
-        sim.update(10);
+        sim.update(5);
 
         clock.outSig[0].value = 1;
         sim.update(1);
         clock.outSig[0].value = 0;
 
-        sim.update(10);
+        sim.update(5);
     }
 
-    for (let i = 0; i < 100; i++) {
-        // TODO: test shouldn't be random
-        let startValue = Math.floor(Math.random() * 0xFFFF)
+    for (let i = 0; i < 1000; i++) {
+        let startValue = rng.int() & 0xFFFF;
         let expected = startValue;
 
         start.outSig[0].value = 1;

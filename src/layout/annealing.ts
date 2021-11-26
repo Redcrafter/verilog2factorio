@@ -1,5 +1,6 @@
 import { options } from "../options.js";
 import { logger } from "../logger.js";
+import { RNG } from "../random.js";
 
 import { Color, Endpoint, Entity } from "../entities/Entity.js";
 import { opt_chain } from "../optimization/opt_chain.js";
@@ -61,10 +62,10 @@ class Simulator {
     private gridSize: number;
     private grid: Point[];
 
-    constructor() { }
+    private rng = new RNG();
 
     rand(min: number, max: number) {
-        return (Math.random() * (max - min)) + min;
+        return (this.rng.float() * (max - min)) + min;
     }
 
     addNode(fixed: boolean) {
@@ -279,7 +280,7 @@ class Simulator {
     }
 
     private randomOffset() {
-        switch (Math.floor(Math.random() * 4)) {
+        switch (Math.floor(this.rng.int() & 3)) {
             case 0: return { x: 1, y: 0 };
             case 1: return { x: -1, y: 0 };
             case 2: return { x: 0, y: -1 };

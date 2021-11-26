@@ -1,6 +1,6 @@
 export let options: {
     verbose: boolean;
-    // seed?: string;
+    seed?: string;
     output?: string;
     modules?: string[];
     files?: string[];
@@ -8,5 +8,6 @@ export let options: {
     generator: "annealing" | "matrix";
 } = {
     verbose: false,
+    seed: Math.random().toString(),
     generator: "annealing"
 };
