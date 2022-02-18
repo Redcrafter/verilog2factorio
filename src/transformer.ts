@@ -10,6 +10,7 @@ import { options } from "./options.js";
 
 import { runAnnealing } from "./layout/annealing.js";
 import { createMatrixLayout } from "./layout/netMatrix.js";
+import { generateCircuitGraph } from "./generateCircuitGraph.js";
 
 const generators = {
     "annealing": runAnnealing,
@@ -55,6 +56,8 @@ export function transform(nodes: Node[]) {
     for (let i = 0; i < combs.length; i++) {
         combs[i].id = i + 1;
     }
+
+    if(options.debug) generateCircuitGraph(combs,"circuit.svg");
 
     generators[options.generator](combs, ports);
 
