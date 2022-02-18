@@ -48,6 +48,7 @@ export function opt_transform(entities: Entity[]) {
 
         // TODO: allow for multiple differnt colored outputs when inNet.points.size == 2
         if ((!!e.input.red == !!e.input.green) || (!!e.output.red == !!e.output.green)) {
+            //skip if both input or both outputs are set
             filter1++;
             continue;
         }
@@ -71,6 +72,7 @@ export function opt_transform(entities: Entity[]) {
             } else if (!outNet.hasOtherColor()) {
                 newColor = inNet.color;  // outNet can be changed to other color
             } else {
+                //skip if other combinators on the network other color connected have the other color connected
                 filter3++;
                 continue;
             }

@@ -9,6 +9,8 @@ import { Color, each, Entity, isSpecial } from "../entities/Entity.js";
 import { Network } from "./nets.js";
 import { options } from "../options.js";
 
+//returns the number of constant combinators whit a given signal on the given network
+//return null if there are active writers or in there is an input
 function constNetwork(net: Network, s: SignalID) {
     if (!net || !net.signals.has(s)) return 0;
 
@@ -74,6 +76,7 @@ function flipOperator(op: ComparatorString) {
     return op;
 }
 
+//constant folding
 export function opt_const(entities: Entity[]) {
     if (options.verbose) logger.log("Running opt_const");
 
@@ -87,13 +90,13 @@ export function opt_const(entities: Entity[]) {
         const rNet = e.input.red;
         const gNet = e.input.green;
 
-        function del() {
+        function del() { //delete current entity
             e.delete();
             entities.splice(entities.indexOf(e), 1);
             i--;
             deleted++;
         }
-        function delN(s: SignalID) {
+        function delN(s: SignalID) { //disconnect connection if the signal type is not present
             if (rNet && !rNet.signals.has(s)) e.delCon(e.input, Color.Red);
             if (gNet && !gNet.signals.has(s)) e.delCon(e.input, Color.Green);
         }
@@ -101,12 +104,14 @@ export function opt_const(entities: Entity[]) {
         // let signals = new Set([...rNet.signals, ...gNet.signals]);
 
         if (e instanceof Constant) {
+            //delete constant combinator with no output
             if (e.params.every(x => x.count == 0)) {
                 del();
             }
         } else if (e instanceof Arithmetic) {
             // TODO: don't skip each
             if (e.params.first_signal && e.params.first_signal !== each) {
+                //move constant input into combinator for the first signal
                 let rVal = constNetwork(rNet, e.params.first_signal);
                 let gVal = constNetwork(gNet, e.params.first_signal);
 
@@ -120,6 +125,7 @@ export function opt_const(entities: Entity[]) {
             }
 
             if (e.params.second_signal && e.params.second_signal !== each) {
+                //move constant input into combinator for the second signal
                 let rVal = constNetwork(rNet, e.params.second_signal);
                 let gVal = constNetwork(gNet, e.params.second_signal);
 
@@ -133,6 +139,8 @@ export function opt_const(entities: Entity[]) {
             }
 
             if (e.params.first_constant !== undefined && e.params.second_constant !== undefined) {
+                //if combinator has no active parameter then replace it whit a constant combinator
+                //or nothing if the result is zero
                 if(isSpecial(e.params.output_signal)) {
                     debugger;
                     continue;
@@ -158,12 +166,14 @@ export function opt_const(entities: Entity[]) {
             }
         } else if (e instanceof Decider) {
             if (e.params.copy_count_from_input) {
+                //if copy input count is checked skip al other optimizations
                 if(isSpecial(e.params.output_signal)) {
                     // debugger;
                 } else {
                     let rVal = constNetwork(rNet, e.params.output_signal);
                     let gVal = constNetwork(gNet, e.params.output_signal);
     
+                    //delete if the out put signal doesn't exist on the network
                     if (rVal !== null && gVal !== null && rVal + gVal == 0) {
                         del();
                     }
@@ -177,6 +187,7 @@ export function opt_const(entities: Entity[]) {
                 let rVal = constNetwork(rNet, e.params.second_signal);
                 let gVal = constNetwork(gNet, e.params.second_signal);
 
+                //move constants inside combinator
                 if (rVal !== null && gVal !== null) {
                     e.params.second_signal = undefined;
                     e.params.constant = rVal + gVal;
@@ -192,6 +203,7 @@ export function opt_const(entities: Entity[]) {
             if (rVal === null || gVal === null) continue;
 
             if (e.params.second_signal) {
+                //if second signal is constant switch them and move it into the combinator
                 e.params.first_signal = e.params.second_signal;
                 e.params.second_signal = undefined;
                 e.params.constant = rVal + gVal;
@@ -203,7 +215,7 @@ export function opt_const(entities: Entity[]) {
                 debugger;
 
                 if (calcConstDecider(e, rVal + gVal)) {
-                    // replace with passthrough
+                    //TODO: replace with passthrough
                     debugger;
                 } else {
                     del();
