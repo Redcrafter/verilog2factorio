@@ -7,37 +7,30 @@ import { Pole } from "./entities/Pole.js";
 import { exec } from "child_process";
 import { logger } from "./logger.js";
 
-function genLabel(comb:Entity):string{
-        if(comb instanceof Constant)
-        {
+function genLabel(comb:Entity):string {
+        if(comb instanceof Constant) {
             let data = "";
             comb.params.forEach((d)=>{
                 data += d.signal.name+d.count+"\n";
             });
             return `${comb.id} [label="constant\n${data}",shape="cylinder"]\n`
-        }
-        else if(comb instanceof Arithmetic)
-        {
+        } else if(comb instanceof Arithmetic) {
             let first = comb.params.first_constant ?? comb.params.first_signal.name;
             let second = comb.params.second_constant ?? comb.params.second_signal.name;
             return `${comb.id} [label="${first} ${comb.params.operation} ${second}\n${comb.params.output_signal.name}",shape="box"]\n`
-        }
-        else if(comb instanceof Decider)
-        {
+        } else if(comb instanceof Decider) {
             let first = comb.params.first_signal.name;
             let second = comb.params.constant ?? comb.params.second_signal.name;
             let out = comb.params.output_signal.name + (comb.params.copy_count_from_input ? " copy" : "");
             return `${comb.id} [label="${first} ${comb.params.comparator} ${second}\n${out}",shape="ellipse"]\n`
-        }
-        else if(comb instanceof Pole)
-        {
+        } else if(comb instanceof Pole) {
             return `${comb.id} [label="pole",shape="diamond"]\n`
         }
         throw Error("unreachable")
 }
 
 
-export function generateCircuitGraph(combs:Entity[],outFileName:string){
+export function generateCircuitGraph(combs:Entity[],outFileName:string) {
     let gv = 
     `digraph {
         rankdir="LR"`;

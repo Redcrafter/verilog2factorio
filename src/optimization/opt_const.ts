@@ -9,7 +9,7 @@ import { Color, each, Entity, isSpecial } from "../entities/Entity.js";
 import { Network } from "./nets.js";
 import { options } from "../options.js";
 
-//returns the number of constant combinators whit a given signal on the given network
+//returns the number of constant combinators with a given signal on the given network
 //return null if there are active writers or in there is an input
 function constNetwork(net: Network, s: SignalID) {
     if (!net || !net.signals.has(s)) return 0;
@@ -139,7 +139,7 @@ export function opt_const(entities: Entity[]) {
             }
 
             if (e.params.first_constant !== undefined && e.params.second_constant !== undefined) {
-                //if combinator has no active parameter then replace it whit a constant combinator
+                //if combinator has no active parameter then replace it with a constant combinator
                 //or nothing if the result is zero
                 if(isSpecial(e.params.output_signal)) {
                     debugger;

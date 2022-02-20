@@ -17,6 +17,7 @@ Usage: v2f [options] <files..>
 
 Options:
   -v, --verbose
+  -d  --debug               Generate debug information. (A graph of the output circuit.)
   -o, --output <file>       File to output the compiled blueprint to.
   -m, --modules <names...>  Verilog modules to output blueprint for. (defaults to all).
   -f, --files <files...>    List of Verilog files to compile. (only has to be explicitly specified after -m).
