@@ -1,5 +1,6 @@
 export let options: {
     verbose: boolean;
+    debug: boolean;
     seed?: string;
     output?: string;
     modules?: string[];
@@ -8,6 +9,7 @@ export let options: {
     generator: "annealing" | "matrix";
 } = {
     verbose: false,
+    debug: false,
     seed: Math.random().toString(),
     generator: "annealing"
 };

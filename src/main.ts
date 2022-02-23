@@ -16,6 +16,7 @@ import { genNetlist } from "./yosys.js";
         .arguments("<files..>")
         .helpOption("-h, --help", "Display this information.")
         .option("-v, --verbose")
+        .option("-d, --debug","Generate debug information. (A graph of the output circuit.)")
         .option("-s, --seed <seed>", "Specify a seed for the layout generation.")
         .option("-o, --output <file>", "File to output the compiled blueprint to.")
         .option("-m, --modules <names...>", "Verilog modules to output blueprint for. (defaults to all).")
