@@ -12,6 +12,8 @@ import { runAnnealing } from "./layout/annealing.js";
 import { createMatrixLayout } from "./layout/netMatrix.js";
 import { generateCircuitGraph } from "./generateCircuitGraph.js";
 
+import { Entity } from "./entities/Entity.js";
+
 const generators = {
     "annealing": runAnnealing,
     "matrix": createMatrixLayout
@@ -44,27 +46,28 @@ function logNodes(nodes: Node[]) {
     })));
 }
 
+function assignId(combs: Entity[]) {
+    // assign entity id's
+    for (let i = 0; i < combs.length; i++) {
+        combs[i].id = i + 1;
+    }
+}
+
 export function transform(nodes: Node[]) {
     if (options.verbose) logNodes(nodes);
 
     let combs = nodes.flatMap(x => x.combs());
     let ports = new Set(nodes.filter(x => x instanceof Input || x instanceof Output).flatMap(x => x.combs()));
 
+    assignId(combs);
     optimize(combs);
+    assignId(combs);
 
-    // assign entity id's
-    for (let i = 0; i < combs.length; i++) {
-        combs[i].id = i + 1;
-    }
-
-    if(options.debug) generateCircuitGraph(combs,"circuit.svg");
+    if (options.debug) generateCircuitGraph(combs);
 
     generators[options.generator](combs, ports);
 
-    // assign entity id's
-    for (let i = 0; i < combs.length; i++) {
-        combs[i].id = i + 1;
-    }
+    assignId(combs);
 
     return combs.map(x => x.toObj()); // return list of entities
 }

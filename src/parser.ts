@@ -160,7 +160,7 @@ function arrMatch<T>(a: T[], b: T[]): [number, number] {
 export function buildGraph(mod: yosys.Module) {
     resetNets();
 
-    let ports = new Map();
+    let ports = new Map<string, Node>();
 
     let nodes: Node[] = [];
     let knownWires = new Set<number>();
@@ -261,13 +261,13 @@ export function buildGraph(mod: yosys.Module) {
 
         let node: Node;
         if (item.direction === "input") {
-            node = new Input(item.bits);
+            node = new Input(item.bits, name);
 
             for (const b of item.bits) {
                 knownWires.add(b);
             }
         } else {
-            node = new Output(item.bits);
+            node = new Output(item.bits, name);
         }
         nodes.push(node);
         ports.set(name, node);
@@ -282,7 +282,7 @@ export function buildGraph(mod: yosys.Module) {
             let val = item.parameters[key];
 
             if (typeof val === "string" && val.match(/^[01]+$/)) {
-                let num =  parseInt(val, 2);
+                let num = parseInt(val, 2);
                 logger.assert(Number.isSafeInteger(num), "exceeded safe integer range");
 
                 //@ts-ignore

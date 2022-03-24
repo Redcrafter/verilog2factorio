@@ -1,4 +1,5 @@
 import { RawEntity, ConnectionPoint, SignalID } from "../blueprint.js";
+import { Node } from "../nodes/Node.js";
 import { Network } from "../optimization/nets.js";
 
 export const signalA: SignalID = { type: "virtual", name: "signal-A" };
@@ -305,6 +306,12 @@ export const enum Color {
     Both = Red | Green
 }
 
+let globalSource: Node;
+// used to keep track of which yosys node creates which combinator
+export function setGlobalSource(source: Node) {
+    globalSource = source;
+}
+
 export class Endpoint {
     public entity: Entity;
     public type: number;
@@ -343,7 +350,11 @@ export abstract class Entity {
     output: Endpoint;
     id: number;
 
-    constructor() { }
+    source: Node;
+
+    constructor() {
+        this.source = globalSource;
+    }
 
     abstract toObj(): RawEntity;
     abstract get width(): number;

@@ -1,16 +1,18 @@
 import { Node, nodeFunc } from "./Node.js";
 
-import { Color, Endpoint, makeConnection } from "../entities/Entity.js";
+import { Color, Endpoint, makeConnection, setGlobalSource } from "../entities/Entity.js";
 import { Pole } from "../entities/Pole.js";
 
 export class Output extends Node {
     bits: number[];
+    name: string;
 
     pole: Pole;
 
-    constructor(bits: number[]) {
+    constructor(bits: number[], name: string) {
         super([]);
         this.bits = bits;
+        this.name = name;
     }
 
     _connect(getInputNode: nodeFunc): Endpoint {

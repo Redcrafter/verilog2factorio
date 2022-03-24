@@ -1,7 +1,7 @@
 import { logger } from "../logger.js";
 
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
-import { Color, Endpoint, Entity, makeConnection, signalC, signalV } from "../entities/Entity.js";
+import { Color, Endpoint, Entity, makeConnection, setGlobalSource, signalC, signalV } from "../entities/Entity.js";
 
 import { MergeEl } from "./MergeNode.js";
 
@@ -54,7 +54,9 @@ export abstract class Node {
     }
 
     public connect(getInputNode: nodeFunc, getMergeEls: mergeFunc) {
+        setGlobalSource(this);
         let e = this._connect(getInputNode, getMergeEls);
+        setGlobalSource(null);
         if (!e) {
             if (this.outputPlaceholder.red || this.outputPlaceholder.green)
                 throw new Error("missing output endpoint");
