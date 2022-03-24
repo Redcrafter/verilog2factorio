@@ -337,20 +337,17 @@ export abstract class Entity {
     x = -1;
     y = -1;
 
-    width: number;
-    height: number;
     dir = 4;
 
     input: Endpoint;
     output: Endpoint;
     id: number;
 
-    constructor(width: number, height: number) {
-        this.width = width;
-        this.height = height;
-    }
+    constructor() { }
 
     abstract toObj(): RawEntity;
+    abstract get width(): number;
+    abstract get height(): number;
 
     /** Used to update {@link Endpoint.outSignals} when using special output signal */
     netSignalAdd(e: Endpoint, s: SignalID): void { }

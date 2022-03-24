@@ -25,11 +25,14 @@ export class Constant extends Entity {
     isOn = true;
 
     constructor(...param: ConstantControlBehavior[]) {
-        super(1, 1);
+        super();
         this.params = param;
 
         this.input = this.output = new Endpoint(this, 1, ...this.params.map(x => x.signal));
     }
+
+    get width() { return 1; }
+    get height() { return 1; }
 
     toObj(): ConstantCombinator {
         logger.assert(this.input.redP.size != 0 || this.input.greenP.size != 0, "Unconnected Constant")

@@ -42,7 +42,7 @@ export class Arithmetic extends Entity {
     params: ArithmeticControlBehavior;
 
     constructor(params: ArithmeticControlBehavior) {
-        super(1, 2);
+        super();
         this.params = params;
 
         this.input = new Endpoint(this, 1);
@@ -71,6 +71,9 @@ export class Arithmetic extends Entity {
             this.output.green?.addSignal(s);
         }
     }
+
+    get width() { return 1; }
+    get height() { return 2; }
 
     toObj(): ArithmeticCombinator {
         if (!this.input.red && !this.input.green || !this.output.red && !this.output.green) {

@@ -38,7 +38,7 @@ export class Decider extends Entity {
     params: DeciderControlBehavior;
 
     constructor(params: DeciderControlBehavior) {
-        super(1, 2);
+        super();
         this.params = params;
 
         this.input = new Endpoint(this, 1);
@@ -60,6 +60,9 @@ export class Decider extends Entity {
             this.output.green?.addSignal(s);
         }
     }
+
+    get width() { return 1; }
+    get height() { return 2; }
 
     toObj(): DeciderCombinator {
         if (!this.input.red && !this.input.green || !this.output.red && !this.output.green) {

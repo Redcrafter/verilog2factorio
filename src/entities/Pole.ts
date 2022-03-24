@@ -12,9 +12,12 @@ export interface MediumElectricPole extends EntityBase {
 
 export class Pole extends Entity {
     constructor() {
-        super(1, 1);
+        super();
         this.input = this.output = new Endpoint(this, 1);
     }
+
+    get width() { return 1; }
+    get height() { return 1; }
 
     toObj(): MediumElectricPole {
         logger.assert(this.input.redP.size != 0 || this.input.greenP.size != 0, "Unconnected Pole")
