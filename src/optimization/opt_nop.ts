@@ -1,9 +1,9 @@
-import { extractSignalGroups, GroupCollection } from "./groups.js";
+import { extractSignalGroups } from "./groups.js";
 import { logger } from "../logger.js";
 
 import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Decider } from "../entities/Decider.js";
-import { allSignals, Entity, makeConnection } from "../entities/Entity.js";
+import { allSignals, Entity } from "../entities/Entity.js";
 
 import { options } from "../options.js";
 import { nets, Network } from "./nets.js";
@@ -32,7 +32,8 @@ function isNop(e: Entity) {
     return false;
 }
 
-export function opt_transform(entities: Entity[]) {
+// removes combinators which are no ops
+export function opt_nop(entities: Entity[]) {
     if (options.verbose) logger.log("Running opt_transform");
 
     let groups = extractSignalGroups(entities);
@@ -46,9 +47,9 @@ export function opt_transform(entities: Entity[]) {
 
         if (!isNop(e)) continue;
 
-        // TODO: allow for multiple differnt colored outputs when inNet.points.size == 2
+        // TODO: allow for multiple different colored outputs when inNet.points.size == 2
         if ((!!e.input.red == !!e.input.green) || (!!e.output.red == !!e.output.green)) {
-            //skip if both input or both outputs are set
+            // skip if both input or both outputs are set
             filter1++;
             continue;
         }
@@ -72,7 +73,7 @@ export function opt_transform(entities: Entity[]) {
             } else if (!outNet.hasOtherColor()) {
                 newColor = inNet.color;  // outNet can be changed to other color
             } else {
-                //skip if other combinators on the network other color connected have the other color connected
+                // skip if other combinators on the network other color connected have the other color connected
                 filter3++;
                 continue;
             }

@@ -26,17 +26,15 @@ function eq(a: Entity, b: Entity) {
     return false;
 }
 
-//combine combinators that have the have the same input do the same thing and have no output neighbors 
+// combines combinators which have the same input do the same thing and have no output neighbors 
 export function opt_merge(entities: Entity[]) {
     if (options.verbose) logger.log("Running opt_merge");
-
-    // let asd = extractSignalGroups(entities, nets);
 
     let groups = new Map<string, Entity[]>();
     for (const e of entities) {
         if (e instanceof Pole) continue;
 
-        //collet entities grouped by input networks
+        // collet entities grouped by input networks
         let key = `${e.input.red?.id ?? 0}_${e.input.green?.id ?? 0}`;
 
         if (groups.has(key)) {
@@ -46,6 +44,7 @@ export function opt_merge(entities: Entity[]) {
         }
     }
 
+    // this is O(n^2) could optimize this to O(n) by converting to string representation and doing a dictionary lookup
     let total = 0;
     for (const [key, group] of groups) {
         if (group.length == 1) continue;
@@ -64,7 +63,7 @@ export function opt_merge(entities: Entity[]) {
                 let orNet = other.output.red;
                 let ogNet = other.output.green;
 
-                //check if there are other writers on the output networks
+                // check if there are other writers on the output networks
                 let doMerge = false;
                 if (!arNet && !orNet) { // only green output
                     doMerge = !agNet.hasOtherWriters(entity.output) && !ogNet.hasOtherWriters(other.output);
