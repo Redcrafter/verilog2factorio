@@ -9,14 +9,17 @@ import { logger } from "./logger.js";
 import { options } from "./options.js";
 
 import { runAnnealing } from "./layout/annealing.js";
+import * as chunkAnnealing from "./layout/chunkAnnealing.js";
+
 import { createMatrixLayout } from "./layout/netMatrix.js";
 import { generateCircuitGraph } from "./generateCircuitGraph.js";
 
-import { Entity } from "./entities/Entity.js";
+import { nets } from "./nets.js";
 
 const generators = {
     "annealing": runAnnealing,
-    "matrix": createMatrixLayout
+    "matrix": createMatrixLayout,
+    "chunkAnnealing": chunkAnnealing.runAnnealing
 };
 
 function logNodes(nodes: Node[]) {
@@ -46,28 +49,38 @@ function logNodes(nodes: Node[]) {
     })));
 }
 
-function assignId(combs: Entity[]) {
-    // assign entity id's
-    for (let i = 0; i < combs.length; i++) {
-        combs[i].id = i + 1;
-    }
-}
-
-export function transform(nodes: Node[]) {
+export function transform(name: string, nodes: Node[]) {
     if (options.verbose) logNodes(nodes);
 
     let combs = nodes.flatMap(x => x.combs());
     let ports = new Set(nodes.filter(x => x instanceof Input || x instanceof Output).flatMap(x => x.combs()));
 
-    assignId(combs);
+    if (options.debug) generateCircuitGraph(`${name}_pre_opt.dot`, combs);
+
+    logger.log(`Optimizing combinator graph`);
     optimize(combs);
-    assignId(combs);
 
-    if (options.debug) generateCircuitGraph(combs);
+    if (options.debug) generateCircuitGraph(`${name}_post_opt.dot`, combs);
 
-    generators[options.generator](combs, ports);
+    logger.log(`Placing combinators`);
 
-    assignId(combs);
+    let result = generators[options.generator](combs, ports);
+    if(options.generator == "annealing" && !result) {
+        console.warn("Failde to properly place combinators. try using \"-g chunkAnnealing\"");
+        return null;
+    }
+
+    // assign entity id's
+    for (let i = 0; i < combs.length; i++) {
+        combs[i].id = i + 1;
+    }
+
+    let i = 1;
+    // assign network ids
+    for (const n of nets.red)
+        n.id = i++;
+    for (const n of nets.green)
+        n.id = i++;
 
     return combs.map(x => x.toObj()); // return list of entities
 }

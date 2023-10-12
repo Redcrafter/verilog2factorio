@@ -6,7 +6,7 @@ import { Constant } from "../entities/Constant.js";
 import { ComparatorString, Decider } from "../entities/Decider.js";
 import { Color, each, Entity, isSpecial } from "../entities/Entity.js";
 
-import { Network } from "./nets.js";
+import { Network } from "../nets.js";
 import { options } from "../options.js";
 
 // returns the number of constant combinators with a given signal on the given network

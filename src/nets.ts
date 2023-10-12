@@ -1,9 +1,6 @@
-import { SignalID } from "../blueprint.js";
-import { anything, each, Endpoint, everything } from "../entities/Entity.js";
-import { logger } from "../logger.js";
-
-let redCounter = 1;
-let greenCounter = 1;
+import { SignalID } from "./blueprint.js";
+import { anything, each, Endpoint, everything } from "./entities/Entity.js";
+import { logger } from "./logger.js";
 
 // TODO: remove global?
 export let nets: {
@@ -16,8 +13,6 @@ export function resetNets() {
         red: new Set<Network>(),
         green: new Set<Network>()
     }
-    redCounter = 1;
-    greenCounter = 1;
 }
 
 export class Network {
@@ -29,12 +24,6 @@ export class Network {
 
     constructor(color: "red" | "green") {
         this.color = color;
-
-        if (color == "red") {
-            this.id = redCounter++;
-        } else {
-            this.id = greenCounter++;
-        }
         nets[color].add(this);
     }
 

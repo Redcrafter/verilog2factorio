@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { signalV } from "../../entities/Entity.js";
+import { signalV } from "../../src/entities/Entity.js";
 import { Const, createSimulator } from "../simulator.js";
 
 // TODO: add bit width option

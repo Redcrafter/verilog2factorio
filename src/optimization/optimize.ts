@@ -10,17 +10,15 @@ import { opt_nop } from "./opt_nop.js";
 import { opt_user } from "./opt_user.js";
 
 export function optimize(entities: Entity[]) {
-    opt_user();
-
     let changed = true;
     while (changed) {
         changed = false;
 
-        // somehow ||= does not work?
+        if (opt_user()) changed = true;
         if (opt_const(entities)) changed = true;
         if (opt_clean(entities)) changed = true;
         if (opt_merge(entities)) changed = true;
-        if (opt_nop(entities)) changed = true;
+        // if (opt_nop(entities)) changed = true;
 
         if (options.verbose) logger.log("");
     }

@@ -9,14 +9,14 @@ import { Input } from "./Input.js";
 import { Node, nodeFunc } from "./Node.js";
 
 export class SDFF extends Node {
-    private data: SDff;
+    data: SDff;
 
-    private clkIn: Decider;
-    private rstIn: Decider;
+    clkIn: Decider;
+    rstIn: Decider;
 
-    private dff1: Decider;
-    private dff2: Decider;
-    private dff3: Arithmetic;
+    dff1: Decider;
+    dff2: Decider;
+    dff3: Arithmetic;
 
     constructor(item: SDff) {
         super(item.connections.Q);

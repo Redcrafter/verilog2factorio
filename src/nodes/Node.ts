@@ -4,6 +4,7 @@ import { Arithmetic, ArithmeticOperations } from "../entities/Arithmetic.js";
 import { Color, Endpoint, Entity, makeConnection, setGlobalSource, signalC, signalV } from "../entities/Entity.js";
 
 import { MergeEl } from "./MergeNode.js";
+import { CellBase } from "../yosys.js";
 
 export type nodeFunc = (n: (number | string)[]) => Node;
 export type mergeFunc = (n: (number | string)[]) => MergeEl[];
@@ -43,6 +44,8 @@ export abstract class Node {
     outputBits: number[];
     outMask: number;
     outputPlaceholder: Endpoint;
+
+    abstract data: CellBase;
 
     constructor(bits: number[]) {
         logger.assert(bits.length <= 32, `Wire width too big: ${bits.length}`);

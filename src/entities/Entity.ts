@@ -1,6 +1,6 @@
 import { RawEntity, ConnectionPoint, SignalID } from "../blueprint.js";
 import { Node } from "../nodes/Node.js";
-import { Network } from "../optimization/nets.js";
+import { Network } from "../nets.js";
 
 export const signalA: SignalID = { type: "virtual", name: "signal-A" };
 export const signalC: SignalID = { type: "virtual", name: "signal-C" };
@@ -314,7 +314,7 @@ export function setGlobalSource(source: Node) {
 
 export class Endpoint {
     public entity: Entity;
-    public type: number;
+    public index: number;
     public outSignals: Set<SignalID>;
 
     public red: Network;
@@ -324,16 +324,16 @@ export class Endpoint {
     public redP = new Set<Endpoint>();
     public greenP = new Set<Endpoint>();
 
-    constructor(ent: Entity, type: number, ...outSignals: SignalID[]) {
+    constructor(ent: Entity, index: number, ...outSignals: SignalID[]) {
         this.entity = ent;
-        this.type = type;
+        this.index = index;
         this.outSignals = new Set(outSignals);
     }
 
     convert(): ConnectionPoint {
         return {
-            red: [...this.redP].map(x => ({ entity_id: x.entity.id, circuit_id: x.type })),
-            green: [...this.greenP].map(x => ({ entity_id: x.entity.id, circuit_id: x.type }))
+            red: [...this.redP].map(x => ({ entity_id: x.entity.id, circuit_id: x.index })),
+            green: [...this.greenP].map(x => ({ entity_id: x.entity.id, circuit_id: x.index }))
         }
     }
 }

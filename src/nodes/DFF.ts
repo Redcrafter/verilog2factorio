@@ -10,9 +10,7 @@ import { createTransformer, Node, nodeFunc } from "./Node.js";
 export class DFF extends Node {
     data: Dff | Dffe;
 
-    transformer: Entity;
-    decider1: Decider;
-    decider2: Decider;
+    entities: Entity[];
 
     constructor(item: Dff | Dffe) {
         super(item.connections.Q);
@@ -32,29 +30,44 @@ export class DFF extends Node {
             throw new Error("Not implemented");
         }
 
+        let transformer, inverter;
         if (this.data.type == "$dffe") {
             const en = getInputNode(this.data.connections.EN);
 
-            this.transformer = new Decider({
+            transformer = new Decider({
                 first_signal: signalV,
                 constant: 2,
                 comparator: ComparatorString.EQ,
                 copy_count_from_input: false,
                 output_signal: signalC
             });
-            makeConnection(Color.Green, en.output(), this.transformer.input);
+
+            if (this.data.parameters.EN_POLARITY == 0) {
+                inverter = new Decider({
+                    first_signal: signalV,
+                    constant: 0,
+                    comparator: ComparatorString.EQ,
+                    copy_count_from_input: false,
+                    output_signal: signalV
+                });
+
+                makeConnection(Color.Red, en.output(), inverter.input);
+                makeConnection(Color.Green, inverter.output, transformer.input);
+            } else {
+                makeConnection(Color.Green, en.output(), transformer.input);
+            }
         } else {
-            this.transformer = createTransformer();
+            transformer = createTransformer();
         }
 
-        this.decider1 = new Decider({
+        let decider1 = new Decider({
             first_signal: signalC,
             constant: 1,
             comparator: ComparatorString.EQ,
             copy_count_from_input: true,
             output_signal: signalV
         }); // if c == 1 output a
-        this.decider2 = new Decider({
+        let decider2 = new Decider({
             first_signal: signalC,
             constant: 0,
             comparator: ComparatorString.EQ,
@@ -62,15 +75,19 @@ export class DFF extends Node {
             output_signal: signalV
         }); // if c == 0 output b
 
-        makeConnection(Color.Red, clk.output(), this.transformer.input);
-        makeConnection(Color.Red, d.output(), this.decider1.input);
+        makeConnection(Color.Red, clk.output(), transformer.input);
+        makeConnection(Color.Red, d.output(), decider1.input);
 
-        makeConnection(Color.Green, this.transformer.output, this.decider1.input, this.decider2.input);
-        makeConnection(Color.Both, this.decider1.output, this.decider2.output);
-        makeConnection(Color.Red, this.decider2.output, this.decider2.input);
+        makeConnection(Color.Green, transformer.output, decider1.input, decider2.input);
+        makeConnection(Color.Both, decider1.output, decider2.output);
+        makeConnection(Color.Red, decider2.output, decider2.input);
 
-        return this.decider1.output;
+        this.entities = [transformer, decider1, decider2];
+
+        if (inverter) this.entities.push(inverter);
+
+        return decider1.output;
     }
 
-    combs(): Entity[] { return [this.transformer, this.decider1, this.decider2]; }
+    combs(): Entity[] { return this.entities; }
 }

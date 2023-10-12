@@ -18,8 +18,6 @@ export function opt_clean(entities: Entity[]) {
             entities.splice(entities.indexOf(e), 1);
             i--;
             count++;
-
-            continue;
         }
     }
 

@@ -14,11 +14,15 @@ export interface MergeEl {
 }
 
 export class MergeNode extends Node {
+    data: undefined;
     inputs: MergeEl[];
-
+    
     constructor(inputs: MergeEl[], outBits: number[]) {
         super(outBits);
         this.inputs = inputs;
+        
+        // @ts-ignore: hack to correctly dispaly group name for graph
+        this.data = { type: "internal_mux" };
     }
 
     entities: Entity[] = [];

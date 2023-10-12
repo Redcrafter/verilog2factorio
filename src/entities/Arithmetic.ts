@@ -46,8 +46,10 @@ export class Arithmetic extends Entity {
         this.params = params;
 
         this.input = new Endpoint(this, 1);
+
+        logger.assert(params.first_signal !== each || params.second_signal !== each, "only one input parameter can be each");
         if (params.output_signal == each) {
-            logger.assert(params.first_signal == each);
+            logger.assert(params.first_signal == each || params.second_signal == each, "output can only be each if an input is each");
             this.output = new Endpoint(this, 2);
         } else {
             this.output = new Endpoint(this, 2, params.output_signal);

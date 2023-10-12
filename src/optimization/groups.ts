@@ -6,7 +6,7 @@ import { Constant } from "../entities/Constant.js";
 import { Decider } from "../entities/Decider.js";
 import { anything, each, Endpoint, Entity, everything } from "../entities/Entity.js";
 
-import { Network } from "./nets.js";
+import { Network } from "../nets.js";
 
 // todo: make this a virtual function?
 function changeCombSignal(endpoint: Endpoint, from: SignalID, to: SignalID) {
@@ -176,8 +176,8 @@ export class GroupManager {
             function add(s: SignalID) {
                 if (!s) return;
                 if (isSpecial(s)) {
-                    if(entity.input.red) inSigs.push(...entity.input.red.signals);
-                    if(entity.input.green) inSigs.push(...entity.input.green.signals);
+                    if (entity.input.red) inSigs.push(...entity.input.red.signals);
+                    if (entity.input.green) inSigs.push(...entity.input.green.signals);
                 } else {
                     inSigs.push(s);
                 }

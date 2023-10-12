@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { signalV } from "../../entities/Entity.js";
+import { signalV } from "../../src/entities/Entity.js";
 import { createSimulator, Const } from "../simulator.js";
 
 export async function testFibonacci() {

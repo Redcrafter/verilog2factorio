@@ -1,8 +1,7 @@
-import { options } from "../options.js";
 import { logger } from "../logger.js";
 import { RNG } from "../random.js";
 
-import { Color, Endpoint, Entity } from "../entities/Entity.js";
+import { Endpoint, Entity } from "../entities/Entity.js";
 import { opt_chain } from "../optimization/opt_chain.js";
 
 function dist(a: Point, b: Point) {
@@ -95,39 +94,16 @@ class Simulator {
     }
 
     sim(errorCallback: (a: number, b: number) => void) {
-        let run = true;
-        let iter = 0;
-        while (run) {
-            iter++;
+        this.reset();
 
-            run = false;
-            this.reset();
+        for (let i = 0; i < this.iterationCount; i++) {
+            this.simStep();
+        }
 
-            for (let i = 0; i < this.iterationCount; i++) {
-                this.simStep();
-            }
-
-            let errorCount = 0;
-            for (const e of this.edges.filter(x => dist(x.a, x.b) > 9)) {
-                errorCount++;
-                errorCallback(e.a.id, e.b.id);
-
-                // delete edge
-                /*e.a.connected.splice(e.a.connected.indexOf(e.b), 1);
-                e.b.connected.splice(e.b.connected.indexOf(e.a), 1);
-                this.edges.splice(this.edges.indexOf(e), 1);
-
-                // add intermediate node
-                let p = this.addNode(false);
-                this.addEdge(e.a.id, p);
-                this.addEdge(p, e.b.id);*/
-
-                if (options.retry) {
-                    run = true;
-                }
-            }
-
-            logger.log(`Iteration: ${iter} Errors: ${errorCount}`);
+        let errorCount = 0;
+        for (const e of this.edges.filter(x => dist(x.a, x.b) > 9)) {
+            errorCount++;
+            errorCallback(e.a.id, e.b.id);
         }
     }
 
@@ -302,7 +278,6 @@ export function runAnnealing(combs: Entity[], ports: Set<Entity>) {
     // set op connections
     opt_chain(combs);
 
-    logger.log(`Running layout simulation`);
     let simulator = new Simulator();
 
     // add combinators to simulator
@@ -328,31 +303,9 @@ export function runAnnealing(combs: Entity[], ports: Set<Entity>) {
 
     let errors = 0;
     // run simulator
-    simulator.sim((aId, bId) => {
-        let a = combs[aId];
-        let b = combs[bId];
-
-        // TODO: identify which connection should be changed and add pole
-
-        let cons = [];
-
-        if (a.input.redP.has(b.input)) cons.push([Color.Red, a.input, b.input]);
-        if (a.input.greenP.has(b.input)) cons.push([Color.Green, a.input, b.input]);
-        if (a.input.redP.has(b.output)) cons.push([Color.Red, a.input, b.output]);
-        if (a.input.greenP.has(b.output)) cons.push([Color.Green, a.input, b.output]);
-
-        if (a.output.redP.has(b.input)) cons.push([Color.Red, a.output, b.input]);
-        if (a.output.greenP.has(b.input)) cons.push([Color.Green, a.output, b.input]);
-        if (a.output.redP.has(b.output)) cons.push([Color.Red, a.output, b.output]);
-        if (a.output.greenP.has(b.output)) cons.push([Color.Green, a.output, b.output]);
-        // problematic: need two poles in some cases
-
-        // debugger;
-        errors++;
-    });
+    simulator.sim((aId, bId) => errors++);
     if (errors != 0) {
         logger.error(`${errors} overlong wire(s) have been found after trying to layout the circuit`);
-        // process.exit(0);
     }
 
     // transfer simulation to combinators
@@ -363,4 +316,6 @@ export function runAnnealing(combs: Entity[], ports: Set<Entity>) {
         n.x = Math.floor(p.x) + 0.5;
         n.y = Math.floor(p.y * 2) + n.height / 2;
     }
+
+    return errors == 0;
 }

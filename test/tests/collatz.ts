@@ -1,6 +1,6 @@
 import * as assert from "assert";
-import { signalV } from "../../entities/Entity.js";
-import { RNG } from "../../random.js";
+import { signalV } from "../../src/entities/Entity.js";
+import { RNG } from "../../src/random.js";
 import { createSimulator, Const } from "../simulator.js";
 
 export async function testCollatz() {

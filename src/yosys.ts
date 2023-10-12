@@ -14,7 +14,7 @@ export interface Port {
 
 type Conn = (number | string)[];
 
-interface CellBase {
+export interface CellBase {
     hide_name: number;
     type: string;
     parameters: IDict<number | string>;
@@ -270,11 +270,15 @@ export interface Mem extends CellBase {
     }
 }
 
+export interface Print extends CellBase { 
+    type: "$print";
+}
+
 export type Cell = UnaryCell | BinaryCell |
     Mux | PMux |
     SR | Dff | ADff | SDff | Dffsr |
     Dffe | ADffe | SDffe | Dffsre |
-    Mem;
+    Mem | Print;
 
 export interface Module {
     attributes: IDict<string>;
@@ -291,15 +295,9 @@ export interface YosysData {
     modules: IDict<Module>;
 }
 
-export function genNetlist(files: string[]): Promise<YosysData> {
-    for (const file of files) {
-        if (!fs.existsSync(file)) {
-            logger.log(`error: file ${file} not found`);
-        }
-    }
 
-    const commands = "proc; flatten; wreduce; opt; fsm; opt; memory -nomap -nordff; opt; muxpack; peepopt; async2sync; wreduce; opt -mux_bool";
-    const proc = exec(`yosys -p "${commands}" -o temp.json "${files.join('" "')}"`);
+function execYosys(files: string[], command: string): Promise<YosysData> {
+    const proc = exec(`yosys -o temp.json ${command} "${files.join('" "')}"`);
 
     return new Promise(res => {
         proc.stderr.on("data", (data) => {
@@ -307,8 +305,7 @@ export function genNetlist(files: string[]): Promise<YosysData> {
         });
         proc.on("exit", (code) => {
             if (code != 0) {
-                logger.log("An error occurred while yosys tried to compile your code.")
-                process.exit(code);
+                throw new Error("An error occurred while yosys tried to compile your code.");
             }
             const data = JSON.parse(fs.readFileSync("./temp.json", 'utf8'));
             fs.unlinkSync("temp.json");
@@ -316,4 +313,31 @@ export function genNetlist(files: string[]): Promise<YosysData> {
             res(data);
         });
     })
+}
+
+export async function genNetlist(files: string[]): Promise<YosysData> {
+    for (const file of files) {
+        if (!fs.existsSync(file)) {
+            logger.log(`error: file ${file} not found`);
+        }
+    }
+
+    let first = await execYosys(files, `-p "proc;"`); // run empty pass to find all module names
+    let modules = Object.keys(first.modules).map(x => x.substring(10));
+
+    let res: YosysData = {
+        creator: first.creator,
+        modules: {}
+    };
+
+    const commands = "proc; flatten; wreduce; opt; fsm; opt; memory -nomap -nordff; opt; muxpack; peepopt; async2sync; wreduce; opt -mux_bool";
+    for (const module of modules) {
+        try {
+            const proc = await execYosys(files, `-p "${commands}" -r "${module}"`);
+            res.modules[module] = proc.modules[module];
+        } catch (e) {
+            console.warn(`Failed to elaborate design for module "${module}"`);
+        }
+    }
+    return res;
 }

@@ -5,16 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "pwa-node",
+            "type": "node",
             "request": "launch",
             "name": "Debug",
             "skipFiles": ["<node_internals>/**"],
             "runtimeArgs": ["--loader", "ts-node/esm"],
-            "args": ["./samples/gates.v"],
+            "args": ["./samples/chip8/chip8.sv"],
             "program": "${workspaceFolder}/src/main.ts",
         },
         {
-            "type": "pwa-node",
+            "type": "node",
             "request": "launch",
             "name": "Test",
             "skipFiles": ["<node_internals>/**"],

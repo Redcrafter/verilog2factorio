@@ -29,7 +29,8 @@ export class MathNode extends Node {
         logger.assert(data.parameters.A_SIGNED == data.parameters.B_SIGNED);
 
         if (method == ArithmeticOperations.Div || method == ArithmeticOperations.Mod) { // sign only matters for division and modulo
-            logger.assert(data.parameters.A_WIDTH == data.parameters.B_WIDTH, "mismatching div width");
+            if (data.parameters.A_WIDTH == data.parameters.B_WIDTH)
+                logger.warn("mismatching div width");
 
             if (data.parameters.A_WIDTH == 32) {
                 logger.assert(data.parameters.A_SIGNED == 1, `${method}: Only 32-bit signed values allowed`);

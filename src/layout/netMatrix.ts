@@ -1,7 +1,7 @@
 
 import { Constant } from "../entities/Constant.js";
 import { Color, Endpoint, Entity } from "../entities/Entity.js";
-import { nets, Network } from "../optimization/nets.js";
+import { nets, Network } from "../nets.js";
 
 interface El {
     min: number;

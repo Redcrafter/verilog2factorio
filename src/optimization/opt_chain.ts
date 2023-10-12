@@ -1,12 +1,10 @@
 import { logger } from "../logger.js";
 import { options } from "../options.js";
-import { nets, Network } from "./nets.js";
+import { nets, Network } from "../nets.js";
 
 import { Color, Entity } from "../entities/Entity.js";
 
-/** 
- * replaces all wires with wire chains 
-*/
+/** connects all combinators using wire chains */
 export function opt_chain(entities: Entity[]) {
     if (options.verbose) logger.log("Running opt_chain");
 

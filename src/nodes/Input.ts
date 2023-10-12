@@ -4,6 +4,8 @@ import { setGlobalSource } from "../entities/Entity.js";
 import { Node } from "./Node.js";
 
 export class Input extends Node {
+    data: undefined;
+
     name: string;
     constant: Constant;
 

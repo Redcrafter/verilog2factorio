@@ -1,15 +1,16 @@
-import { ConnectionData, SignalID } from "../blueprint.js";
-import { buildGraph } from "../parser.js";
-import { genNetlist, YosysData } from "../yosys.js";
+import { ConnectionData, SignalID } from "../src/blueprint.js";
+import { buildGraph } from "../src/parser.js";
+import { genNetlist, YosysData } from "../src/yosys.js";
 
-import { ArithmeticCombinator, ArithmeticOperations } from "../entities/Arithmetic.js";
-import { ConstantCombinator } from "../entities/Constant.js";
-import { ComparatorString, DeciderCombinator } from "../entities/Decider.js";
-import { anything, each, everything, isSpecial } from "../entities/Entity.js";
-import { MediumElectricPole } from "../entities/Pole.js";
+import { ArithmeticCombinator, ArithmeticOperations } from "../src/entities/Arithmetic.js";
+import { ConstantCombinator } from "../src/entities/Constant.js";
+import { ComparatorString, DeciderCombinator } from "../src/entities/Decider.js";
+import { anything, each, everything, isSpecial } from "../src/entities/Entity.js";
+import { MediumElectricPole } from "../src/entities/Pole.js";
 
-import { optimize } from "../optimization/optimize.js";
-import { opt_chain } from "../optimization/opt_chain.js";
+import { optimize } from "../src/optimization/optimize.js";
+import { opt_chain } from "../src/optimization/opt_chain.js";
+import { SteelChest_ } from "../src/entities/SteelChest.js";
 
 interface Signal {
     value: number;
@@ -261,9 +262,9 @@ export class Const extends SimEnt {
 }
 
 class Pole extends SimEnt {
-    data: MediumElectricPole;
+    data: MediumElectricPole | SteelChest_;
 
-    constructor(data: MediumElectricPole) {
+    constructor(data: MediumElectricPole | SteelChest_) {
         super();
         this.in = this.out = { ent: this, green: null, red: null, isOut: false };
 
@@ -408,6 +409,8 @@ export async function createSimulator(file: string, moduleName: string) {
             case "constant-combinator": el = new Const(e); break;
             case "decider-combinator": el = new Decider(e); break;
             case "medium-electric-pole": el = new Pole(e); break;
+            case "steel-chest": el = new Pole(e); break;
+            default: throw new Error(`Uknown entity type "${e.name}"`);
         }
         idMap.set(e.entity_number, el);
         simEnts.push(el);

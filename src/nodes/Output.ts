@@ -1,13 +1,14 @@
 import { Node, nodeFunc } from "./Node.js";
 
-import { Color, Endpoint, makeConnection, setGlobalSource } from "../entities/Entity.js";
-import { Pole } from "../entities/Pole.js";
+import { Color, Endpoint, makeConnection } from "../entities/Entity.js";
+import { SteelChest } from "../entities/SteelChest.js";
 
 export class Output extends Node {
     bits: number[];
     name: string;
+    data: undefined;
 
-    pole: Pole;
+    pole: SteelChest;
 
     constructor(bits: number[], name: string) {
         super([]);
@@ -18,7 +19,7 @@ export class Output extends Node {
     _connect(getInputNode: nodeFunc): Endpoint {
         const src = getInputNode(this.bits);
 
-        this.pole = new Pole();
+        this.pole = new SteelChest();
         this.pole.keep = true;
 
         makeConnection(Color.Red, src.output(), this.pole.input);

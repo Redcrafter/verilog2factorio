@@ -33,14 +33,14 @@ import { SDFF } from "./nodes/SDFF.js";
 import { SDFFE } from "./nodes/SDFFE.js";
 import { SDFFCE } from "./nodes/SDFFCE.js";
 
-import { resetNets } from "./optimization/nets.js";
+import { resetNets } from "./nets.js";
 
 function arraysEqual<T>(a: T[], b: T[]) {
     if (a === b) return true;
     if (a === null || b === null) return false;
     if (a.length !== b.length) return false;
 
-    for (var i = 0; i < a.length; ++i) {
+    for (let i = 0; i < a.length; ++i) {
         if (a[i] !== b[i]) return false;
     }
     return true
@@ -276,6 +276,8 @@ export function buildGraph(mod: yosys.Module) {
     let err = false;
     for (const key in mod.cells) {
         const item = mod.cells[key];
+        if(item.type == "$print")
+            continue
 
         for (const key in item.parameters) {
             //@ts-ignore

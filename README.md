@@ -7,7 +7,7 @@ Using [this](https://github.com/ghdl/ghdl-yosys-plugin) it should also be possib
 You can check out the web demo [here](https://redcrafter.github.io/verilog2factorio).
 
 ## Install
-Manually compile [yosys](https://github.com/YosysHQ/yosys) (since the last release is quite old) and add it to your PATH.
+Manually compile [Yosys 0.34](https://github.com/YosysHQ/yosys/releases/tag/yosys-0.34) (later releases might not work) and add it to your PATH.
 
 Run ``` npm install ``` to install all dependencies.
 
@@ -21,8 +21,7 @@ Options:
   -o, --output <file>       File to output the compiled blueprint to.
   -m, --modules <names...>  Verilog modules to output blueprint for. (defaults to all).
   -f, --files <files...>    List of Verilog files to compile. (only has to be explicitly specified after -m).
-  -r, --retry               Retry until there are no longer layout errors.
-  -g, --generator [type]    Layout generator to use. annealing(default),matrix
+  -g, --generator [type]    Layout generator to use. annealing(default),matrix,chunkAnnealing
   -h, --help                Display this information.
 ```
 ## Quick Start
@@ -47,8 +46,9 @@ module counter(input clk, input rst, input inc, output reg [3:0] cnt);
 endmodule
 ```
 ![image](https://user-images.githubusercontent.com/35386456/115978416-2c589600-a54d-11eb-8cbd-92d37e0ef3bb.png)
+
 At the top in order clk, rst, inc and cnt.
 
 ### 6502 CPU from https://github.com/Arlet/verilog-6502/
-(Currently not entirely working)
-![image](https://user-images.githubusercontent.com/35386456/115978429-54e09000-a54d-11eb-8d4e-48d7d9fc68c2.png)
+using new the layout method "chunkAnnealing"
+![image](https://github.com/Redcrafter/verilog2factorio/assets/19157738/c560b2bc-b943-4d40-9aad-64d8d7a33df2)

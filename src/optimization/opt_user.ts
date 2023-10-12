@@ -1,10 +1,10 @@
-import { nets } from "./nets.js";
+import { nets } from "../nets.js";
 import { options } from "../options.js";
 import { logger } from "../logger.js";
 
 // todo: check for each signal?
 
-// removes networks which are never used as inputs
+/** removes networks which are never used as inputs or have no input */
 export function opt_user() {
     if (options.verbose) logger.log("Running opt_user");
 

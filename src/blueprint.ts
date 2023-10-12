@@ -2,6 +2,8 @@ import { ArithmeticCombinator } from "./entities/Arithmetic";
 import { DeciderCombinator } from "./entities/Decider.js";
 import { ConstantCombinator } from "./entities/Constant.js";
 import { MediumElectricPole } from "./entities/Pole.js";
+import { Substation_ } from "./entities/Substation.js";
+import { SteelChest_ } from "./entities/SteelChest.js";
 
 import * as zlib from "zlib";
 
@@ -46,7 +48,7 @@ export interface EntityBase {
     // control_behavior?: any;
 }
 
-export type RawEntity = ArithmeticCombinator | DeciderCombinator | ConstantCombinator | MediumElectricPole;
+export type RawEntity = ArithmeticCombinator | DeciderCombinator | ConstantCombinator | MediumElectricPole | Substation_ | SteelChest_;
 
 interface Tile {
     name: string;

@@ -9,5 +9,9 @@
         "strictNullChecks": false,
         "noImplicitOverride": true
     },
-    "include": ["src/"]
+    "include": [
+        "src/",
+        "test/",
+        "scripts/",
+    ]
 }

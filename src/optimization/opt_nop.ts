@@ -6,7 +6,7 @@ import { Decider } from "../entities/Decider.js";
 import { allSignals, Entity } from "../entities/Entity.js";
 
 import { options } from "../options.js";
-import { nets, Network } from "./nets.js";
+import { nets, Network } from "../nets.js";
 
 function getSignals(e: Entity) {
     if (e instanceof Arithmetic || e instanceof Decider) {
@@ -45,7 +45,7 @@ export function opt_nop(entities: Entity[]) {
     for (let i = 0; i < entities.length; i++) {
         const e = entities[i];
 
-        if (!isNop(e)) continue;
+        if (e.keep || !isNop(e)) continue;
 
         // TODO: allow for multiple different colored outputs when inNet.points.size == 2
         if ((!!e.input.red == !!e.input.green) || (!!e.output.red == !!e.output.green)) {

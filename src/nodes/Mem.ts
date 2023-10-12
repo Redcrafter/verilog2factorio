@@ -21,11 +21,11 @@ export class MemNode extends Node {
     outputSegments: MemRead[] = [];
     entities: Entity[] = [];
 
-    constructor(item: Mem) {
+    constructor(data: Mem) {
         super([]);
-        this.data = item;
+        this.data = data;
 
-        const params = item.parameters;
+        const params = data.parameters;
 
         logger.assert(params.ABITS <= 32, "too many address bits");
         logger.assert(params.WIDTH <= 32, "cannot store > 32 bit numbers");
@@ -47,19 +47,19 @@ export class MemNode extends Node {
         logger.assert(params.WR_CLK_POLARITY == 1, "invert wr_clk polarity");
         logger.assert(params.WR_PRIORITY_MASK == 0);
 
-        logger.assert(arraySame(item.connections.RD_CLK, "x"));
-        logger.assert(arraySame(item.connections.RD_EN, "1"));
-        logger.assert(arraySame(item.connections.RD_ARST, "0"));
-        logger.assert(arraySame(item.connections.RD_SRST, "0"));
+        logger.assert(arraySame(data.connections.RD_CLK, "x"));
+        logger.assert(arraySame(data.connections.RD_EN, "1"));
+        logger.assert(arraySame(data.connections.RD_ARST, "0"));
+        logger.assert(arraySame(data.connections.RD_SRST, "0"));
 
-        logger.assert(arraySame(item.connections.WR_EN, item.connections.WR_EN[0]));
+        logger.assert(arraySame(data.connections.WR_EN, data.connections.WR_EN[0]));
 
         let width = this.data.parameters.WIDTH;
 
         for (let i = 0; i < this.data.parameters.RD_PORTS; i++) {
-            let bits = item.connections.RD_DATA.slice(i * width, (i + 1) * width);
+            let bits = data.connections.RD_DATA.slice(i * width, (i + 1) * width);
 
-            this.outputSegments.push(new MemRead(bits));
+            this.outputSegments.push(new MemRead(data, bits));
         }
     }
 
@@ -169,10 +169,12 @@ export class MemNode extends Node {
 }
 
 class MemRead extends Node {
+    data: Mem;
     endPoint: Endpoint;
 
-    constructor(bits: number[]) {
+    constructor(data: Mem, bits: number[]) {
         super(bits);
+        this.data = data;
     }
 
     _connect(getInputNode: nodeFunc, getMergeEls: mergeFunc): Endpoint {

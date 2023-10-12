@@ -1,8 +1,12 @@
+import { options } from "../src/options.js";
+import { testChip8 } from "./tests/chip8.js";
 import { testCollatz } from "./tests/collatz.js";
 import { testFibonacci } from "./tests/fibonacci.js";
 import { testMerge, testUnary } from "./tests/gates.js";
 import { testRv32i } from "./tests/rv32i_cpu.js";
 import { testSpiral } from "./tests/spiral.js";
+
+options.verbose = false;
 
 let tests = [
     testCollatz,
@@ -10,7 +14,8 @@ let tests = [
     testUnary,
     testMerge,
     testRv32i,
-    testSpiral
+    testSpiral,
+    testChip8
 ];
 
 for (const t of tests) {

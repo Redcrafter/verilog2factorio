@@ -211,11 +211,19 @@ module Or (input [31:0] A, input [31:0] B, output [31:0] Y);
     assign Y = A | B;
 endmodule
 
-module LAnd (input [31:0] A, input [31:0] B, output Y);
+// module LAnd_32 (input [31:0] A, input [31:0] B, output Y);
+//     assign Y = A && B;
+// endmodule
+
+// module LOr_32 (input [31:0] A, input [31:0] B, output Y);
+//     assign Y = A || B;
+// endmodule
+
+module LAnd_1 (input A, input B, output Y);
     assign Y = A && B;
 endmodule
 
-module LOr (input [31:0] A, input [31:0] B, output Y);
+module LOr_1 (input A, input B, output Y);
     assign Y = A || B;
 endmodule
 

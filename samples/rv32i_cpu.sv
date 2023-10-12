@@ -1,11 +1,15 @@
 // instructions
 // I-type LOAD
 `define OP_LOAD     7'b0000011
-`define F3_LW       3'b010
+`define F3_LB       3'b000 // load byte
+`define F3_LH       3'b001 // load high
+`define F3_LW       3'b010 // load word
 
 // S-type STORE
 `define OP_STORE    7'b0100011
-`define F3_SW       3'b010
+`define F3_SB       3'b000 // save byte
+`define F3_SH       3'b001 // save high
+`define F3_SW       3'b010 // save word
 
 // I-type OP-IMM
 `define OP_IMM      7'b0010011
@@ -108,8 +112,8 @@ module rv32i_cpu(
     logic writeResult;
     logic [31:0] pcResult;
 
-    wire [31:0] rs1Val = rs1 == 0 ? 0 : regs[rs1];
-    wire [31:0] rs2Val = rs2 == 0 ? 0 : regs[rs2];
+    wire [31:0] rs1Val = regs[rs1];
+    wire [31:0] rs2Val = regs[rs2];
 
     function jumpCond();
         case (funct3)
@@ -209,7 +213,7 @@ module rv32i_cpu(
             endcase
 
             pc <= pcResult;
-            if (rd != 0 && writeResult) regs[rd] <= result; 
+            if (writeResult) regs[rd] <= result; 
         end
     end
 endmodule
