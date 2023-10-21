@@ -50,5 +50,5 @@ endmodule
 At the top in order clk, rst, inc and cnt.
 
 ### 6502 CPU from https://github.com/Arlet/verilog-6502/
-using new the layout method "chunkAnnealing"
+using the new layout method "chunkAnnealing"
 ![image](https://github.com/Redcrafter/verilog2factorio/assets/19157738/c560b2bc-b943-4d40-9aad-64d8d7a33df2)
