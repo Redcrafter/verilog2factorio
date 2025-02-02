@@ -23,6 +23,7 @@ export class SDFFE extends Node {
     sel1: Decider;
     sel2: Arithmetic;
     srstInv: Decider;
+    enInv: Decider;
 
     constructor(item: SDffe) {
         super(item.connections.Q);
@@ -31,7 +32,6 @@ export class SDFFE extends Node {
         this.rstVal = item.parameters.SRST_VALUE;
 
         logger.assert(item.parameters.CLK_POLARITY == 1, "SDFFE: revert clk polarity");
-        logger.assert(item.parameters.EN_POLARITY == 1, "SDFFE:revert enable polarity");
     }
 
     _connect(getInputNode: nodeFunc) {
@@ -109,8 +109,23 @@ export class SDFFE extends Node {
             makeConnection(Color.Green, srst.output(), this.clk2.input, this.rst.input);
         }
 
+        //same as above, invert enable polarity if needed
+        if (this.data.parameters.EN_POLARITY == 0) {
+            this.enInv = new Decider({
+                first_signal: signalV,
+                constant: 0,
+                comparator: ComparatorString.EQ,
+                copy_count_from_input: false,
+                output_signal: signalV
+            })
+
+            makeConnection(Color.Green, en.output(), this.enInv.input)
+            makeConnection(Color.Green, this.enInv.output, this.clk1.input)
+        } else {
+            makeConnection(Color.Green, en.output(), this.clk1.input);
+        }
+
         makeConnection(Color.Red, clk.output(), this.clk1.input, this.clk2.input);
-        makeConnection(Color.Green, en.output(), this.clk1.input);
 
         makeConnection(Color.Red, d.output(), this.sel1.input);
 
@@ -128,6 +143,7 @@ export class SDFFE extends Node {
         let res = [this.clk1, this.clk2, this.dff1, this.dff2, this.rst, this.sel1];
         if (this.sel2) res.push(this.sel2);
         if (this.srstInv) res.push(this.srstInv);
+        if (this.enInv) res.push(this.enInv);
         return res;
     }
 }
