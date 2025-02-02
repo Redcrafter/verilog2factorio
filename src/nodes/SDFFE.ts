@@ -117,10 +117,10 @@ export class SDFFE extends Node {
                 comparator: ComparatorString.EQ,
                 copy_count_from_input: false,
                 output_signal: signalV
-            })
+            });
 
-            makeConnection(Color.Green, en.output(), this.enInv.input)
-            makeConnection(Color.Green, this.enInv.output, this.clk1.input)
+            makeConnection(Color.Green, en.output(), this.enInv.input);
+            makeConnection(Color.Green, this.enInv.output, this.clk1.input);
         } else {
             makeConnection(Color.Green, en.output(), this.clk1.input);
         }
